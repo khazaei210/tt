@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ tournament.name }}{% endblock %}
+{% block page_title %}{{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ tournament.name }}</h1>
+        <p class="text-base-content/60">
+            {{ tournament.location|default:"—" }}
+            {% if tournament.start_date %} · {{ tournament.start_date }}{% if tournament.end_date %} – {{ tournament.end_date }}{% endif %}{% endif %}
+            · <span class="badge badge-outline badge-sm">{{ tournament.get_status_display }}</span>
+        </p>
+    </div>
+    <div class="flex gap-2">
+        {% if can_manage %}
+            <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline">{% translate "Edit tournament" %}</a>
+        {% endif %}
+        <a href="{% url 'tournaments:list' %}" class="btn btn-ghost">{% translate "Back to tournaments" %}</a>
+    </div>
+</div>
+
+{% if tournament.description %}
+    <p class="mb-6 text-base-content/80">{{ tournament.description|linebreaksbr }}</p>
+{% endif %}
+
+<div class="flex items-center justify-between mb-2">
+    <h2 class="text-lg font-semibold">{% translate "Competitions" %}</h2>
+    {% if can_manage %}
+        <a href="{% url 'tournaments:competition_add' tournament.pk %}" class="btn btn-primary btn-sm">{% translate "Add competition" %}</a>
+    {% endif %}
+</div>
+
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% translate "Name" %}</th>
+                <th>{% translate "Participant type" %}</th>
+                <th>{% translate "Stages" %}</th>
+                <th>{% translate "Participants" %}</th>
+                <th>{% translate "Status" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% include "tournaments/_competition_rows.html" %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% load i18n %}
+<div id="roster-panel">
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% translate "Player" %}</th>
+                    <th>{% translate "Joined on" %}</th>
+                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for membership in memberships %}
+                <tr>
+                    <td>{{ membership.player.full_name }}</td>
+                    <td>{{ membership.joined_on|default:"—" }}</td>
+                    {% if can_manage %}
+                    <td class="text-right">
+                        <button type="button"
+                                class="btn btn-xs btn-error btn-outline"
+                                hx-delete="{% url 'teams:member_remove' team.pk membership.pk %}"
+                                hx-target="#roster-panel"
+                                hx-swap="outerHTML"
+                                hx-confirm="{% translate 'Remove this player from the team?' %}">
+                            {% translate "Remove" %}
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No members yet." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if can_manage %}
+    <form hx-post="{% url 'teams:member_add' team.pk %}"
+          hx-target="#roster-panel"
+          hx-swap="outerHTML"
+          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4">
+        {% csrf_token %}
+        <div class="flex-1 min-w-48">
+            <label class="label"><span class="label-text">{{ membership_form.player.label }}</span></label>
+            {{ membership_form.player }}
+            {% for error in membership_form.player.errors %}
+                <p class="text-sm text-error mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div>
+            <label class="label"><span class="label-text">{{ membership_form.joined_on.label }}</span></label>
+            {{ membership_form.joined_on }}
+        </div>
+        <button type="submit" class="btn btn-primary">{% translate "Add to team" %}</button>
+    </form>
+    {% endif %}
+</div>

@@ -1,0 +1,25 @@
+{% load i18n %}
+{% for stage in stages %}
+<tr id="stage-row-{{ stage.pk }}">
+    <td><a href="{% url 'tournaments:stage_detail' stage.pk %}" class="link link-primary">{{ stage.name }}</a></td>
+    <td>{{ stage.get_stage_format_display }}</td>
+    <td>{{ stage.order }}</td>
+    {% if can_manage %}
+    <td class="text-right space-x-2 rtl:space-x-reverse">
+        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
+        <button type="button"
+                class="btn btn-xs btn-error btn-outline"
+                hx-delete="{% url 'tournaments:stage_delete' stage.pk %}"
+                hx-target="#stage-row-{{ stage.pk }}"
+                hx-swap="outerHTML"
+                hx-confirm="{% translate 'Are you sure you want to delete this stage?' %}">
+            {% translate "Delete" %}
+        </button>
+    </td>
+    {% endif %}
+</tr>
+{% empty %}
+<tr>
+    <td colspan="4" class="text-center text-base-content/60 py-8">{% translate "No stages yet." %}</td>
+</tr>
+{% endfor %}

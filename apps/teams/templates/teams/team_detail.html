@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ team.name }}{% endblock %}
+{% block page_title %}{{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ team.name }}</h1>
+        {% if team.short_name or team.country %}
+            <p class="text-base-content/60">{{ team.short_name }}{% if team.short_name and team.country %} · {% endif %}{{ team.country }}</p>
+        {% endif %}
+    </div>
+    <div class="flex gap-2">
+        {% if can_manage %}
+            <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline">{% translate "Edit team" %}</a>
+        {% endif %}
+        <a href="{% url 'teams:list' %}" class="btn btn-ghost">{% translate "Back to teams" %}</a>
+    </div>
+</div>
+
+<h2 class="text-lg font-semibold mb-2">{% translate "Roster" %}</h2>
+{% include "teams/_roster_panel.html" %}
+{% endblock %}

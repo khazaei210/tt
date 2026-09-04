@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Players" %}{% endblock %}
+{% block page_title %}{% translate "Players" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <h1 class="text-2xl font-bold">{% translate "Players" %}</h1>
+    {% if can_manage %}
+        <a href="{% url 'players:add' %}" class="btn btn-primary">{% translate "Add player" %}</a>
+    {% endif %}
+</div>
+
+<div class="mb-4">
+    <input type="search"
+           name="q"
+           value="{{ request.GET.q }}"
+           placeholder="{% translate 'Search by name or club…' %}"
+           class="input input-bordered w-full max-w-sm"
+           hx-get="{% url 'players:list' %}"
+           hx-target="#player-table-body"
+           hx-swap="innerHTML"
+           hx-trigger="keyup changed delay:300ms, search">
+</div>
+
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% translate "Name" %}</th>
+                <th>{% translate "Gender" %}</th>
+                <th>{% translate "Club" %}</th>
+                <th>{% translate "Country" %}</th>
+                <th>{% translate "Status" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody id="player-table-body">
+            {% include "players/_player_rows.html" %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

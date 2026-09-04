@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full mb-6">
+    <div class="stat">
+        <div class="stat-title">{% translate "Tournaments" %}</div>
+        <div class="stat-value text-primary">{{ tournament_count }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Players" %}</div>
+        <div class="stat-value text-secondary">{{ player_count }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Teams" %}</div>
+        <div class="stat-value text-accent">{{ team_count }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Doubles pairs" %}</div>
+        <div class="stat-value">{{ pair_count }}</div>
+    </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+    <a href="{% url 'tournaments:list' %}" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+        <div class="card-body">
+            <h2 class="card-title">{% translate "Tournaments" %}</h2>
+            <p class="text-base-content/60">{% translate "Create and manage tournaments." %}</p>
+        </div>
+    </a>
+    <a href="{% url 'players:list' %}" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+        <div class="card-body">
+            <h2 class="card-title">{% translate "Players" %}</h2>
+            <p class="text-base-content/60">{% translate "Manage player profiles." %}</p>
+        </div>
+    </a>
+    <a href="{% url 'teams:list' %}" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+        <div class="card-body">
+            <h2 class="card-title">{% translate "Teams" %}</h2>
+            <p class="text-base-content/60">{% translate "Manage teams and rosters." %}</p>
+        </div>
+    </a>
+    <a href="{% url 'players:pair_list' %}" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+        <div class="card-body">
+            <h2 class="card-title">{% translate "Doubles pairs" %}</h2>
+            <p class="text-base-content/60">{% translate "Manage doubles pairings." %}</p>
+        </div>
+    </a>
+</div>
+
+<div class="flex items-center gap-2 text-sm text-base-content/60">
+    <span class="badge badge-success badge-xs"></span>
+    {% translate "Database connected" %}: {{ postgres_version|truncatechars:40 }}
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" data-theme="corporate">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% translate "Table Tennis Tournaments" %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-base-200">
+    {% with rm=request.resolver_match %}
+    <div class="drawer lg:drawer-open">
+        <input id="app-drawer" type="checkbox" class="drawer-toggle">
+
+        <div class="drawer-content flex flex-col min-h-screen">
+            <div class="navbar bg-base-100 shadow-sm sticky top-0 z-10">
+                <div class="flex-none lg:hidden">
+                    <label for="app-drawer" aria-label="{% translate 'Open menu' %}" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <span class="text-lg font-semibold">{% block page_title %}{% translate "Table Tennis Tournaments" %}{% endblock %}</span>
+                </div>
+                <div class="flex-none flex items-center gap-2">
+                    <form action="{% url 'set_language' %}" method="post">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.path }}">
+                        {% get_current_language as CURRENT_LANGUAGE %}
+                        {% get_available_languages as AVAILABLE_LANGUAGES %}
+                        {% get_language_info_list for AVAILABLE_LANGUAGES as languages %}
+                        <select name="language" class="select select-bordered select-sm" onchange="this.form.submit()">
+                            {% for language in languages %}
+                                <option value="{{ language.code }}" {% if language.code == CURRENT_LANGUAGE %}selected{% endif %}>
+                                    {{ language.name_local }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    {% if user.is_authenticated %}
+                        <div class="dropdown dropdown-end">
+                            <label tabindex="0" class="btn btn-ghost btn-sm">{{ user.username }}</label>
+                            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-30 w-40 p-2">
+                                <li>
+                                    <form action="{% url 'accounts:logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full text-left">{% translate "Sign out" %}</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn btn-ghost btn-sm">
+                            {% translate "Sign in" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <main class="flex-1 p-4 lg:p-6">
+                {% if messages %}
+                    <div class="mb-4 space-y-2">
+                        {% for message in messages %}
+                            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+
+        <div class="drawer-side z-20">
+            <label for="app-drawer" aria-label="{% translate 'Close menu' %}" class="drawer-overlay"></label>
+            <ul class="menu bg-base-200 text-base-content min-h-full w-64 p-4 gap-1">
+                <li class="menu-title">{% translate "Table Tennis Tournaments" %}</li>
+                <li>
+                    <a href="{% url 'core:home' %}" class="{% if rm.app_name == 'core' %}menu-active{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7m-9-2v9a1 1 0 001 1h3m6-10l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        {% translate "Home" %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'tournaments:list' %}" class="{% if rm.app_name == 'tournaments' %}menu-active{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8m-4-4v4M6 3h12l-1 7a5 5 0 01-10 0L6 3zM3 5h3M18 5h3" />
+                        </svg>
+                        {% translate "Tournaments" %}
+                    </a>
+                </li>
+                <li class="menu-title">{% translate "Registry" %}</li>
+                <li>
+                    <a href="{% url 'players:list' %}" class="{% if rm.app_name == 'players' and 'pair' not in rm.url_name %}menu-active{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        {% translate "Players" %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'teams:list' %}" class="{% if rm.app_name == 'teams' %}menu-active{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-1.13-7.84" />
+                        </svg>
+                        {% translate "Teams" %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'players:pair_list' %}" class="{% if rm.app_name == 'players' and 'pair' in rm.url_name %}menu-active{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z" />
+                        </svg>
+                        {% translate "Doubles pairs" %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    {% endwith %}
+
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            if (match) {
+                event.detail.headers['X-CSRFToken'] = match[1];
+            }
+        });
+    </script>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% load i18n %}
+<div id="participant-panel">
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% translate "Seed" %}</th>
+                    <th>{% translate "Participant" %}</th>
+                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in participants %}
+                <tr>
+                    <td>{{ participant.seed|default:"—" }}</td>
+                    <td>{{ participant.display_name }}</td>
+                    {% if can_manage %}
+                    <td class="text-right">
+                        <button type="button"
+                                class="btn btn-xs btn-error btn-outline"
+                                hx-delete="{% url 'tournaments:participant_delete' competition.pk participant.pk %}"
+                                hx-target="#participant-panel"
+                                hx-swap="outerHTML"
+                                hx-confirm="{% translate 'Remove this participant from the competition?' %}">
+                            {% translate "Remove" %}
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No participants registered yet." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if can_manage %}
+    <form hx-post="{% url 'tournaments:participant_add' competition.pk %}"
+          hx-target="#participant-panel"
+          hx-swap="outerHTML"
+          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4">
+        {% csrf_token %}
+        {% for field in participant_form %}
+        <div class="flex-1 min-w-48">
+            <label class="label"><span class="label-text">{{ field.label }}</span></label>
+            {{ field }}
+            {% for error in field.errors %}
+                <p class="text-sm text-error mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">{% translate "Add participant" %}</button>
+    </form>
+    {% endif %}
+</div>
