@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
@@ -44,6 +45,7 @@ from .permissions import (
     can_manage_tournament,
     tournament_manager_required,
 )
+from .services.dashboard import build_manager_dashboard
 
 
 def _tournament_from_pk(request, pk, **kwargs):
@@ -64,6 +66,17 @@ def _tournament_from_stage_pk(request, pk, **kwargs):
 
 def _tournament_from_group_pk(request, pk, **kwargs):
     return get_object_or_404(Group, pk=pk).stage.competition.tournament
+
+
+@login_required
+def manager_dashboard(request):
+    """The Tournament Manager dashboard (CLAUDE.md section 25): tournaments
+    the user manages (or every tournament, for a superuser), their
+    progress, and their live/upcoming/completed matches. A user with no
+    management role anywhere just sees an empty state, not a 403 — this
+    is a personalized view, not a gated action.
+    """
+    return render(request, "tournaments/manager_dashboard.html", {"dashboard": build_manager_dashboard(request.user)})
 
 
 class TournamentListView(ListView):

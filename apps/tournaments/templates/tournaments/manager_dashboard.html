@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Manager dashboard" %}{% endblock %}
+{% block page_title %}{% translate "Manager dashboard" %}{% endblock %}
+
+{% block content %}
+{% if not dashboard.tournaments %}
+    <div class="hero bg-base-100 rounded-box shadow py-16">
+        <div class="hero-content text-center">
+            <div class="max-w-md">
+                <h2 class="text-xl font-semibold mb-2">{% translate "No tournaments to manage" %}</h2>
+                <p class="text-base-content/60 mb-4">
+                    {% translate "You don't have a Tournament Admin or Manager role on any tournament yet." %}
+                </p>
+                <a href="{% url 'tournaments:list' %}" class="btn btn-primary">{% translate "Browse tournaments" %}</a>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full mb-6">
+        <div class="stat">
+            <div class="stat-title">{% translate "Active tournaments" %}</div>
+            <div class="stat-value text-primary">{{ dashboard.active_tournament_count }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">{% translate "Live matches" %}</div>
+            <div class="stat-value text-error">{{ dashboard.live_matches|length }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">{% translate "Upcoming matches" %}</div>
+            <div class="stat-value">{{ dashboard.upcoming_matches|length }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">{% translate "Participants" %}</div>
+            <div class="stat-value text-secondary">{{ dashboard.total_participants }}</div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <div>
+            <h2 class="text-lg font-semibold mb-2">{% translate "Tournament progress" %}</h2>
+            <div class="space-y-3 mb-6">
+                {% for row in dashboard.tournaments %}
+                <a href="{% url 'tournaments:detail' row.tournament.pk %}"
+                   class="block bg-base-100 rounded-box shadow p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-medium">{{ row.tournament.name }}</span>
+                        <span class="badge badge-outline badge-sm">{{ row.tournament.get_status_display }}</span>
+                    </div>
+                    <div class="text-sm text-base-content/60 mb-2">
+                        {% blocktranslate with c=row.competition_count p=row.participant_count %}{{ c }} competitions · {{ p }} participants{% endblocktranslate %}
+                    </div>
+                    {% if row.total_matches %}
+                        <progress class="progress progress-primary w-full" value="{{ row.progress_percent }}" max="100"></progress>
+                        <div class="text-xs text-base-content/60 mt-1">
+                            {% blocktranslate with done=row.completed_matches total=row.total_matches pct=row.progress_percent %}{{ done }} / {{ total }} matches complete ({{ pct }}%){% endblocktranslate %}
+                        </div>
+                    {% else %}
+                        <div class="text-xs text-base-content/60">{% translate "No matches scheduled yet." %}</div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+
+            <h2 class="text-lg font-semibold mb-2">{% translate "Live matches" %}</h2>
+            <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+                <table class="table">
+                    <tbody>
+                        {% for match in dashboard.live_matches %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                                    {{ match.participant_a.display_name|default:"—" }}
+                                    <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                                    {{ match.participant_b.display_name|default:"—" }}
+                                </a>
+                                <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
+                            </td>
+                            <td class="text-right"><span class="badge badge-error badge-sm">{% translate "Live" %}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td class="text-center text-base-content/60 py-6">{% translate "No live matches right now." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-semibold mb-2">{% translate "Upcoming matches" %}</h2>
+            <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+                <table class="table">
+                    <tbody>
+                        {% for match in dashboard.upcoming_matches %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                                    {{ match.participant_a.display_name|default:"TBD" }}
+                                    <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                                    {{ match.participant_b.display_name|default:"TBD" }}
+                                </a>
+                                <div class="text-xs text-base-content/60">
+                                    {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+                                </div>
+                            </td>
+                            <td class="text-right"><span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td class="text-center text-base-content/60 py-6">{% translate "No upcoming matches." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 class="text-lg font-semibold mb-2">{% translate "Recently completed" %}</h2>
+            <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+                <table class="table">
+                    <tbody>
+                        {% for match in dashboard.recent_completed_matches %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                                    {{ match.participant_a.display_name|default:"—" }}
+                                    <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                                    {{ match.participant_b.display_name|default:"—" }}
+                                </a>
+                                <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
+                            </td>
+                            <td class="text-right">
+                                {% if match.winner %}
+                                    <span class="badge badge-success badge-sm">{{ match.winner.display_name }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td class="text-center text-base-content/60 py-6">{% translate "No completed matches yet." %}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
