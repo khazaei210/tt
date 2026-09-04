@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 16:28+0000\n"
+"POT-Creation-Date: 2026-09-04 16:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,28 +18,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: apps/core/templates/core/home.html:8
-msgid "Phase 1: Foundation"
+#: apps/core/templates/core/home.html:7 apps/core/templates/core/home.html:23
+#: apps/players/templates/players/player_list.html:4
+#: apps/players/templates/players/player_list.html:5
+#: apps/players/templates/players/player_list.html:9 templates/base.html:79
+msgid "Players"
 msgstr ""
 
-#: apps/core/templates/core/home.html:10
-msgid "Django, PostgreSQL, Tailwind, DaisyUI and HTMX are wired together."
+#: apps/core/templates/core/home.html:11 apps/core/templates/core/home.html:29
+#: apps/teams/templates/teams/team_list.html:4
+#: apps/teams/templates/teams/team_list.html:5
+#: apps/teams/templates/teams/team_list.html:9 templates/base.html:87
+msgid "Teams"
 msgstr ""
 
-#: apps/core/templates/core/home.html:13
+#: apps/core/templates/core/home.html:15 apps/core/templates/core/home.html:35
+#: apps/players/templates/players/doubles_pair_list.html:4
+#: apps/players/templates/players/doubles_pair_list.html:5
+#: apps/players/templates/players/doubles_pair_list.html:9
+#: templates/base.html:95
+msgid "Doubles pairs"
+msgstr ""
+
+#: apps/core/templates/core/home.html:24
+msgid "Manage player profiles."
+msgstr ""
+
+#: apps/core/templates/core/home.html:30
+msgid "Manage teams and rosters."
+msgstr ""
+
+#: apps/core/templates/core/home.html:36
+msgid "Manage doubles pairings."
+msgstr ""
+
+#: apps/core/templates/core/home.html:43
 msgid "Database connected"
-msgstr ""
-
-#: apps/core/templates/core/home.html:17
-msgid "Test HTMX"
-msgstr ""
-
-#: apps/core/views.py:19
-msgid "HTMX request received and handled server-side."
-msgstr ""
-
-#: apps/core/views.py:21
-msgid "This endpoint is meant to be called via HTMX."
 msgstr ""
 
 #: apps/players/forms.py:48
@@ -70,7 +84,7 @@ msgstr ""
 msgid "Last name"
 msgstr ""
 
-#: apps/players/models.py:29 apps/players/templates/players/player_list.html:29
+#: apps/players/models.py:29 apps/players/templates/players/player_list.html:30
 msgid "Gender"
 msgstr ""
 
@@ -78,12 +92,12 @@ msgstr ""
 msgid "Date of birth"
 msgstr ""
 
-#: apps/players/models.py:31 apps/players/templates/players/player_list.html:30
+#: apps/players/models.py:31 apps/players/templates/players/player_list.html:31
 msgid "Club"
 msgstr ""
 
-#: apps/players/models.py:32 apps/players/templates/players/player_list.html:31
-#: apps/teams/models.py:11 apps/teams/templates/teams/team_list.html:30
+#: apps/players/models.py:32 apps/players/templates/players/player_list.html:32
+#: apps/teams/models.py:11 apps/teams/templates/teams/team_list.html:31
 msgid "Country"
 msgstr ""
 
@@ -126,75 +140,67 @@ msgid "No players found."
 msgstr ""
 
 #: apps/players/templates/players/doubles_pair_form.html:4
-#: apps/players/templates/players/doubles_pair_form.html:8
-#: apps/players/templates/players/doubles_pair_list.html:9
+#: apps/players/templates/players/doubles_pair_form.html:5
+#: apps/players/templates/players/doubles_pair_form.html:9
+#: apps/players/templates/players/doubles_pair_list.html:10
 msgid "Add pair"
-msgstr ""
-
-#: apps/players/templates/players/doubles_pair_form.html:28
-#: apps/players/templates/players/player_form.html:28
-#: apps/teams/templates/teams/team_form.html:25
-msgid "Cancel"
 msgstr ""
 
 #: apps/players/templates/players/doubles_pair_form.html:29
 #: apps/players/templates/players/player_form.html:29
 #: apps/teams/templates/teams/team_form.html:26
+msgid "Cancel"
+msgstr ""
+
+#: apps/players/templates/players/doubles_pair_form.html:30
+#: apps/players/templates/players/player_form.html:30
+#: apps/teams/templates/teams/team_form.html:27
 msgid "Save"
 msgstr ""
 
-#: apps/players/templates/players/doubles_pair_list.html:4
-#: apps/players/templates/players/doubles_pair_list.html:8
-#: templates/base.html:18
-msgid "Doubles pairs"
-msgstr ""
-
-#: apps/players/templates/players/doubles_pair_list.html:16
+#: apps/players/templates/players/doubles_pair_list.html:17
 msgid "Player one"
 msgstr ""
 
-#: apps/players/templates/players/doubles_pair_list.html:17
+#: apps/players/templates/players/doubles_pair_list.html:18
 msgid "Player two"
 msgstr ""
 
-#: apps/players/templates/players/doubles_pair_list.html:18
-#: apps/players/templates/players/player_list.html:33
+#: apps/players/templates/players/doubles_pair_list.html:19
+#: apps/players/templates/players/player_list.html:34
 #: apps/teams/templates/teams/_roster_panel.html:9
-#: apps/teams/templates/teams/team_list.html:33
+#: apps/teams/templates/teams/team_list.html:34
 msgid "Actions"
 msgstr ""
 
 #: apps/players/templates/players/player_form.html:4
-#: apps/players/templates/players/player_form.html:9
+#: apps/players/templates/players/player_form.html:5
+#: apps/players/templates/players/player_form.html:10
 msgid "Edit player"
 msgstr ""
 
 #: apps/players/templates/players/player_form.html:4
-#: apps/players/templates/players/player_form.html:9
-#: apps/players/templates/players/player_list.html:9
+#: apps/players/templates/players/player_form.html:5
+#: apps/players/templates/players/player_form.html:10
+#: apps/players/templates/players/player_list.html:10
 msgid "Add player"
 msgstr ""
 
-#: apps/players/templates/players/player_list.html:4
-#: apps/players/templates/players/player_list.html:8 templates/base.html:16
-msgid "Players"
-msgstr ""
-
-#: apps/players/templates/players/player_list.html:16
+#: apps/players/templates/players/player_list.html:17
 msgid "Search by name or club…"
 msgstr ""
 
-#: apps/players/templates/players/player_list.html:28 apps/teams/models.py:9
-#: apps/teams/templates/teams/team_list.html:28
+#: apps/players/templates/players/player_list.html:29 apps/teams/models.py:9
+#: apps/teams/templates/teams/team_list.html:29
 msgid "Name"
 msgstr ""
 
-#: apps/players/templates/players/player_list.html:32
-#: apps/teams/templates/teams/team_list.html:32
+#: apps/players/templates/players/player_list.html:33
+#: apps/teams/templates/teams/team_list.html:33
 msgid "Status"
 msgstr ""
 
-#: apps/teams/models.py:10 apps/teams/templates/teams/team_list.html:29
+#: apps/teams/models.py:10 apps/teams/templates/teams/team_list.html:30
 msgid "Short name"
 msgstr ""
 
@@ -234,39 +240,48 @@ msgstr ""
 msgid "No teams found."
 msgstr ""
 
-#: apps/teams/templates/teams/team_detail.html:15
+#: apps/teams/templates/teams/team_detail.html:16
 #: apps/teams/templates/teams/team_form.html:4
-#: apps/teams/templates/teams/team_form.html:9
+#: apps/teams/templates/teams/team_form.html:5
+#: apps/teams/templates/teams/team_form.html:10
 msgid "Edit team"
 msgstr ""
 
-#: apps/teams/templates/teams/team_detail.html:16
+#: apps/teams/templates/teams/team_detail.html:17
 msgid "Back to teams"
 msgstr ""
 
-#: apps/teams/templates/teams/team_detail.html:20
+#: apps/teams/templates/teams/team_detail.html:21
 msgid "Roster"
 msgstr ""
 
 #: apps/teams/templates/teams/team_form.html:4
-#: apps/teams/templates/teams/team_form.html:9
-#: apps/teams/templates/teams/team_list.html:9
+#: apps/teams/templates/teams/team_form.html:5
+#: apps/teams/templates/teams/team_form.html:10
+#: apps/teams/templates/teams/team_list.html:10
 msgid "Add team"
 msgstr ""
 
-#: apps/teams/templates/teams/team_list.html:4
-#: apps/teams/templates/teams/team_list.html:8 templates/base.html:17
-msgid "Teams"
-msgstr ""
-
-#: apps/teams/templates/teams/team_list.html:16
+#: apps/teams/templates/teams/team_list.html:17
 msgid "Search by name or country…"
 msgstr ""
 
-#: apps/teams/templates/teams/team_list.html:31
+#: apps/teams/templates/teams/team_list.html:32
 msgid "Members"
 msgstr ""
 
-#: templates/base.html:7 templates/base.html:15
+#: templates/base.html:7 templates/base.html:27 templates/base.html:65
 msgid "Table Tennis Tournaments"
+msgstr ""
+
+#: templates/base.html:20
+msgid "Open menu"
+msgstr ""
+
+#: templates/base.html:63
+msgid "Close menu"
+msgstr ""
+
+#: templates/base.html:71
+msgid "Home"
 msgstr ""

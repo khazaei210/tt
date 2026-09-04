@@ -1,6 +1,8 @@
 from django.db import connection
 from django.shortcuts import render
-from django.utils.translation import gettext as _
+
+from apps.players.models import DoublesPair, Player
+from apps.teams.models import Team
 
 
 def home(request):
@@ -10,13 +12,8 @@ def home(request):
 
     context = {
         "postgres_version": postgres_version,
+        "player_count": Player.objects.count(),
+        "team_count": Team.objects.count(),
+        "pair_count": DoublesPair.objects.count(),
     }
     return render(request, "core/home.html", context)
-
-
-def htmx_ping(request):
-    if request.htmx:
-        message = _("HTMX request received and handled server-side.")
-    else:
-        message = _("This endpoint is meant to be called via HTMX.")
-    return render(request, "core/_ping_result.html", {"message": message})

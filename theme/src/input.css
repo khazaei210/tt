@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: corporate --default;
+}
 
 /* Explicit template sources: entry point lives in theme/src/, templates
    live at the project root and inside each app, outside Tailwind's

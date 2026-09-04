@@ -2,6 +2,7 @@
 {% load i18n %}
 
 {% block title %}{% if object %}{% translate "Edit player" %}{% else %}{% translate "Add player" %}{% endif %}{% endblock %}
+{% block page_title %}{% if object %}{% translate "Edit player" %}{% else %}{% translate "Add player" %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="max-w-lg mx-auto bg-base-100 rounded-box shadow p-6">
