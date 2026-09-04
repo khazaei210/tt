@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ stage.name }}{% endblock %}
+{% block page_title %}{{ stage.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ stage.name }}</h1>
+        <p class="text-base-content/60">
+            <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="link">{{ stage.competition.name }}</a>
+            · {{ stage.get_stage_format_display }}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
+        <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost">{% translate "Back to competition" %}</a>
+    </div>
+</div>
+
+{% if stage.stage_format == "round_robin" %}
+    <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold">{% translate "Groups" %}</h2>
+        <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+    </div>
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% translate "Name" %}</th>
+                    <th>{% translate "Order" %}</th>
+                    <th class="text-right">{% translate "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% include "tournaments/_group_rows.html" %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert">
+        <span>{% translate "Knockout bracket generation isn't built yet — coming in a later phase." %}</span>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% load i18n %}
+{% for group in groups %}
+<tr id="group-row-{{ group.pk }}">
+    <td>{{ group.name }}</td>
+    <td>{{ group.order }}</td>
+    <td class="text-right">
+        <button type="button"
+                class="btn btn-xs btn-error btn-outline"
+                hx-delete="{% url 'tournaments:group_delete' group.pk %}"
+                hx-target="#group-row-{{ group.pk }}"
+                hx-swap="outerHTML"
+                hx-confirm="{% translate 'Are you sure you want to delete this group?' %}">
+            {% translate "Delete" %}
+        </button>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="3" class="text-center text-base-content/60 py-8">{% translate "No groups yet." %}</td>
+</tr>
+{% endfor %}

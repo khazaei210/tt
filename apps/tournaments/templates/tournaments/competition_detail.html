@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ competition.name }}{% endblock %}
+{% block page_title %}{{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ competition.name }}</h1>
+        <p class="text-base-content/60">
+            <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="link">{{ competition.tournament.name }}</a>
+            · {{ competition.get_participant_type_display }}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
+        <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+    </div>
+</div>
+
+<div class="card bg-base-100 shadow mb-6">
+    <div class="card-body">
+        <div class="flex items-center justify-between">
+            <h2 class="card-title">{% translate "Rules" %}</h2>
+            <a href="{% url 'tournaments:competition_rule_edit' competition.pk %}" class="btn btn-sm btn-outline">
+                {% translate "Edit rules" %}
+            </a>
+        </div>
+        {% if rule %}
+            <div class="flex flex-wrap gap-2 mt-2">
+                <span class="badge badge-outline">{{ rule.get_best_of_sets_display }}</span>
+                <span class="badge badge-outline">{% blocktranslate with points=rule.points_per_set %}{{ points }} points per set{% endblocktranslate %}</span>
+                <span class="badge badge-outline">{% blocktranslate with n=rule.win_by %}Win by {{ n }}{% endblocktranslate %}</span>
+                {% if rule.deciding_set_points %}
+                    <span class="badge badge-outline">{% blocktranslate with points=rule.deciding_set_points %}Deciding set to {{ points }}{% endblocktranslate %}</span>
+                {% endif %}
+                {% if rule.cap_at %}
+                    <span class="badge badge-outline">{% blocktranslate with cap=rule.cap_at %}Capped at {{ cap }}{% endblocktranslate %}</span>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="text-base-content/60">{% translate "No rules configured yet — using defaults once set." %}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="flex items-center justify-between mb-2">
+    <h2 class="text-lg font-semibold">{% translate "Stages" %}</h2>
+    <a href="{% url 'tournaments:stage_add' competition.pk %}" class="btn btn-primary btn-sm">{% translate "Add stage" %}</a>
+</div>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% translate "Name" %}</th>
+                <th>{% translate "Format" %}</th>
+                <th>{% translate "Order" %}</th>
+                <th class="text-right">{% translate "Actions" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% include "tournaments/_stage_rows.html" %}
+        </tbody>
+    </table>
+</div>
+
+<h2 class="text-lg font-semibold mb-2">{% translate "Participants" %}</h2>
+{% include "tournaments/_participant_panel.html" %}
+{% endblock %}
