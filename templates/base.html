@@ -13,6 +13,23 @@
     <div class="navbar bg-base-100 shadow-sm">
         <div class="flex-1">
             <a href="{% url 'core:home' %}" class="btn btn-ghost text-xl">{% translate "Table Tennis Tournaments" %}</a>
+            <a href="{% url 'players:list' %}" class="btn btn-ghost">{% translate "Players" %}</a>
+        </div>
+        <div class="flex-none">
+            <form action="{% url 'set_language' %}" method="post">
+                {% csrf_token %}
+                <input name="next" type="hidden" value="{{ request.path }}">
+                {% get_current_language as CURRENT_LANGUAGE %}
+                {% get_available_languages as AVAILABLE_LANGUAGES %}
+                {% get_language_info_list for AVAILABLE_LANGUAGES as languages %}
+                <select name="language" class="select select-bordered select-sm" onchange="this.form.submit()">
+                    {% for language in languages %}
+                        <option value="{{ language.code }}" {% if language.code == CURRENT_LANGUAGE %}selected{% endif %}>
+                            {{ language.name_local }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
     </div>
 
@@ -30,6 +47,14 @@
         {% block content %}{% endblock %}
     </main>
 
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            if (match) {
+                event.detail.headers['X-CSRFToken'] = match[1];
+            }
+        });
+    </script>
     {% block extra_body %}{% endblock %}
 </body>
 </html>

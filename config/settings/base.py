@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django_htmx",
     # Project apps
     "apps.core",
+    "apps.players",
 ]
 
 MIDDLEWARE = [
