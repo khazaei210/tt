@@ -58,16 +58,18 @@
                     <h3 class="font-semibold mb-2">{{ round.label }}</h3>
                     <ul class="space-y-2">
                         {% for match in round.matches %}
-                        <li class="border border-base-200 rounded-btn p-2 text-sm">
+                        <li class="border border-base-200 rounded-btn p-2 text-sm {% if not match.is_bye and match.participant_a and match.participant_b %}hover:bg-base-200{% endif %}">
+                            {% if not match.is_bye and match.participant_a and match.participant_b %}<a href="{% url 'matches:detail' match.pk %}" class="block">{% endif %}
                             <div class="flex items-center justify-between">
-                                <span>{{ match.participant_a.display_name|default:"—" }}</span>
+                                <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ match.participant_a.display_name|default:"—" }}</span>
                                 {% if match.participant_a.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
                             </div>
                             <div class="text-center text-base-content/40 text-xs">{% translate "vs" %}</div>
                             <div class="flex items-center justify-between">
-                                <span>{{ match.participant_b.display_name|default:"—" }}</span>
+                                <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name|default:"—" }}</span>
                                 {% if match.participant_b.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
                             </div>
+                            {% if not match.is_bye and match.participant_a and match.participant_b %}</a>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>

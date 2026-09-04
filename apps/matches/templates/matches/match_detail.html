@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ match.participant_a.display_name|default:"TBD" }} {% translate "vs" %} {{ match.participant_b.display_name|default:"TBD" }}{% endblock %}
+{% block page_title %}{% translate "Match" %}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <p class="text-base-content/60">
+        <a href="{% url 'tournaments:competition_detail' match.competition.pk %}" class="link">{{ match.competition.name }}</a>
+        {% if match.group %}
+            · <a href="{% url 'tournaments:group_detail' match.group.pk %}" class="link">{{ match.group.name }}</a>
+        {% else %}
+            · <a href="{% url 'tournaments:stage_detail' match.stage.pk %}" class="link">{{ match.stage.name }}</a>
+        {% endif %}
+        · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+    </p>
+    <div class="flex items-center gap-3 mt-2">
+        <h1 class="text-2xl font-bold">
+            {{ match.participant_a.display_name|default:"—" }}
+            <span class="text-base-content/40 mx-2">{% translate "vs" %}</span>
+            {{ match.participant_b.display_name|default:"—" }}
+        </h1>
+        <span class="badge badge-outline">{{ match.get_status_display }}</span>
+    </div>
+</div>
+
+{% if match.status == "completed" %}
+    <div class="alert alert-success mb-4">
+        <span>{% blocktranslate with winner=match.winner.display_name %}Winner: {{ winner }}{% endblocktranslate %}</span>
+    </div>
+{% endif %}
+
+<div class="text-sm text-base-content/60 mb-4">
+    {% blocktranslate with n=rule.best_of_sets %}Best of {{ n }} sets{% endblocktranslate %}
+    · {% blocktranslate with p=rule.points_per_set %}{{ p }} points per set{% endblocktranslate %}
+    · {% blocktranslate with n=rule.win_by %}Win by {{ n }}{% endblocktranslate %}
+    {% if rule.cap_at %}· {% blocktranslate with cap=rule.cap_at %}Capped at {{ cap }}{% endblocktranslate %}{% endif %}
+</div>
+
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% translate "Set" %}</th>
+                <th>{{ match.participant_a.display_name|default:"A" }}</th>
+                <th>{{ match.participant_b.display_name|default:"B" }}</th>
+                <th class="text-right">{% translate "Actions" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for set in sets %}
+            <tr>
+                <form method="post" action="{% url 'matches:set_save' match.pk %}" class="contents">
+                    {% csrf_token %}
+                    <input type="hidden" name="set_number" value="{{ set.set_number }}">
+                    {% if match.status == "completed" %}<input type="hidden" name="allow_correction" value="1">{% endif %}
+                    <td>{{ set.set_number }}</td>
+                    <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered w-20 text-center"></td>
+                    <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered w-20 text-center"></td>
+                    <td class="text-right space-x-2 rtl:space-x-reverse">
+                        <button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button>
+                        <button type="submit"
+                                formaction="{% url 'matches:set_delete' match.pk set.set_number %}"
+                                formnovalidate
+                                class="btn btn-xs btn-error btn-outline"
+                                onclick="return confirm('{% translate "Delete this set?" %}');">
+                            {% translate "Delete" %}
+                        </button>
+                    </td>
+                </form>
+            </tr>
+            {% empty %}
+                <tr><td colspan="4" class="text-center text-base-content/60 py-6">{% translate "No sets recorded yet." %}</td></tr>
+            {% endfor %}
+            {% if next_set_number %}
+            <tr>
+                <form method="post" action="{% url 'matches:set_save' match.pk %}" class="contents">
+                    {% csrf_token %}
+                    <input type="hidden" name="set_number" value="{{ next_set_number }}">
+                    <td>{{ next_set_number }}</td>
+                    <td>{{ set_form.participant_a_score }}</td>
+                    <td>{{ set_form.participant_b_score }}</td>
+                    <td class="text-right"><button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button></td>
+                </form>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

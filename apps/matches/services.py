@@ -1,11 +1,12 @@
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Max
 from django.utils.translation import gettext_lazy as _
 
 from apps.tournaments.services.knockout import generate_knockout_bracket
 from apps.tournaments.services.round_robin import generate_round_robin
 
-from .models import Match
+from .models import Match, MatchSet, MatchStatus
+from .scoring import compute_match_result, validate_set_score
 
 
 class ScheduleAlreadyGeneratedError(Exception):
@@ -13,6 +14,14 @@ class ScheduleAlreadyGeneratedError(Exception):
 
 
 class NotEnoughParticipantsError(Exception):
+    pass
+
+
+class MatchAlreadyCompletedError(Exception):
+    pass
+
+
+class InvalidSetNumberError(Exception):
     pass
 
 
@@ -123,3 +132,123 @@ def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed
 @transaction.atomic
 def clear_stage_bracket(stage):
     stage.matches.filter(group__isnull=True).delete()
+
+
+def get_effective_rule(competition):
+    """The competition's configured CompetitionRule, or an unsaved one
+    holding just the model defaults, so scoring code never has to
+    special-case "no rule configured yet"."""
+    from apps.tournaments.models import CompetitionRule
+
+    rule = getattr(competition, "rule", None)
+    return rule if rule is not None else CompetitionRule(competition=competition)
+
+
+def _points_to_win_for_set(rule, set_number):
+    if rule.deciding_set_points and set_number == rule.best_of_sets:
+        return rule.deciding_set_points
+    return rule.points_per_set
+
+
+@transaction.atomic
+def record_set_score(match, set_number, participant_a_score, participant_b_score, *, allow_correction=False):
+    """Validate and persist one set's score, then refresh the match result.
+
+    Raises MatchAlreadyCompletedError if the match is already decided and
+    allow_correction wasn't explicitly passed (CLAUDE.md: completed
+    matches must not be silently overwritten) and InvalidSetNumberError if
+    set_number is out of range for the competition's best-of-sets format.
+    """
+    if match.status == MatchStatus.COMPLETED and not allow_correction:
+        raise MatchAlreadyCompletedError(
+            _("This match is already completed. Explicitly correct it to change a score.")
+        )
+
+    rule = get_effective_rule(match.competition)
+    if not (1 <= set_number <= rule.best_of_sets):
+        raise InvalidSetNumberError(_("Set number must be between 1 and %(n)s.") % {"n": rule.best_of_sets})
+
+    points_to_win = _points_to_win_for_set(rule, set_number)
+    validate_set_score(
+        participant_a_score, participant_b_score, points_to_win=points_to_win, win_by=rule.win_by, cap_at=rule.cap_at
+    )
+
+    MatchSet.objects.update_or_create(
+        match=match,
+        set_number=set_number,
+        defaults={"participant_a_score": participant_a_score, "participant_b_score": participant_b_score},
+    )
+    _refresh_match_result(match, rule)
+
+
+@transaction.atomic
+def delete_set_score(match, set_number):
+    match.sets.filter(set_number=set_number).delete()
+    rule = get_effective_rule(match.competition)
+    _refresh_match_result(match, rule)
+
+
+def _refresh_match_result(match, rule):
+    all_sets = list(match.sets.order_by("set_number").values_list("participant_a_score", "participant_b_score"))
+    result = compute_match_result(all_sets, best_of_sets=rule.best_of_sets)
+
+    was_completed = match.status == MatchStatus.COMPLETED
+    if result.is_complete:
+        match.winner_id = match.participant_a_id if result.winner == "a" else match.participant_b_id
+        match.status = MatchStatus.COMPLETED
+    else:
+        match.winner_id = None
+        match.status = MatchStatus.LIVE if all_sets else MatchStatus.SCHEDULED
+    match.save(update_fields=["status", "winner"])
+
+    if result.is_complete:
+        _propagate_knockout_winner(match)
+    elif was_completed:
+        _clear_untouched_propagation(match)
+
+
+def _next_bracket_match(match):
+    if match.group_id is not None or match.bracket_slot is None:
+        return None
+    return Match.objects.filter(
+        stage_id=match.stage_id,
+        group__isnull=True,
+        is_third_place=False,
+        round_number=match.round_number + 1,
+        bracket_slot=match.bracket_slot // 2,
+    ).first()
+
+
+def _propagate_knockout_winner(match):
+    next_match = _next_bracket_match(match)
+    if next_match is None:
+        return
+    field = "participant_a_id" if match.bracket_slot % 2 == 0 else "participant_b_id"
+    setattr(next_match, field, match.winner_id)
+    next_match.save(update_fields=[field])
+
+    # If this was a semifinal, the loser feeds the third-place match (if any).
+    total_rounds = Match.objects.filter(
+        stage_id=match.stage_id, group__isnull=True, is_third_place=False
+    ).aggregate(Max("round_number"))["round_number__max"]
+    if match.round_number == total_rounds - 1:
+        third_place_match = Match.objects.filter(stage_id=match.stage_id, is_third_place=True).first()
+        if third_place_match is not None:
+            loser_id = match.participant_b_id if match.winner_id == match.participant_a_id else match.participant_a_id
+            field = "participant_a_id" if match.bracket_slot % 2 == 0 else "participant_b_id"
+            setattr(third_place_match, field, loser_id)
+            third_place_match.save(update_fields=[field])
+
+
+def _clear_untouched_propagation(match):
+    """A correction undid this match's completion. Roll back a winner it
+    already fed forward, but only if that next match hasn't itself started
+    (no sets recorded) — if it has, leave it alone: cascading a correction
+    through already-played downstream matches isn't handled automatically.
+    """
+    next_match = _next_bracket_match(match)
+    if next_match is None or next_match.sets.exists():
+        return
+    field = "participant_a_id" if match.bracket_slot % 2 == 0 else "participant_b_id"
+    setattr(next_match, field, None)
+    next_match.save(update_fields=[field])
