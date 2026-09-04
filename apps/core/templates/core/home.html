@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="hero bg-base-100 rounded-box shadow">
+    <div class="hero-content text-center py-16">
+        <div class="max-w-md">
+            <h1 class="text-4xl font-bold">{% translate "Phase 1: Foundation" %}</h1>
+            <p class="py-6">
+                {% translate "Django, PostgreSQL, Tailwind, DaisyUI and HTMX are wired together." %}
+            </p>
+            <div class="badge badge-success gap-2 mb-4">
+                {% translate "Database connected" %}: {{ postgres_version|truncatechars:40 }}
+            </div>
+            <div>
+                <button class="btn btn-primary" hx-get="{% url 'core:htmx_ping' %}" hx-target="#ping-result" hx-swap="innerHTML">
+                    {% translate "Test HTMX" %}
+                </button>
+                <div id="ping-result" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

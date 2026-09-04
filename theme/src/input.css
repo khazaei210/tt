@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Explicit template sources: entry point lives in theme/src/, templates
+   live at the project root and inside each app, outside Tailwind's
+   automatic-detection base directory. */
+@source "../../templates";
+@source "../../apps";

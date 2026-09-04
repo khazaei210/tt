@@ -1,0 +1,35 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% translate "Table Tennis Tournaments" %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-base-200">
+    <div class="navbar bg-base-100 shadow-sm">
+        <div class="flex-1">
+            <a href="{% url 'core:home' %}" class="btn btn-ghost text-xl">{% translate "Table Tennis Tournaments" %}</a>
+        </div>
+    </div>
+
+    <main class="container mx-auto p-4">
+        {% if messages %}
+            <div class="mb-4 space-y-2">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_body %}{% endblock %}
+</body>
+</html>
