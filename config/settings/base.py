@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django_htmx",
     # Project apps
     "apps.core",
+    "apps.accounts",
     "apps.players",
     "apps.teams",
     "apps.tournaments",
@@ -108,3 +109,8 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Authentication ---
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "core:home"
+LOGOUT_REDIRECT_URL = "core:home"

@@ -15,7 +15,9 @@
         </p>
     </div>
     <div class="flex gap-2">
-        <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline">{% translate "Edit tournament" %}</a>
+        {% if can_manage %}
+            <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline">{% translate "Edit tournament" %}</a>
+        {% endif %}
         <a href="{% url 'tournaments:list' %}" class="btn btn-ghost">{% translate "Back to tournaments" %}</a>
     </div>
 </div>
@@ -26,7 +28,9 @@
 
 <div class="flex items-center justify-between mb-2">
     <h2 class="text-lg font-semibold">{% translate "Competitions" %}</h2>
-    <a href="{% url 'tournaments:competition_add' tournament.pk %}" class="btn btn-primary btn-sm">{% translate "Add competition" %}</a>
+    {% if can_manage %}
+        <a href="{% url 'tournaments:competition_add' tournament.pk %}" class="btn btn-primary btn-sm">{% translate "Add competition" %}</a>
+    {% endif %}
 </div>
 
 <div class="overflow-x-auto bg-base-100 rounded-box shadow">
@@ -38,7 +42,7 @@
                 <th>{% translate "Stages" %}</th>
                 <th>{% translate "Participants" %}</th>
                 <th>{% translate "Status" %}</th>
-                <th class="text-right">{% translate "Actions" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
         <tbody>

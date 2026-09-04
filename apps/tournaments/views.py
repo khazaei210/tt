@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
@@ -25,7 +26,44 @@ from .forms import (
     StageForm,
     TournamentForm,
 )
-from .models import Competition, CompetitionRule, Group, GroupParticipant, Participant, Stage, StageFormat, Tournament
+from .models import (
+    Competition,
+    CompetitionRule,
+    Group,
+    GroupParticipant,
+    Participant,
+    Stage,
+    StageFormat,
+    StaffRole,
+    Tournament,
+    TournamentStaff,
+)
+from .permissions import (
+    TournamentManagerRequiredMixin,
+    can_create_tournament,
+    can_manage_tournament,
+    tournament_manager_required,
+)
+
+
+def _tournament_from_pk(request, pk, **kwargs):
+    return get_object_or_404(Tournament, pk=pk)
+
+
+def _tournament_from_competition_pk(request, pk, **kwargs):
+    return get_object_or_404(Competition, pk=pk).tournament
+
+
+def _tournament_from_competition_pk_kwarg(request, competition_pk, **kwargs):
+    return get_object_or_404(Competition, pk=competition_pk).tournament
+
+
+def _tournament_from_stage_pk(request, pk, **kwargs):
+    return get_object_or_404(Stage, pk=pk).competition.tournament
+
+
+def _tournament_from_group_pk(request, pk, **kwargs):
+    return get_object_or_404(Group, pk=pk).stage.competition.tournament
 
 
 class TournamentListView(ListView):
@@ -45,24 +83,36 @@ class TournamentListView(ListView):
         return ["tournaments/tournament_list.html"]
 
 
-class TournamentCreateView(CreateView):
+class TournamentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Tournament
     form_class = TournamentForm
     template_name = "tournaments/tournament_form.html"
+
+    def test_func(self):
+        return can_create_tournament(self.request.user)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        TournamentStaff.objects.create(tournament=self.object, user=self.request.user, role=StaffRole.TOURNAMENT_ADMIN)
+        return response
 
     def get_success_url(self):
         return reverse("tournaments:detail", kwargs={"pk": self.object.pk})
 
 
-class TournamentUpdateView(UpdateView):
+class TournamentUpdateView(TournamentManagerRequiredMixin, UpdateView):
     model = Tournament
     form_class = TournamentForm
     template_name = "tournaments/tournament_form.html"
+
+    def get_tournament(self):
+        return get_object_or_404(Tournament, pk=self.kwargs["pk"])
 
     def get_success_url(self):
         return reverse("tournaments:detail", kwargs={"pk": self.object.pk})
 
 
+@tournament_manager_required(_tournament_from_pk)
 def tournament_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -77,10 +127,11 @@ class TournamentDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["competitions"] = self.object.competitions.all()
+        context["can_manage"] = can_manage_tournament(self.request.user, self.object)
         return context
 
 
-class CompetitionCreateView(CreateView):
+class CompetitionCreateView(TournamentManagerRequiredMixin, CreateView):
     model = Competition
     form_class = CompetitionForm
     template_name = "tournaments/competition_form.html"
@@ -88,6 +139,9 @@ class CompetitionCreateView(CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.tournament = get_object_or_404(Tournament, pk=kwargs["tournament_pk"])
         return super().dispatch(request, *args, **kwargs)
+
+    def get_tournament(self):
+        return self.tournament
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -103,10 +157,13 @@ class CompetitionCreateView(CreateView):
         return reverse("tournaments:detail", kwargs={"pk": self.tournament.pk})
 
 
-class CompetitionUpdateView(UpdateView):
+class CompetitionUpdateView(TournamentManagerRequiredMixin, UpdateView):
     model = Competition
     form_class = CompetitionForm
     template_name = "tournaments/competition_form.html"
+
+    def get_tournament(self):
+        return get_object_or_404(Competition, pk=self.kwargs["pk"]).tournament
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -117,6 +174,7 @@ class CompetitionUpdateView(UpdateView):
         return reverse("tournaments:competition_detail", kwargs={"pk": self.object.pk})
 
 
+@tournament_manager_required(_tournament_from_competition_pk)
 def competition_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -136,9 +194,11 @@ class CompetitionDetailView(DetailView):
             "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
         )
         context["participant_form"] = ParticipantForm(competition=self.object)
+        context["can_manage"] = can_manage_tournament(self.request.user, self.object.tournament)
         return context
 
 
+@tournament_manager_required(_tournament_from_competition_pk)
 def competition_rule_edit(request, pk):
     competition = get_object_or_404(Competition, pk=pk)
     rule, _created = CompetitionRule.objects.get_or_create(competition=competition)
@@ -152,7 +212,7 @@ def competition_rule_edit(request, pk):
     return render(request, "tournaments/competitionrule_form.html", {"form": form, "competition": competition})
 
 
-class StageCreateView(CreateView):
+class StageCreateView(TournamentManagerRequiredMixin, CreateView):
     model = Stage
     form_class = StageForm
     template_name = "tournaments/stage_form.html"
@@ -160,6 +220,9 @@ class StageCreateView(CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.competition = get_object_or_404(Competition, pk=kwargs["competition_pk"])
         return super().dispatch(request, *args, **kwargs)
+
+    def get_tournament(self):
+        return self.competition.tournament
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -175,10 +238,13 @@ class StageCreateView(CreateView):
         return reverse("tournaments:competition_detail", kwargs={"pk": self.competition.pk})
 
 
-class StageUpdateView(UpdateView):
+class StageUpdateView(TournamentManagerRequiredMixin, UpdateView):
     model = Stage
     form_class = StageForm
     template_name = "tournaments/stage_form.html"
+
+    def get_tournament(self):
+        return get_object_or_404(Stage, pk=self.kwargs["pk"]).competition.tournament
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -189,6 +255,7 @@ class StageUpdateView(UpdateView):
         return reverse("tournaments:stage_detail", kwargs={"pk": self.object.pk})
 
 
+@tournament_manager_required(_tournament_from_stage_pk)
 def stage_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -196,6 +263,7 @@ def stage_delete(request, pk):
     return HttpResponse("")
 
 
+@tournament_manager_required(_tournament_from_stage_pk)
 def stage_bracket_generate(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -209,6 +277,7 @@ def stage_bracket_generate(request, pk):
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
+@tournament_manager_required(_tournament_from_stage_pk)
 def stage_bracket_clear(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -264,10 +333,11 @@ class StageDetailView(DetailView):
 
             context["bracket_rounds"] = rounds
             context["has_bracket"] = bool(bracket_matches)
+        context["can_manage"] = can_manage_tournament(self.request.user, self.object.competition.tournament)
         return context
 
 
-class GroupCreateView(CreateView):
+class GroupCreateView(TournamentManagerRequiredMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "tournaments/group_form.html"
@@ -275,6 +345,9 @@ class GroupCreateView(CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.stage = get_object_or_404(Stage, pk=kwargs["stage_pk"])
         return super().dispatch(request, *args, **kwargs)
+
+    def get_tournament(self):
+        return self.stage.competition.tournament
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -290,6 +363,7 @@ class GroupCreateView(CreateView):
         return reverse("tournaments:stage_detail", kwargs={"pk": self.stage.pk})
 
 
+@tournament_manager_required(_tournament_from_group_pk)
 def group_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -321,9 +395,11 @@ class GroupDetailView(DetailView):
             "participant_a", "participant_b"
         ).order_by("round_number", "pk")
         context["standings"] = compute_group_standings(self.object)
+        context["can_manage"] = can_manage_tournament(self.request.user, self.object.stage.competition.tournament)
         return context
 
 
+@tournament_manager_required(_tournament_from_group_pk)
 def group_participant_add(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -338,6 +414,7 @@ def group_participant_add(request, pk):
     return render(request, "tournaments/_group_participant_panel.html", context)
 
 
+@tournament_manager_required(_tournament_from_group_pk)
 def group_participant_remove(request, pk, group_participant_id):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -346,6 +423,7 @@ def group_participant_remove(request, pk, group_participant_id):
     return render(request, "tournaments/_group_participant_panel.html", _group_participant_panel_context(group))
 
 
+@tournament_manager_required(_tournament_from_group_pk)
 def group_schedule_generate(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -358,6 +436,7 @@ def group_schedule_generate(request, pk):
     return redirect("tournaments:group_detail", pk=group.pk)
 
 
+@tournament_manager_required(_tournament_from_group_pk)
 def group_schedule_clear(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -376,6 +455,7 @@ def _participant_panel_context(competition):
     }
 
 
+@tournament_manager_required(_tournament_from_competition_pk_kwarg)
 def participant_add(request, competition_pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -390,6 +470,7 @@ def participant_add(request, competition_pk):
     return render(request, "tournaments/_participant_panel.html", context)
 
 
+@tournament_manager_required(_tournament_from_competition_pk_kwarg)
 def participant_delete(request, competition_pk, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])

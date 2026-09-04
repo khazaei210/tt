@@ -14,7 +14,9 @@
         </p>
     </div>
     <div class="flex gap-2">
-        <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
+        {% if can_manage %}
+            <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
+        {% endif %}
         <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
     </div>
 </div>
@@ -23,9 +25,11 @@
     <div class="card-body">
         <div class="flex items-center justify-between">
             <h2 class="card-title">{% translate "Rules" %}</h2>
-            <a href="{% url 'tournaments:competition_rule_edit' competition.pk %}" class="btn btn-sm btn-outline">
-                {% translate "Edit rules" %}
-            </a>
+            {% if can_manage %}
+                <a href="{% url 'tournaments:competition_rule_edit' competition.pk %}" class="btn btn-sm btn-outline">
+                    {% translate "Edit rules" %}
+                </a>
+            {% endif %}
         </div>
         {% if rule %}
             <div class="flex flex-wrap gap-2 mt-2">
@@ -47,7 +51,9 @@
 
 <div class="flex items-center justify-between mb-2">
     <h2 class="text-lg font-semibold">{% translate "Stages" %}</h2>
-    <a href="{% url 'tournaments:stage_add' competition.pk %}" class="btn btn-primary btn-sm">{% translate "Add stage" %}</a>
+    {% if can_manage %}
+        <a href="{% url 'tournaments:stage_add' competition.pk %}" class="btn btn-primary btn-sm">{% translate "Add stage" %}</a>
+    {% endif %}
 </div>
 <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
     <table class="table">
@@ -56,7 +62,7 @@
                 <th>{% translate "Name" %}</th>
                 <th>{% translate "Format" %}</th>
                 <th>{% translate "Order" %}</th>
-                <th class="text-right">{% translate "Actions" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
         <tbody>

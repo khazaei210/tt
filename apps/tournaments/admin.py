@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Competition, CompetitionRule, Group, Participant, Stage, Tournament
+from .models import Competition, CompetitionRule, Group, Participant, Stage, Tournament, TournamentStaff
 
 
 class CompetitionInline(admin.TabularInline):
@@ -8,12 +8,26 @@ class CompetitionInline(admin.TabularInline):
     extra = 0
 
 
+class TournamentStaffInline(admin.TabularInline):
+    model = TournamentStaff
+    extra = 0
+    autocomplete_fields = ["user"]
+
+
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
     list_display = ("name", "location", "start_date", "end_date", "status")
     list_filter = ("status",)
     search_fields = ("name", "location")
-    inlines = [CompetitionInline]
+    inlines = [TournamentStaffInline, CompetitionInline]
+
+
+@admin.register(TournamentStaff)
+class TournamentStaffAdmin(admin.ModelAdmin):
+    list_display = ("user", "tournament", "role")
+    list_filter = ("role",)
+    search_fields = ("user__username", "tournament__name")
+    autocomplete_fields = ["user"]
 
 
 class StageInline(admin.TabularInline):

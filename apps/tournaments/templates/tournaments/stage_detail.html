@@ -14,7 +14,9 @@
         </p>
     </div>
     <div class="flex gap-2">
-        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
+        {% if can_manage %}
+            <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
+        {% endif %}
         <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost">{% translate "Back to competition" %}</a>
     </div>
 </div>
@@ -22,7 +24,9 @@
 {% if stage.stage_format == "round_robin" %}
     <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">{% translate "Groups" %}</h2>
-        <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+        {% if can_manage %}
+            <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+        {% endif %}
     </div>
     <div class="overflow-x-auto bg-base-100 rounded-box shadow">
         <table class="table">
@@ -30,7 +34,7 @@
                 <tr>
                     <th>{% translate "Name" %}</th>
                     <th>{% translate "Order" %}</th>
-                    <th class="text-right">{% translate "Actions" %}</th>
+                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -41,7 +45,7 @@
 {% else %}
     <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">{% translate "Bracket" %}</h2>
-        {% if has_bracket %}
+        {% if has_bracket and can_manage %}
             <form method="post" action="{% url 'tournaments:stage_bracket_clear' stage.pk %}"
                   onsubmit="return confirm('{% translate "Clear the generated bracket? This deletes all matches for this stage." %}');">
                 {% csrf_token %}

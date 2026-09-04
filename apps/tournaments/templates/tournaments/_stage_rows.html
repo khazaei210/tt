@@ -4,6 +4,7 @@
     <td><a href="{% url 'tournaments:stage_detail' stage.pk %}" class="link link-primary">{{ stage.name }}</a></td>
     <td>{{ stage.get_stage_format_display }}</td>
     <td>{{ stage.order }}</td>
+    {% if can_manage %}
     <td class="text-right space-x-2 rtl:space-x-reverse">
         <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
         <button type="button"
@@ -15,6 +16,7 @@
             {% translate "Delete" %}
         </button>
     </td>
+    {% endif %}
 </tr>
 {% empty %}
 <tr>

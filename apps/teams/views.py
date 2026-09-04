@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from apps.core.permissions import StaffRequiredMixin, staff_required
+
 from .forms import TeamForm, TeamMembershipForm
 from .models import Team, TeamMembership
 
@@ -25,14 +27,14 @@ class TeamListView(ListView):
         return ["teams/team_list.html"]
 
 
-class TeamCreateView(CreateView):
+class TeamCreateView(StaffRequiredMixin, CreateView):
     model = Team
     form_class = TeamForm
     template_name = "teams/team_form.html"
     success_url = reverse_lazy("teams:list")
 
 
-class TeamUpdateView(UpdateView):
+class TeamUpdateView(StaffRequiredMixin, UpdateView):
     model = Team
     form_class = TeamForm
     template_name = "teams/team_form.html"
@@ -50,6 +52,7 @@ class TeamDetailView(DetailView):
         return context
 
 
+@staff_required
 def team_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -58,6 +61,7 @@ def team_delete(request, pk):
     return HttpResponse("")
 
 
+@staff_required
 def team_member_add(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -77,6 +81,7 @@ def team_member_add(request, pk):
     )
 
 
+@staff_required
 def team_member_remove(request, pk, membership_id):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])

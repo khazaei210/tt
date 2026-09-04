@@ -26,7 +26,7 @@
                 <div class="flex-1">
                     <span class="text-lg font-semibold">{% block page_title %}{% translate "Table Tennis Tournaments" %}{% endblock %}</span>
                 </div>
-                <div class="flex-none">
+                <div class="flex-none flex items-center gap-2">
                     <form action="{% url 'set_language' %}" method="post">
                         {% csrf_token %}
                         <input name="next" type="hidden" value="{{ request.path }}">
@@ -41,6 +41,23 @@
                             {% endfor %}
                         </select>
                     </form>
+                    {% if user.is_authenticated %}
+                        <div class="dropdown dropdown-end">
+                            <label tabindex="0" class="btn btn-ghost btn-sm">{{ user.username }}</label>
+                            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-30 w-40 p-2">
+                                <li>
+                                    <form action="{% url 'accounts:logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full text-left">{% translate "Sign out" %}</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn btn-ghost btn-sm">
+                            {% translate "Sign in" %}
+                        </a>
+                    {% endif %}
                 </div>
             </div>
 

@@ -9,6 +9,7 @@ urlpatterns = [
 
 urlpatterns += i18n_patterns(
     path("admin/", admin.site.urls),
+    path("accounts/", include("apps.accounts.urls")),
     path("players/", include("apps.players.urls")),
     path("teams/", include("apps.teams.urls")),
     path("tournaments/", include("apps.tournaments.urls")),
@@ -17,7 +18,7 @@ urlpatterns += i18n_patterns(
     prefix_default_language=True,
 )
 
-if settings.DEBUG:
+if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     import debug_toolbar
 
     urlpatterns += [

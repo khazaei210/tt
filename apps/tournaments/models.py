@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +30,38 @@ class Tournament(models.Model):
 
     def get_absolute_url(self):
         return reverse("tournaments:detail", kwargs={"pk": self.pk})
+
+
+class StaffRole(models.TextChoices):
+    TOURNAMENT_ADMIN = "tournament_admin", _("Tournament Admin")
+    TOURNAMENT_MANAGER = "tournament_manager", _("Tournament Manager")
+    REFEREE = "referee", _("Referee")
+    SCOREKEEPER = "scorekeeper", _("Scorekeeper")
+
+
+class TournamentStaff(models.Model):
+    """A user's role on a specific Tournament.
+
+    Deliberately per-tournament rather than a global Django Group/
+    Permission: the same person can be a Tournament Admin for one
+    tournament and have no role at all on another. Super Admin (Django's
+    is_superuser) and Viewer (anyone, including anonymous — all read views
+    are public) don't need a row here.
+    """
+
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name="staff")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tournament_roles")
+    role = models.CharField(_("Role"), max_length=30, choices=StaffRole.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["tournament", "role", "user"]
+        constraints = [
+            models.UniqueConstraint(fields=["tournament", "user", "role"], name="unique_staff_role_per_tournament"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.get_role_display()} ({self.tournament})"
 
 
 class ParticipantType(models.TextChoices):

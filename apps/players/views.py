@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
+from apps.core.permissions import StaffRequiredMixin, staff_required
+
 from .forms import DoublesPairForm, PlayerForm
 from .models import DoublesPair, Player
 
@@ -25,20 +27,21 @@ class PlayerListView(ListView):
         return ["players/player_list.html"]
 
 
-class PlayerCreateView(CreateView):
+class PlayerCreateView(StaffRequiredMixin, CreateView):
     model = Player
     form_class = PlayerForm
     template_name = "players/player_form.html"
     success_url = reverse_lazy("players:list")
 
 
-class PlayerUpdateView(UpdateView):
+class PlayerUpdateView(StaffRequiredMixin, UpdateView):
     model = Player
     form_class = PlayerForm
     template_name = "players/player_form.html"
     success_url = reverse_lazy("players:list")
 
 
+@staff_required
 def player_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -56,13 +59,14 @@ class DoublesPairListView(ListView):
         return super().get_queryset().select_related("player_one", "player_two")
 
 
-class DoublesPairCreateView(CreateView):
+class DoublesPairCreateView(StaffRequiredMixin, CreateView):
     model = DoublesPair
     form_class = DoublesPairForm
     template_name = "players/doubles_pair_form.html"
     success_url = reverse_lazy("players:pair_list")
 
 
+@staff_required
 def doubles_pair_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])

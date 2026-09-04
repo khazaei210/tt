@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView
 
+from apps.tournaments.permissions import can_score_matches, match_scorer_required
+
 from .forms import SetScoreForm
 from .models import Match
 from .scoring import ScoreValidationError
@@ -14,6 +16,10 @@ from .services import (
     get_effective_rule,
     record_set_score,
 )
+
+
+def _tournament_from_match_pk(request, pk, **kwargs):
+    return get_object_or_404(Match, pk=pk).competition.tournament
 
 
 class MatchDetailView(DetailView):
@@ -30,9 +36,11 @@ class MatchDetailView(DetailView):
         next_set_number = len(sets) + 1
         context["next_set_number"] = next_set_number if next_set_number <= rule.best_of_sets else None
         context["set_form"] = SetScoreForm()
+        context["can_score"] = can_score_matches(self.request.user, match.competition.tournament)
         return context
 
 
+@match_scorer_required(_tournament_from_match_pk)
 def match_set_save(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -59,6 +67,7 @@ def match_set_save(request, pk):
     return redirect("matches:detail", pk=match.pk)
 
 
+@match_scorer_required(_tournament_from_match_pk)
 def match_set_delete(request, pk, set_number):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
