@@ -49,3 +49,35 @@ class Player(models.Model):
 
     def get_absolute_url(self):
         return reverse("players:edit", kwargs={"pk": self.pk})
+
+
+class DoublesPair(models.Model):
+    """Two players paired for doubles competitions.
+
+    A pair is reusable across tournaments/competitions, so it is its own
+    entity rather than something created per-competition. player_one/
+    player_two are stored in a canonical order (lowest pk first) so a pair
+    can't be registered twice with the players swapped.
+    """
+
+    player_one = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="doubles_pairs_as_player_one")
+    player_two = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="doubles_pairs_as_player_two")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["player_one__last_name", "player_two__last_name"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(player_one=models.F("player_two")),
+                name="doubles_pair_distinct_players",
+            ),
+            models.UniqueConstraint(fields=["player_one", "player_two"], name="unique_doubles_pair"),
+        ]
+
+    def __str__(self):
+        return f"{self.player_one.full_name} / {self.player_two.full_name}"
+
+    def save(self, *args, **kwargs):
+        if self.player_one_id and self.player_two_id and self.player_one_id > self.player_two_id:
+            self.player_one_id, self.player_two_id = self.player_two_id, self.player_one_id
+        super().save(*args, **kwargs)

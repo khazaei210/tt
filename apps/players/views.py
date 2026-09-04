@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
-from .forms import PlayerForm
-from .models import Player
+from .forms import DoublesPairForm, PlayerForm
+from .models import DoublesPair, Player
 
 
 class PlayerListView(ListView):
@@ -44,4 +44,28 @@ def player_delete(request, pk):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     player = get_object_or_404(Player, pk=pk)
     player.delete()
+    return HttpResponse("")
+
+
+class DoublesPairListView(ListView):
+    model = DoublesPair
+    context_object_name = "pairs"
+    template_name = "players/doubles_pair_list.html"
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("player_one", "player_two")
+
+
+class DoublesPairCreateView(CreateView):
+    model = DoublesPair
+    form_class = DoublesPairForm
+    template_name = "players/doubles_pair_form.html"
+    success_url = reverse_lazy("players:pair_list")
+
+
+def doubles_pair_delete(request, pk):
+    if request.method not in ("DELETE", "POST"):
+        return HttpResponseNotAllowed(["DELETE", "POST"])
+    pair = get_object_or_404(DoublesPair, pk=pk)
+    pair.delete()
     return HttpResponse("")

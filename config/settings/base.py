@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     # Project apps
     "apps.core",
     "apps.players",
+    "apps.teams",
 ]
 
 MIDDLEWARE = [

@@ -14,6 +14,8 @@
         <div class="flex-1">
             <a href="{% url 'core:home' %}" class="btn btn-ghost text-xl">{% translate "Table Tennis Tournaments" %}</a>
             <a href="{% url 'players:list' %}" class="btn btn-ghost">{% translate "Players" %}</a>
+            <a href="{% url 'teams:list' %}" class="btn btn-ghost">{% translate "Teams" %}</a>
+            <a href="{% url 'players:pair_list' %}" class="btn btn-ghost">{% translate "Doubles pairs" %}</a>
         </div>
         <div class="flex-none">
             <form action="{% url 'set_language' %}" method="post">
