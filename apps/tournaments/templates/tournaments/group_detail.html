@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ group.name }}{% endblock %}
+{% block page_title %}{{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ group.name }}</h1>
+        <p class="text-base-content/60">
+            <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="link">{{ group.stage.name }}</a>
+            · <a href="{% url 'tournaments:competition_detail' group.stage.competition.pk %}" class="link">{{ group.stage.competition.name }}</a>
+        </p>
+    </div>
+    <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="btn btn-ghost">{% translate "Back to stage" %}</a>
+</div>
+
+<h2 class="text-lg font-semibold mb-2">{% translate "Participants" %}</h2>
+{% include "tournaments/_group_participant_panel.html" %}
+
+<div class="flex items-center justify-between mt-6 mb-2">
+    <h2 class="text-lg font-semibold">{% translate "Schedule" %}</h2>
+    {% if schedule_matches %}
+        <form method="post" action="{% url 'tournaments:group_schedule_clear' group.pk %}"
+              onsubmit="return confirm('{% translate "Clear the generated schedule? This deletes all matches for this group." %}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline btn-error">{% translate "Clear schedule" %}</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if schedule_matches %}
+    {% regroup schedule_matches by round_number as rounds_list %}
+    <div class="space-y-4">
+        {% for round in rounds_list %}
+        <div class="bg-base-100 rounded-box shadow p-4">
+            <h3 class="font-semibold mb-2">{% blocktranslate with n=round.grouper %}Round {{ n }}{% endblocktranslate %}</h3>
+            <ul class="space-y-1">
+                {% for match in round.list %}
+                <li class="flex items-center justify-between border-b border-base-200 py-1 last:border-0">
+                    <span>{{ match.participant_a.display_name }} <span class="text-base-content/40">{% translate "vs" %}</span> {{ match.participant_b.display_name }}</span>
+                    <span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="bg-base-100 rounded-box shadow p-4">
+        <p class="text-base-content/60 mb-4">{% translate "No schedule generated yet." %}</p>
+        <form method="post" action="{% url 'tournaments:group_schedule_generate' group.pk %}" class="flex items-end gap-4 flex-wrap">
+            {% csrf_token %}
+            <div>
+                <label class="label"><span class="label-text">{% translate "Format" %}</span></label>
+                <select name="legs" class="select select-bordered">
+                    <option value="1">{% translate "Single round robin" %}</option>
+                    <option value="2">{% translate "Double round robin" %}</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">{% translate "Generate schedule" %}</button>
+        </form>
+    </div>
+{% endif %}
+{% endblock %}

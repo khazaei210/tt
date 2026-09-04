@@ -21,6 +21,15 @@ urlpatterns = [
     path("stages/<int:pk>/delete/", views.stage_delete, name="stage_delete"),
     path("stages/<int:stage_pk>/groups/add/", views.GroupCreateView.as_view(), name="group_add"),
     path("groups/<int:pk>/delete/", views.group_delete, name="group_delete"),
+    path("groups/<int:pk>/", views.GroupDetailView.as_view(), name="group_detail"),
+    path("groups/<int:pk>/participants/add/", views.group_participant_add, name="group_participant_add"),
+    path(
+        "groups/<int:pk>/participants/<int:group_participant_id>/remove/",
+        views.group_participant_remove,
+        name="group_participant_remove",
+    ),
+    path("groups/<int:pk>/schedule/generate/", views.group_schedule_generate, name="group_schedule_generate"),
+    path("groups/<int:pk>/schedule/clear/", views.group_schedule_clear, name="group_schedule_clear"),
     path(
         "competitions/<int:competition_pk>/participants/add/",
         views.participant_add,

@@ -1,7 +1,7 @@
 {% load i18n %}
 {% for group in groups %}
 <tr id="group-row-{{ group.pk }}">
-    <td>{{ group.name }}</td>
+    <td><a href="{% url 'tournaments:group_detail' group.pk %}" class="link link-primary">{{ group.name }}</a></td>
     <td>{{ group.order }}</td>
     <td class="text-right">
         <button type="button"

@@ -1,0 +1,49 @@
+{% load i18n %}
+<div id="group-participant-panel">
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% translate "Participant" %}</th>
+                    <th class="text-right">{% translate "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for gp in group_participants %}
+                <tr>
+                    <td>{{ gp.participant.display_name }}</td>
+                    <td class="text-right">
+                        <button type="button"
+                                class="btn btn-xs btn-error btn-outline"
+                                hx-delete="{% url 'tournaments:group_participant_remove' group.pk gp.pk %}"
+                                hx-target="#group-participant-panel"
+                                hx-swap="outerHTML"
+                                hx-confirm="{% translate 'Remove this participant from the group?' %}">
+                            {% translate "Remove" %}
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center text-base-content/60 py-6">{% translate "No participants assigned yet." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form hx-post="{% url 'tournaments:group_participant_add' group.pk %}"
+          hx-target="#group-participant-panel"
+          hx-swap="outerHTML"
+          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4">
+        {% csrf_token %}
+        <div class="flex-1 min-w-48">
+            <label class="label"><span class="label-text">{{ group_participant_form.participant.label }}</span></label>
+            {{ group_participant_form.participant }}
+            {% for error in group_participant_form.participant.errors %}
+                <p class="text-sm text-error mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">{% translate "Add to group" %}</button>
+    </form>
+</div>

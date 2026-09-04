@@ -196,3 +196,24 @@ class Participant(models.Model):
             elif self.participant_type == ParticipantType.TEAM and self.team_id:
                 self.display_name = self.team.name
         super().save(*args, **kwargs)
+
+
+class GroupParticipant(models.Model):
+    """Placement of a competition Participant into one Group of a Stage.
+
+    Kept as its own table (rather than a FK on Participant) because a
+    Participant is scoped to a Competition, not to a single Stage — a
+    competition can have a group stage followed by a knockout stage, and
+    each needs its own, independent grouping of the same participants.
+    """
+
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_participants")
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name="group_assignments")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["group", "participant"], name="unique_participant_per_group"),
+        ]
+
+    def __str__(self):
+        return f"{self.participant} in {self.group}"

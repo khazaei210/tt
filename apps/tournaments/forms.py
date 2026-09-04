@@ -4,7 +4,16 @@ from django.utils.translation import gettext_lazy as _
 from apps.players.models import DoublesPair, Player
 from apps.teams.models import Team
 
-from .models import Competition, CompetitionRule, Group, Participant, ParticipantType, Stage, Tournament
+from .models import (
+    Competition,
+    CompetitionRule,
+    Group,
+    GroupParticipant,
+    Participant,
+    ParticipantType,
+    Stage,
+    Tournament,
+)
 
 INPUT_CLASS = "input input-bordered w-full"
 SELECT_CLASS = "select select-bordered w-full"
@@ -101,6 +110,35 @@ class GroupForm(forms.ModelForm):
         instance = super().save(commit=False)
         if self.stage:
             instance.stage = self.stage
+        if commit:
+            instance.save()
+        return instance
+
+
+class GroupParticipantForm(forms.ModelForm):
+    class Meta:
+        model = GroupParticipant
+        fields = ["participant"]
+        widgets = {
+            "participant": forms.Select(attrs={"class": SELECT_CLASS}),
+        }
+
+    def __init__(self, *args, group=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.group = group
+        if not group:
+            return
+        # A participant may only be placed in one group per stage.
+        already_grouped_ids = GroupParticipant.objects.filter(group__stage=group.stage).values_list(
+            "participant_id", flat=True
+        )
+        self.fields["participant"].queryset = group.stage.competition.participants.exclude(
+            pk__in=already_grouped_ids
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.group = self.group
         if commit:
             instance.save()
         return instance

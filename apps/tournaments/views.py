@@ -1,11 +1,27 @@
+from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from .forms import CompetitionForm, CompetitionRuleForm, GroupForm, ParticipantForm, StageForm, TournamentForm
-from .models import Competition, CompetitionRule, Group, Participant, Stage, Tournament
+from apps.matches.services import (
+    NotEnoughParticipantsError,
+    ScheduleAlreadyGeneratedError,
+    clear_group_schedule,
+    generate_group_schedule,
+)
+
+from .forms import (
+    CompetitionForm,
+    CompetitionRuleForm,
+    GroupForm,
+    GroupParticipantForm,
+    ParticipantForm,
+    StageForm,
+    TournamentForm,
+)
+from .models import Competition, CompetitionRule, Group, GroupParticipant, Participant, Stage, Tournament
 
 
 class TournamentListView(ListView):
@@ -214,6 +230,74 @@ def group_delete(request, pk):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     get_object_or_404(Group, pk=pk).delete()
     return HttpResponse("")
+
+
+def _group_participant_panel_context(group):
+    return {
+        "group": group,
+        "group_participants": group.group_participants.select_related(
+            "participant__individual_player",
+            "participant__doubles_pair__player_one",
+            "participant__doubles_pair__player_two",
+            "participant__team",
+        ),
+        "group_participant_form": GroupParticipantForm(group=group),
+    }
+
+
+class GroupDetailView(DetailView):
+    model = Group
+    template_name = "tournaments/group_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_group_participant_panel_context(self.object))
+        context["schedule_matches"] = self.object.matches.select_related(
+            "participant_a", "participant_b"
+        ).order_by("round_number", "pk")
+        return context
+
+
+def group_participant_add(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    group = get_object_or_404(Group, pk=pk)
+    form = GroupParticipantForm(request.POST, group=group)
+    if form.is_valid():
+        form.save()
+        context = _group_participant_panel_context(group)
+    else:
+        context = _group_participant_panel_context(group)
+        context["group_participant_form"] = form
+    return render(request, "tournaments/_group_participant_panel.html", context)
+
+
+def group_participant_remove(request, pk, group_participant_id):
+    if request.method not in ("DELETE", "POST"):
+        return HttpResponseNotAllowed(["DELETE", "POST"])
+    group = get_object_or_404(Group, pk=pk)
+    get_object_or_404(GroupParticipant, pk=group_participant_id, group=group).delete()
+    return render(request, "tournaments/_group_participant_panel.html", _group_participant_panel_context(group))
+
+
+def group_schedule_generate(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    group = get_object_or_404(Group, pk=pk)
+    legs = 2 if request.POST.get("legs") == "2" else 1
+    try:
+        generate_group_schedule(group, legs=legs)
+    except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
+        messages.error(request, str(exc))
+    return redirect("tournaments:group_detail", pk=group.pk)
+
+
+def group_schedule_clear(request, pk):
+    if request.method not in ("DELETE", "POST"):
+        return HttpResponseNotAllowed(["DELETE", "POST"])
+    group = get_object_or_404(Group, pk=pk)
+    clear_group_schedule(group)
+    return redirect("tournaments:group_detail", pk=group.pk)
 
 
 def _participant_panel_context(competition):
