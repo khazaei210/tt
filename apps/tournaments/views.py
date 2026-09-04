@@ -3,13 +3,16 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from apps.matches.services import (
     NotEnoughParticipantsError,
     ScheduleAlreadyGeneratedError,
     clear_group_schedule,
+    clear_stage_bracket,
     generate_group_schedule,
+    generate_stage_bracket,
 )
 
 from .forms import (
@@ -21,7 +24,7 @@ from .forms import (
     StageForm,
     TournamentForm,
 )
-from .models import Competition, CompetitionRule, Group, GroupParticipant, Participant, Stage, Tournament
+from .models import Competition, CompetitionRule, Group, GroupParticipant, Participant, Stage, StageFormat, Tournament
 
 
 class TournamentListView(ListView):
@@ -192,6 +195,38 @@ def stage_delete(request, pk):
     return HttpResponse("")
 
 
+def stage_bracket_generate(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    seeded = request.POST.get("draw_mode") != "random"
+    third_place = request.POST.get("third_place") == "on"
+    try:
+        generate_stage_bracket(stage, seeded=seeded, third_place=third_place)
+    except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
+        messages.error(request, str(exc))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+def stage_bracket_clear(request, pk):
+    if request.method not in ("DELETE", "POST"):
+        return HttpResponseNotAllowed(["DELETE", "POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    clear_stage_bracket(stage)
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+def _round_label(round_number, total_rounds):
+    from_final = total_rounds - round_number
+    if from_final == 0:
+        return _("Final")
+    if from_final == 1:
+        return _("Semifinal")
+    if from_final == 2:
+        return _("Quarterfinal")
+    return _("Round %(n)s") % {"n": round_number}
+
+
 class StageDetailView(DetailView):
     model = Stage
     template_name = "tournaments/stage_detail.html"
@@ -199,6 +234,35 @@ class StageDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["groups"] = self.object.groups.all()
+        if self.object.stage_format == StageFormat.KNOCKOUT:
+            bracket_matches = list(
+                self.object.matches.filter(group__isnull=True)
+                .select_related("participant_a", "participant_b")
+                .order_by("round_number", "bracket_slot")
+            )
+            non_third_place_rounds = [m.round_number for m in bracket_matches if not m.is_third_place]
+            total_rounds = max(non_third_place_rounds, default=0)
+
+            rounds = []
+            third_place_matches = []
+            for match in bracket_matches:
+                if match.is_third_place:
+                    third_place_matches.append(match)
+                    continue
+                if not rounds or rounds[-1]["round_number"] != match.round_number:
+                    rounds.append(
+                        {
+                            "round_number": match.round_number,
+                            "label": _round_label(match.round_number, total_rounds),
+                            "matches": [],
+                        }
+                    )
+                rounds[-1]["matches"].append(match)
+            if third_place_matches:
+                rounds.append({"round_number": total_rounds, "label": _("Third place"), "matches": third_place_matches})
+
+            context["bracket_rounds"] = rounds
+            context["has_bracket"] = bool(bracket_matches)
         return context
 
 

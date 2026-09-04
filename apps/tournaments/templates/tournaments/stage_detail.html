@@ -39,8 +39,61 @@
         </table>
     </div>
 {% else %}
-    <div class="alert">
-        <span>{% translate "Knockout bracket generation isn't built yet — coming in a later phase." %}</span>
+    <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold">{% translate "Bracket" %}</h2>
+        {% if has_bracket %}
+            <form method="post" action="{% url 'tournaments:stage_bracket_clear' stage.pk %}"
+                  onsubmit="return confirm('{% translate "Clear the generated bracket? This deletes all matches for this stage." %}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline btn-error">{% translate "Clear bracket" %}</button>
+            </form>
+        {% endif %}
     </div>
+
+    {% if has_bracket %}
+        <div class="overflow-x-auto">
+            <div class="flex gap-4 pb-2" style="min-width: max-content;">
+                {% for round in bracket_rounds %}
+                <div class="bg-base-100 rounded-box shadow p-4 min-w-56">
+                    <h3 class="font-semibold mb-2">{{ round.label }}</h3>
+                    <ul class="space-y-2">
+                        {% for match in round.matches %}
+                        <li class="border border-base-200 rounded-btn p-2 text-sm">
+                            <div class="flex items-center justify-between">
+                                <span>{{ match.participant_a.display_name|default:"—" }}</span>
+                                {% if match.participant_a.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
+                            </div>
+                            <div class="text-center text-base-content/40 text-xs">{% translate "vs" %}</div>
+                            <div class="flex items-center justify-between">
+                                <span>{{ match.participant_b.display_name|default:"—" }}</span>
+                                {% if match.participant_b.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-base-100 rounded-box shadow p-4">
+            <p class="text-base-content/60 mb-4">{% translate "No bracket generated yet." %}</p>
+            <form method="post" action="{% url 'tournaments:stage_bracket_generate' stage.pk %}" class="flex items-end gap-4 flex-wrap">
+                {% csrf_token %}
+                <div>
+                    <label class="label"><span class="label-text">{% translate "Draw" %}</span></label>
+                    <select name="draw_mode" class="select select-bordered">
+                        <option value="seeded">{% translate "Seeded" %}</option>
+                        <option value="random">{% translate "Random" %}</option>
+                    </select>
+                </div>
+                <label class="label cursor-pointer gap-2">
+                    <input type="checkbox" name="third_place" class="checkbox">
+                    <span class="label-text">{% translate "Include third-place match" %}</span>
+                </label>
+                <button type="submit" class="btn btn-primary">{% translate "Generate bracket" %}</button>
+            </form>
+        </div>
+    {% endif %}
 {% endif %}
 {% endblock %}

@@ -19,9 +19,15 @@ class Match(models.Model):
 
     This is deliberately minimal for now: no MatchSet/scoring yet (that
     needs CompetitionRule-aware score validation, added in a later phase).
-    For this phase a Match only records the schedule — who plays whom, in
-    which round of which group — produced by a scheduling engine such as
-    the round-robin service.
+    For this phase a Match only records the schedule produced by a
+    scheduling engine (round-robin or knockout).
+
+    participant_a/b are nullable because a knockout match beyond Round 1
+    can genuinely have an undetermined opponent (pending an earlier
+    match's result) — that's different from a BYE, which is a real
+    Participant row (Participant.is_bye=True) substituted at bracket
+    generation time, keeping "this match's two participants" a uniform
+    concept everywhere except truly-not-yet-known future rounds.
     """
 
     competition = models.ForeignKey("tournaments.Competition", on_delete=models.CASCADE, related_name="matches")
@@ -30,17 +36,33 @@ class Match(models.Model):
         "tournaments.Group", null=True, blank=True, on_delete=models.CASCADE, related_name="matches"
     )
     round_number = models.PositiveIntegerField(_("Round"))
+    bracket_slot = models.IntegerField(
+        _("Bracket slot"),
+        null=True,
+        blank=True,
+        help_text=_("Position within the round, for knockout bracket rendering/progression. Unused for round robin."),
+    )
     participant_a = models.ForeignKey(
-        "tournaments.Participant", on_delete=models.PROTECT, related_name="matches_as_participant_a"
+        "tournaments.Participant",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="matches_as_participant_a",
     )
     participant_b = models.ForeignKey(
-        "tournaments.Participant", on_delete=models.PROTECT, related_name="matches_as_participant_b"
+        "tournaments.Participant",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="matches_as_participant_b",
     )
+    is_bye = models.BooleanField(_("BYE"), default=False)
+    is_third_place = models.BooleanField(_("Third place match"), default=False)
     status = models.CharField(_("Status"), max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["group", "round_number", "pk"]
+        ordering = ["group", "round_number", "bracket_slot", "pk"]
         constraints = [
             models.CheckConstraint(
                 condition=~models.Q(participant_a=models.F("participant_b")),
@@ -49,7 +71,10 @@ class Match(models.Model):
         ]
         indexes = [
             models.Index(fields=["group", "round_number"]),
+            models.Index(fields=["stage", "round_number"]),
         ]
 
     def __str__(self):
-        return f"{self.participant_a} vs {self.participant_b} ({_('Round')} {self.round_number})"
+        a = self.participant_a or _("TBD")
+        b = self.participant_b or _("TBD")
+        return f"{a} vs {b} ({_('Round')} {self.round_number})"
