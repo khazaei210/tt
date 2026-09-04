@@ -5,13 +5,14 @@
             <thead>
                 <tr>
                     <th>{% translate "Participant" %}</th>
-                    <th class="text-right">{% translate "Actions" %}</th>
+                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for gp in group_participants %}
                 <tr>
                     <td>{{ gp.participant.display_name }}</td>
+                    {% if can_manage %}
                     <td class="text-right">
                         <button type="button"
                                 class="btn btn-xs btn-error btn-outline"
@@ -22,6 +23,7 @@
                             {% translate "Remove" %}
                         </button>
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
@@ -32,6 +34,7 @@
         </table>
     </div>
 
+    {% if can_manage %}
     <form hx-post="{% url 'tournaments:group_participant_add' group.pk %}"
           hx-target="#group-participant-panel"
           hx-swap="outerHTML"
@@ -46,4 +49,5 @@
         </div>
         <button type="submit" class="btn btn-primary">{% translate "Add to group" %}</button>
     </form>
+    {% endif %}
 </div>

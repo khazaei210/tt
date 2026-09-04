@@ -45,12 +45,13 @@
                 <th>{% translate "Set" %}</th>
                 <th>{{ match.participant_a.display_name|default:"A" }}</th>
                 <th>{{ match.participant_b.display_name|default:"B" }}</th>
-                <th class="text-right">{% translate "Actions" %}</th>
+                {% if can_score %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for set in sets %}
             <tr>
+                {% if can_score %}
                 <form method="post" action="{% url 'matches:set_save' match.pk %}" class="contents">
                     {% csrf_token %}
                     <input type="hidden" name="set_number" value="{{ set.set_number }}">
@@ -69,11 +70,16 @@
                         </button>
                     </td>
                 </form>
+                {% else %}
+                    <td>{{ set.set_number }}</td>
+                    <td>{{ set.participant_a_score }}</td>
+                    <td>{{ set.participant_b_score }}</td>
+                {% endif %}
             </tr>
             {% empty %}
                 <tr><td colspan="4" class="text-center text-base-content/60 py-6">{% translate "No sets recorded yet." %}</td></tr>
             {% endfor %}
-            {% if next_set_number %}
+            {% if next_set_number and can_score %}
             <tr>
                 <form method="post" action="{% url 'matches:set_save' match.pk %}" class="contents">
                     {% csrf_token %}

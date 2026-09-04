@@ -6,7 +6,7 @@
                 <tr>
                     <th>{% translate "Seed" %}</th>
                     <th>{% translate "Participant" %}</th>
-                    <th class="text-right">{% translate "Actions" %}</th>
+                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -14,6 +14,7 @@
                 <tr>
                     <td>{{ participant.seed|default:"—" }}</td>
                     <td>{{ participant.display_name }}</td>
+                    {% if can_manage %}
                     <td class="text-right">
                         <button type="button"
                                 class="btn btn-xs btn-error btn-outline"
@@ -24,6 +25,7 @@
                             {% translate "Remove" %}
                         </button>
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
@@ -34,6 +36,7 @@
         </table>
     </div>
 
+    {% if can_manage %}
     <form hx-post="{% url 'tournaments:participant_add' competition.pk %}"
           hx-target="#participant-panel"
           hx-swap="outerHTML"
@@ -50,4 +53,5 @@
         {% endfor %}
         <button type="submit" class="btn btn-primary">{% translate "Add participant" %}</button>
     </form>
+    {% endif %}
 </div>

@@ -12,6 +12,7 @@
             <span class="badge badge-ghost">{% translate "Inactive" %}</span>
         {% endif %}
     </td>
+    {% if can_manage %}
     <td class="text-right space-x-2 rtl:space-x-reverse">
         <a href="{% url 'players:edit' player.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
         <button type="button"
@@ -23,6 +24,7 @@
             {% translate "Delete" %}
         </button>
     </td>
+    {% endif %}
 </tr>
 {% empty %}
 <tr>

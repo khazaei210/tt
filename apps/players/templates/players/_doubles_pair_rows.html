@@ -3,6 +3,7 @@
 <tr id="pair-row-{{ pair.pk }}">
     <td>{{ pair.player_one.full_name }}</td>
     <td>{{ pair.player_two.full_name }}</td>
+    {% if can_manage %}
     <td class="text-right">
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
@@ -13,6 +14,7 @@
             {% translate "Delete" %}
         </button>
     </td>
+    {% endif %}
 </tr>
 {% empty %}
 <tr>

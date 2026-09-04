@@ -381,6 +381,11 @@ def _group_participant_panel_context(group):
             "participant__team",
         ),
         "group_participant_form": GroupParticipantForm(group=group),
+        # The two HTMX views below re-render this partial standalone and are
+        # already gated by @tournament_manager_required, so reaching them
+        # implies can_manage. GroupDetailView overrides this with the real
+        # per-viewer value after calling this helper.
+        "can_manage": True,
     }
 
 
@@ -452,6 +457,11 @@ def _participant_panel_context(competition):
             "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
         ),
         "participant_form": ParticipantForm(competition=competition),
+        # Same reasoning as _group_participant_panel_context above: the
+        # HTMX views that render this standalone are already gated by
+        # @tournament_manager_required. CompetitionDetailView overrides
+        # this with the real per-viewer value.
+        "can_manage": True,
     }
 
 

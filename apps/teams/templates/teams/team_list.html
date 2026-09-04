@@ -7,7 +7,9 @@
 {% block content %}
 <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
     <h1 class="text-2xl font-bold">{% translate "Teams" %}</h1>
-    <a href="{% url 'teams:add' %}" class="btn btn-primary">{% translate "Add team" %}</a>
+    {% if can_manage %}
+        <a href="{% url 'teams:add' %}" class="btn btn-primary">{% translate "Add team" %}</a>
+    {% endif %}
 </div>
 
 <div class="mb-4">
@@ -31,7 +33,7 @@
                 <th>{% translate "Country" %}</th>
                 <th>{% translate "Members" %}</th>
                 <th>{% translate "Status" %}</th>
-                <th class="text-right">{% translate "Actions" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
         <tbody id="team-table-body">

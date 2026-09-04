@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.core.permissions import StaffRequiredMixin, staff_required
+from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
 from .forms import DoublesPairForm, PlayerForm
 from .models import DoublesPair, Player
@@ -20,6 +20,11 @@ class PlayerListView(ListView):
         if q:
             qs = qs.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(club__icontains=q))
         return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_manage"] = is_staff_user(self.request.user)
+        return context
 
     def get_template_names(self):
         if self.request.htmx:
@@ -57,6 +62,11 @@ class DoublesPairListView(ListView):
 
     def get_queryset(self):
         return super().get_queryset().select_related("player_one", "player_two")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_manage"] = is_staff_user(self.request.user)
+        return context
 
 
 class DoublesPairCreateView(StaffRequiredMixin, CreateView):

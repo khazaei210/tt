@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from apps.core.permissions import StaffRequiredMixin, staff_required
+from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
 from .forms import TeamForm, TeamMembershipForm
 from .models import Team, TeamMembership
@@ -20,6 +20,11 @@ class TeamListView(ListView):
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(short_name__icontains=q) | Q(country__icontains=q))
         return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_manage"] = is_staff_user(self.request.user)
+        return context
 
     def get_template_names(self):
         if self.request.htmx:
@@ -49,6 +54,7 @@ class TeamDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["memberships"] = self.object.memberships.select_related("player")
         context["membership_form"] = TeamMembershipForm(team=self.object)
+        context["can_manage"] = is_staff_user(self.request.user)
         return context
 
 
@@ -77,6 +83,8 @@ def team_member_add(request, pk):
             "team": team,
             "memberships": team.memberships.select_related("player"),
             "membership_form": form,
+            # Guaranteed by @staff_required above.
+            "can_manage": True,
         },
     )
 
@@ -94,5 +102,6 @@ def team_member_remove(request, pk, membership_id):
             "team": team,
             "memberships": team.memberships.select_related("player"),
             "membership_form": TeamMembershipForm(team=team),
+            "can_manage": True,
         },
     )

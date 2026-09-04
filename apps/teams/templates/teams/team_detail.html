@@ -13,7 +13,9 @@
         {% endif %}
     </div>
     <div class="flex gap-2">
-        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline">{% translate "Edit team" %}</a>
+        {% if can_manage %}
+            <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline">{% translate "Edit team" %}</a>
+        {% endif %}
         <a href="{% url 'teams:list' %}" class="btn btn-ghost">{% translate "Back to teams" %}</a>
     </div>
 </div>
