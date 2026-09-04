@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 17:33+0000\n"
+"POT-Creation-Date: 2026-09-04 17:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -180,35 +180,35 @@ msgstr ""
 msgid "The winning margin must be at least %(margin)s points."
 msgstr ""
 
-#: apps/matches/services.py:38
+#: apps/matches/services.py:39
 msgid "This group already has a generated schedule."
 msgstr ""
 
-#: apps/matches/services.py:42
+#: apps/matches/services.py:43
 msgid "A group needs at least two participants to generate a schedule."
 msgstr ""
 
-#: apps/matches/services.py:89
+#: apps/matches/services.py:90
 msgid "This stage already has a generated bracket."
 msgstr ""
 
-#: apps/matches/services.py:96
+#: apps/matches/services.py:97
 msgid "A knockout stage needs at least two participants to generate a bracket."
 msgstr ""
 
-#: apps/matches/services.py:164
+#: apps/matches/services.py:165
 msgid ""
 "This match is already completed. Explicitly correct it to change a score."
 msgstr ""
 
-#: apps/matches/services.py:169
+#: apps/matches/services.py:170
 #, python-format
 msgid "Set number must be between 1 and %(n)s."
 msgstr ""
 
 #: apps/matches/templates/matches/match_detail.html:4
 #: apps/matches/templates/matches/match_detail.html:21
-#: apps/tournaments/templates/tournaments/group_detail.html:44
+#: apps/tournaments/templates/tournaments/group_detail.html:82
 #: apps/tournaments/templates/tournaments/stage_detail.html:67
 msgid "vs"
 msgstr ""
@@ -218,8 +218,8 @@ msgid "Match"
 msgstr ""
 
 #: apps/matches/templates/matches/match_detail.html:16
-#: apps/tournaments/templates/tournaments/group_detail.html:38
-#: apps/tournaments/views.py:227
+#: apps/tournaments/templates/tournaments/group_detail.html:76
+#: apps/tournaments/views.py:228
 #, python-format
 msgid "Round %(n)s"
 msgstr ""
@@ -616,7 +616,7 @@ msgstr ""
 
 #: apps/tournaments/models.py:93
 #: apps/tournaments/templates/tournaments/competition_detail.html:57
-#: apps/tournaments/templates/tournaments/group_detail.html:60
+#: apps/tournaments/templates/tournaments/group_detail.html:98
 msgid "Format"
 msgstr ""
 
@@ -649,6 +649,7 @@ msgstr ""
 
 #: apps/tournaments/templates/tournaments/_group_participant_panel.html:7
 #: apps/tournaments/templates/tournaments/_participant_panel.html:8
+#: apps/tournaments/templates/tournaments/group_detail.html:29
 msgid "Participant"
 msgstr ""
 
@@ -771,30 +772,66 @@ msgid "Back to stage"
 msgstr ""
 
 #: apps/tournaments/templates/tournaments/group_detail.html:23
+msgid "Standings"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:30
+msgid "Played"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:31
+msgid "Won"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:32
+msgid "Lost"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:33
+msgid "Pts"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:34
+msgid "Sets"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:35
+msgid "Set diff"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:36
+msgid "Points"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:37
+msgid "Point diff"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/group_detail.html:61
 msgid "Schedule"
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:26
+#: apps/tournaments/templates/tournaments/group_detail.html:64
 msgid "Clear the generated schedule? This deletes all matches for this group."
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:28
+#: apps/tournaments/templates/tournaments/group_detail.html:66
 msgid "Clear schedule"
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:56
+#: apps/tournaments/templates/tournaments/group_detail.html:94
 msgid "No schedule generated yet."
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:62
+#: apps/tournaments/templates/tournaments/group_detail.html:100
 msgid "Single round robin"
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:63
+#: apps/tournaments/templates/tournaments/group_detail.html:101
 msgid "Double round robin"
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/group_detail.html:66
+#: apps/tournaments/templates/tournaments/group_detail.html:104
 msgid "Generate schedule"
 msgstr ""
 
@@ -882,19 +919,19 @@ msgstr ""
 msgid "Search by name or location…"
 msgstr ""
 
-#: apps/tournaments/views.py:222
+#: apps/tournaments/views.py:223
 msgid "Final"
 msgstr ""
 
-#: apps/tournaments/views.py:224
+#: apps/tournaments/views.py:225
 msgid "Semifinal"
 msgstr ""
 
-#: apps/tournaments/views.py:226
+#: apps/tournaments/views.py:227
 msgid "Quarterfinal"
 msgstr ""
 
-#: apps/tournaments/views.py:262
+#: apps/tournaments/views.py:263
 msgid "Third place"
 msgstr ""
 

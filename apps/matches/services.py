@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.tournaments.services.knockout import generate_knockout_bracket
 from apps.tournaments.services.round_robin import generate_round_robin
+from apps.tournaments.services.standings import MatchRecord, compute_standings
 
 from .models import Match, MatchSet, MatchStatus
 from .scoring import compute_match_result, validate_set_score
@@ -252,3 +253,55 @@ def _clear_untouched_propagation(match):
     field = "participant_a_id" if match.bracket_slot % 2 == 0 else "participant_b_id"
     setattr(next_match, field, None)
     next_match.save(update_fields=[field])
+
+
+def compute_group_standings(group):
+    """Standings for a round-robin Group, computed from its completed
+    matches only (in-progress or unplayed matches don't count yet).
+
+    Returns a list of dicts (rank, participant, played, wins, losses,
+    match_points, sets_won, sets_lost, set_difference, points_scored,
+    points_conceded, point_difference) ordered best-first, using the
+    default tie-break sequence (head-to-head, set difference, point
+    difference, points scored) — see
+    apps.tournaments.services.standings for the tie-break logic itself.
+    """
+    from apps.tournaments.models import Participant
+
+    participant_ids = list(group.group_participants.values_list("participant_id", flat=True))
+    completed_matches = Match.objects.filter(group=group, status=MatchStatus.COMPLETED).prefetch_related("sets")
+
+    match_records = []
+    for m in completed_matches:
+        sets = list(m.sets.all())
+        match_records.append(
+            MatchRecord(
+                participant_a=m.participant_a_id,
+                participant_b=m.participant_b_id,
+                sets_won_a=sum(1 for s in sets if s.participant_a_score > s.participant_b_score),
+                sets_won_b=sum(1 for s in sets if s.participant_b_score > s.participant_a_score),
+                points_scored_a=sum(s.participant_a_score for s in sets),
+                points_scored_b=sum(s.participant_b_score for s in sets),
+            )
+        )
+
+    rows = compute_standings(participant_ids, match_records)
+    participants_by_id = {p.id: p for p in Participant.objects.filter(id__in=participant_ids)}
+
+    return [
+        {
+            "rank": row.rank,
+            "participant": participants_by_id[row.participant],
+            "played": row.played,
+            "wins": row.wins,
+            "losses": row.losses,
+            "match_points": row.match_points,
+            "sets_won": row.sets_won,
+            "sets_lost": row.sets_lost,
+            "set_difference": row.set_difference,
+            "points_scored": row.points_scored,
+            "points_conceded": row.points_conceded,
+            "point_difference": row.point_difference,
+        }
+        for row in rows
+    ]

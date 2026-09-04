@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 17:33+0000\n"
+"POT-Creation-Date: 2026-09-04 17:45+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -162,6 +162,7 @@ msgid "A set cannot end in a tie."
 msgstr "یک ست نمی‌تواند مساوی تمام شود."
 
 #: apps/matches/scoring.py:41
+#, python-format
 msgid "The winning score must be at least %(points)s."
 msgstr "امتیاز برنده باید حداقل %(points)s باشد."
 
@@ -175,35 +176,37 @@ msgstr "امتیاز برنده نمی‌تواند بیشتر از %(cap)s با
 msgid "The winning margin must be at least %(margin)s points."
 msgstr "اختلاف امتیاز برنده باید حداقل %(margin)s باشد."
 
-#: apps/matches/services.py:38
+#: apps/matches/services.py:39
 msgid "This group already has a generated schedule."
 msgstr "این گروه از قبل دارای برنامه مسابقات تولیدشده است."
 
-#: apps/matches/services.py:42
+#: apps/matches/services.py:43
 msgid "A group needs at least two participants to generate a schedule."
 msgstr "برای تولید برنامه مسابقات، گروه باید حداقل دو شرکت‌کننده داشته باشد."
 
-#: apps/matches/services.py:89
+#: apps/matches/services.py:90
 msgid "This stage already has a generated bracket."
 msgstr "این مرحله از قبل دارای جدول تولیدشده است."
 
-#: apps/matches/services.py:96
+#: apps/matches/services.py:97
 msgid "A knockout stage needs at least two participants to generate a bracket."
 msgstr "برای تولید جدول حذفی، مرحله باید حداقل دو شرکت‌کننده داشته باشد."
 
-#: apps/matches/services.py:164
+#: apps/matches/services.py:165
 msgid ""
 "This match is already completed. Explicitly correct it to change a score."
-msgstr "این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌صورت ویژه اصلاح کنید."
+msgstr ""
+"این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌صورت ویژه "
+"اصلاح کنید."
 
-#: apps/matches/services.py:169
+#: apps/matches/services.py:170
 #, python-format
 msgid "Set number must be between 1 and %(n)s."
 msgstr "شماره ست باید بین ۱ و %(n)s باشد."
 
 #: apps/matches/templates/matches/match_detail.html:4
 #: apps/matches/templates/matches/match_detail.html:21
-#: apps/tournaments/templates/tournaments/group_detail.html:44
+#: apps/tournaments/templates/tournaments/group_detail.html:82
 #: apps/tournaments/templates/tournaments/stage_detail.html:67
 msgid "vs"
 msgstr "در برابر"
@@ -213,8 +216,8 @@ msgid "Match"
 msgstr "بازی"
 
 #: apps/matches/templates/matches/match_detail.html:16
-#: apps/tournaments/templates/tournaments/group_detail.html:38
-#: apps/tournaments/views.py:227
+#: apps/tournaments/templates/tournaments/group_detail.html:76
+#: apps/tournaments/views.py:228
 #, python-format
 msgid "Round %(n)s"
 msgstr "دور %(n)s"
@@ -225,10 +228,12 @@ msgid "Winner: %(winner)s"
 msgstr "برنده: %(winner)s"
 
 #: apps/matches/templates/matches/match_detail.html:35
+#, python-format
 msgid "Best of %(n)s sets"
 msgstr "بهترین از %(n)s ست"
 
 #: apps/matches/templates/matches/match_detail.html:36
+#, python-format
 msgid "%(p)s points per set"
 msgstr "%(p)s امتیاز در هر ست"
 
@@ -609,7 +614,7 @@ msgstr "حذفی"
 
 #: apps/tournaments/models.py:93
 #: apps/tournaments/templates/tournaments/competition_detail.html:57
-#: apps/tournaments/templates/tournaments/group_detail.html:60
+#: apps/tournaments/templates/tournaments/group_detail.html:98
 msgid "Format"
 msgstr "فرمت"
 
@@ -642,6 +647,7 @@ msgstr "هنوز مسابقه‌ای ثبت نشده است."
 
 #: apps/tournaments/templates/tournaments/_group_participant_panel.html:7
 #: apps/tournaments/templates/tournaments/_participant_panel.html:8
+#: apps/tournaments/templates/tournaments/group_detail.html:29
 msgid "Participant"
 msgstr "شرکت‌کننده"
 
@@ -765,30 +771,66 @@ msgid "Back to stage"
 msgstr "بازگشت به مرحله"
 
 #: apps/tournaments/templates/tournaments/group_detail.html:23
+msgid "Standings"
+msgstr "جدول رده‌بندی"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:30
+msgid "Played"
+msgstr "بازی"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:31
+msgid "Won"
+msgstr "برد"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:32
+msgid "Lost"
+msgstr "باخت"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:33
+msgid "Pts"
+msgstr "امتیاز"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:34
+msgid "Sets"
+msgstr "ست‌ها"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:35
+msgid "Set diff"
+msgstr "تفاضل ست"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:36
+msgid "Points"
+msgstr "امتیازها"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:37
+msgid "Point diff"
+msgstr "تفاضل امتیاز"
+
+#: apps/tournaments/templates/tournaments/group_detail.html:61
 msgid "Schedule"
 msgstr "برنامه مسابقات"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:26
+#: apps/tournaments/templates/tournaments/group_detail.html:64
 msgid "Clear the generated schedule? This deletes all matches for this group."
 msgstr "برنامه مسابقات پاک شود؟ این کار همه بازی‌های این گروه را حذف می‌کند."
 
-#: apps/tournaments/templates/tournaments/group_detail.html:28
+#: apps/tournaments/templates/tournaments/group_detail.html:66
 msgid "Clear schedule"
 msgstr "پاک کردن برنامه"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:56
+#: apps/tournaments/templates/tournaments/group_detail.html:94
 msgid "No schedule generated yet."
 msgstr "هنوز برنامه مسابقاتی تولید نشده است."
 
-#: apps/tournaments/templates/tournaments/group_detail.html:62
+#: apps/tournaments/templates/tournaments/group_detail.html:100
 msgid "Single round robin"
 msgstr "دوره‌ای تک‌مرحله‌ای"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:63
+#: apps/tournaments/templates/tournaments/group_detail.html:101
 msgid "Double round robin"
 msgstr "دوره‌ای دومرحله‌ای"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:66
+#: apps/tournaments/templates/tournaments/group_detail.html:104
 msgid "Generate schedule"
 msgstr "تولید برنامه مسابقات"
 
@@ -876,19 +918,19 @@ msgstr "افزودن تورنمنت"
 msgid "Search by name or location…"
 msgstr "جستجو بر اساس نام یا مکان…"
 
-#: apps/tournaments/views.py:222
+#: apps/tournaments/views.py:223
 msgid "Final"
 msgstr "فینال"
 
-#: apps/tournaments/views.py:224
+#: apps/tournaments/views.py:225
 msgid "Semifinal"
 msgstr "نیمه‌نهایی"
 
-#: apps/tournaments/views.py:226
+#: apps/tournaments/views.py:227
 msgid "Quarterfinal"
 msgstr "یک‌چهارم نهایی"
 
-#: apps/tournaments/views.py:262
+#: apps/tournaments/views.py:263
 msgid "Third place"
 msgstr "رده‌بندی"
 

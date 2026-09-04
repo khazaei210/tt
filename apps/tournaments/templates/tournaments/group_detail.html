@@ -19,6 +19,44 @@
 <h2 class="text-lg font-semibold mb-2">{% translate "Participants" %}</h2>
 {% include "tournaments/_group_participant_panel.html" %}
 
+{% if standings %}
+<h2 class="text-lg font-semibold mt-6 mb-2">{% translate "Standings" %}</h2>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-zebra">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{% translate "Participant" %}</th>
+                <th class="text-center">{% translate "Played" %}</th>
+                <th class="text-center">{% translate "Won" %}</th>
+                <th class="text-center">{% translate "Lost" %}</th>
+                <th class="text-center">{% translate "Pts" %}</th>
+                <th class="text-center">{% translate "Sets" %}</th>
+                <th class="text-center">{% translate "Set diff" %}</th>
+                <th class="text-center">{% translate "Points" %}</th>
+                <th class="text-center">{% translate "Point diff" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in standings %}
+            <tr>
+                <td>{{ row.rank }}</td>
+                <td>{{ row.participant.display_name }}</td>
+                <td class="text-center">{{ row.played }}</td>
+                <td class="text-center">{{ row.wins }}</td>
+                <td class="text-center">{{ row.losses }}</td>
+                <td class="text-center font-semibold">{{ row.match_points }}</td>
+                <td class="text-center">{{ row.sets_won }}-{{ row.sets_lost }}</td>
+                <td class="text-center">{{ row.set_difference }}</td>
+                <td class="text-center">{{ row.points_scored }}-{{ row.points_conceded }}</td>
+                <td class="text-center">{{ row.point_difference }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 <div class="flex items-center justify-between mt-6 mb-2">
     <h2 class="text-lg font-semibold">{% translate "Schedule" %}</h2>
     {% if schedule_matches %}

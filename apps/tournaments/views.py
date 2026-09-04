@@ -11,6 +11,7 @@ from apps.matches.services import (
     ScheduleAlreadyGeneratedError,
     clear_group_schedule,
     clear_stage_bracket,
+    compute_group_standings,
     generate_group_schedule,
     generate_stage_bracket,
 )
@@ -319,6 +320,7 @@ class GroupDetailView(DetailView):
         context["schedule_matches"] = self.object.matches.select_related(
             "participant_a", "participant_b"
         ).order_by("round_number", "pk")
+        context["standings"] = compute_group_standings(self.object)
         return context
 
 
