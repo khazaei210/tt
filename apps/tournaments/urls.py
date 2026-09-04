@@ -5,6 +5,7 @@ from . import views
 app_name = "tournaments"
 
 urlpatterns = [
+    path("dashboard/", views.manager_dashboard, name="manager_dashboard"),
     path("", views.TournamentListView.as_view(), name="list"),
     path("add/", views.TournamentCreateView.as_view(), name="add"),
     path("<int:pk>/", views.TournamentDetailView.as_view(), name="detail"),
