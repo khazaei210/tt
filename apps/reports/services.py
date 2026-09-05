@@ -167,3 +167,26 @@ def build_player_statistics(player) -> PlayerStatistics:
             stats.recent_matches.append(RecentMatchRow(match=match, opponent=opponent, won=won))
 
     return stats
+
+
+def iter_match_result_rows(competition):
+    """One row per Match in a competition, for the results CSV export —
+    round, where it was played, both sides, status, winner, and a
+    human-readable set-by-set score summary (e.g. "11-8, 9-11, 11-7")."""
+    matches = (
+        competition.matches.select_related("stage", "group", "participant_a", "participant_b", "winner")
+        .prefetch_related("sets")
+        .order_by("stage__order", "group__order", "round_number", "bracket_slot", "pk")
+    )
+    for match in matches:
+        sets_summary = ", ".join(f"{s.participant_a_score}-{s.participant_b_score}" for s in match.sets.all())
+        yield [
+            match.stage.name,
+            match.group.name if match.group else "",
+            match.round_number,
+            match.participant_a.display_name if match.participant_a else "",
+            match.participant_b.display_name if match.participant_b else "",
+            match.get_status_display(),
+            match.winner.display_name if match.winner else "",
+            sets_summary,
+        ]

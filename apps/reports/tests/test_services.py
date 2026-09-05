@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from apps.matches.services import generate_stage_bracket, record_set_score
 from apps.players.models import DoublesPair, Player
-from apps.reports.services import build_player_statistics, build_tournament_report
+from apps.reports.services import build_player_statistics, build_tournament_report, iter_match_result_rows
 from apps.tournaments.models import Competition, Participant, ParticipantType, Stage, StageFormat, Tournament
 
 
@@ -155,3 +155,48 @@ class TournamentReportTests(TestCase):
         self.assertEqual(len(row.placements), 4)
         self.assertEqual(row.placements[0][0], 1)
         self.assertEqual(row.placements[0][1], participants[0])
+
+
+class MatchResultRowsTests(TestCase):
+    def setUp(self):
+        self.tournament = Tournament.objects.create(name="Test Open")
+        self.competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
+        )
+        self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
+        self.player_a = Player.objects.create(first_name="Row", last_name="A", gender="M")
+        self.player_b = Player.objects.create(first_name="Row", last_name="B", gender="M")
+        self.participant_a = Participant.objects.create(
+            competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_a
+        )
+        self.participant_b = Participant.objects.create(
+            competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_b
+        )
+
+    def test_row_includes_participants_status_winner_and_set_scores(self):
+        from apps.matches.models import Match
+        from apps.tournaments.models import CompetitionRule
+
+        CompetitionRule.objects.create(competition=self.competition, best_of_sets=3, points_per_set=11, win_by=2)
+
+        match = Match.objects.create(
+            competition=self.competition, stage=self.stage, round_number=1,
+            participant_a=self.participant_a, participant_b=self.participant_b,
+        )
+        record_set_score(match, 1, 11, 8)
+        record_set_score(match, 2, 9, 11)
+        record_set_score(match, 3, 11, 7)
+
+        rows = list(iter_match_result_rows(self.competition))
+        self.assertEqual(len(rows), 1)
+        stage_name, group_name, round_number, a_name, b_name, status, winner_name, sets_summary = rows[0]
+        self.assertEqual(stage_name, "Groups")
+        self.assertEqual(group_name, "")
+        self.assertEqual(round_number, 1)
+        self.assertEqual(a_name, "Row A")
+        self.assertEqual(b_name, "Row B")
+        self.assertEqual(winner_name, "Row A")
+        self.assertEqual(sets_summary, "11-8, 9-11, 11-7")
+
+    def test_no_matches_yields_no_rows(self):
+        self.assertEqual(list(iter_match_result_rows(self.competition)), [])

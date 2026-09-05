@@ -26,6 +26,7 @@ urlpatterns = [
     path("stages/<int:stage_pk>/groups/add/", views.GroupCreateView.as_view(), name="group_add"),
     path("groups/<int:pk>/delete/", views.group_delete, name="group_delete"),
     path("groups/<int:pk>/", views.GroupDetailView.as_view(), name="group_detail"),
+    path("groups/<int:pk>/standings.csv", views.group_standings_csv, name="group_standings_csv"),
     path("groups/<int:pk>/participants/add/", views.group_participant_add, name="group_participant_add"),
     path(
         "groups/<int:pk>/participants/<int:group_participant_id>/remove/",

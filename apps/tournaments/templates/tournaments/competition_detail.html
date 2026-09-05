@@ -24,6 +24,9 @@
                 <button type="submit" class="btn btn-outline btn-sm">{% translate "Award ranking points" %}</button>
             </form>
         {% endif %}
+        {% if stages %}
+            <a href="{% url 'reports:competition_results_csv' competition.pk %}" class="btn btn-outline">{% translate "Export results CSV" %}</a>
+        {% endif %}
         {% if can_manage %}
             <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
         {% endif %}
