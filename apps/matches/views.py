@@ -47,7 +47,6 @@ def _scoreboard_context(request, match):
         "rule": rule,
         "sets": sets,
         "next_set_number": next_set_number if next_set_number <= rule.best_of_sets else None,
-        "set_form": SetScoreForm(),
         "can_score": can_score_matches(request.user, match.competition.tournament),
         "is_decided": match.status in TERMINAL_MATCH_STATUSES,
         "special_results": SPECIAL_RESULTS,

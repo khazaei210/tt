@@ -159,6 +159,16 @@
                 event.detail.headers['X-CSRFToken'] = match[1];
             }
         });
+
+        // Increments/decrements the number input next to a +/- score
+        // button (matches/_scoreboard.html's live-entry panel) — purely
+        // client-side so tapping through a set's score is instant and
+        // doesn't need a server round trip until "Save" is pressed.
+        function ttStep(button, delta) {
+            const input = button.parentElement.querySelector('input[type="number"]');
+            const next = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
+            input.value = next;
+        }
     </script>
     {% block extra_body %}{% endblock %}
 </body>

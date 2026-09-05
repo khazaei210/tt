@@ -71,6 +71,39 @@
     </div>
     {% endif %}
 
+    {% if next_set_number and can_score %}
+    <div class="bg-base-100 rounded-box shadow p-4 mb-4">
+        <div class="text-sm text-base-content/60 mb-3 text-center">
+            {% blocktranslate with n=next_set_number %}Enter set {{ n }}{% endblocktranslate %}
+        </div>
+        <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="set_number" value="{{ next_set_number }}">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center">
+                    <div class="font-medium mb-2 truncate">{{ match.participant_a.display_name|default:"A" }}</div>
+                    <div class="flex items-center justify-center gap-2">
+                        <button type="button" class="btn btn-circle btn-lg" aria-label="{% translate 'Decrease' %}" onclick="ttStep(this, -1)">−</button>
+                        <input type="number" name="participant_a_score" value="0" min="0" inputmode="numeric"
+                               class="input input-bordered input-lg w-20 text-center text-3xl font-bold">
+                        <button type="button" class="btn btn-circle btn-lg btn-primary" aria-label="{% translate 'Increase' %}" onclick="ttStep(this, 1)">+</button>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="font-medium mb-2 truncate">{{ match.participant_b.display_name|default:"B" }}</div>
+                    <div class="flex items-center justify-center gap-2">
+                        <button type="button" class="btn btn-circle btn-lg" aria-label="{% translate 'Decrease' %}" onclick="ttStep(this, -1)">−</button>
+                        <input type="number" name="participant_b_score" value="0" min="0" inputmode="numeric"
+                               class="input input-bordered input-lg w-20 text-center text-3xl font-bold">
+                        <button type="button" class="btn btn-circle btn-lg btn-primary" aria-label="{% translate 'Increase' %}" onclick="ttStep(this, 1)">+</button>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-full mt-4">{% translate "Save set" %}</button>
+        </form>
+    </div>
+    {% endif %}
+
     <div class="overflow-x-auto bg-base-100 rounded-box shadow">
         <table class="table">
             <thead>
@@ -90,11 +123,11 @@
                         <input type="hidden" name="set_number" value="{{ set.set_number }}">
                         {% if is_decided %}<input type="hidden" name="allow_correction" value="1">{% endif %}
                         <td>{{ set.set_number }}</td>
-                        <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered w-20 text-center"></td>
-                        <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered w-20 text-center"></td>
+                        <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
+                        <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
                         <td class="text-right space-x-2 rtl:space-x-reverse">
-                            <button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button>
-                            <button type="button" class="btn btn-xs btn-error btn-outline"
+                            <button type="submit" class="btn btn-sm btn-primary">{% translate "Save" %}</button>
+                            <button type="button" class="btn btn-sm btn-error btn-outline"
                                     hx-post="{% url 'matches:set_delete' match.pk set.set_number %}"
                                     hx-target="#scoreboard" hx-swap="outerHTML"
                                     {% if is_decided %}hx-vals='{"allow_correction": "1"}'{% endif %}
@@ -112,18 +145,6 @@
                 {% empty %}
                     <tr><td colspan="4" class="text-center text-base-content/60 py-6">{% translate "No sets recorded yet." %}</td></tr>
                 {% endfor %}
-                {% if next_set_number and can_score %}
-                <tr>
-                    <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML" class="contents">
-                        {% csrf_token %}
-                        <input type="hidden" name="set_number" value="{{ next_set_number }}">
-                        <td>{{ next_set_number }}</td>
-                        <td>{{ set_form.participant_a_score }}</td>
-                        <td>{{ set_form.participant_b_score }}</td>
-                        <td class="text-right"><button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button></td>
-                    </form>
-                </tr>
-                {% endif %}
             </tbody>
         </table>
     </div>

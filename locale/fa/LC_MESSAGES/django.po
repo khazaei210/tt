@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-05 19:22+0000\n"
+"POT-Creation-Date: 2026-09-05 19:54+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -194,7 +194,7 @@ msgid "Score B"
 msgstr "امتیاز ب"
 
 #: apps/matches/models.py:140
-#: apps/matches/templates/matches/_scoreboard.html:78
+#: apps/matches/templates/matches/_scoreboard.html:111
 msgid "Set"
 msgstr "ست"
 
@@ -404,7 +404,29 @@ msgstr "تاریخ شروع"
 msgid "wins"
 msgstr ""
 
-#: apps/matches/templates/matches/_scoreboard.html:81
+#: apps/matches/templates/matches/_scoreboard.html:77
+#, fuzzy, python-format
+#| msgid "Round %(n)s"
+msgid "Enter set %(n)s"
+msgstr "دور %(n)s"
+
+#: apps/matches/templates/matches/_scoreboard.html:86
+#: apps/matches/templates/matches/_scoreboard.html:95
+msgid "Decrease"
+msgstr ""
+
+#: apps/matches/templates/matches/_scoreboard.html:89
+#: apps/matches/templates/matches/_scoreboard.html:98
+msgid "Increase"
+msgstr ""
+
+#: apps/matches/templates/matches/_scoreboard.html:102
+#, fuzzy
+#| msgid "Save"
+msgid "Save set"
+msgstr "ذخیره"
+
+#: apps/matches/templates/matches/_scoreboard.html:114
 #: apps/players/templates/players/doubles_pair_list.html:21
 #: apps/players/templates/players/player_list.html:36
 #: apps/teams/templates/teams/_roster_panel.html:9
@@ -418,8 +440,7 @@ msgstr ""
 msgid "Actions"
 msgstr "عملیات"
 
-#: apps/matches/templates/matches/_scoreboard.html:96
-#: apps/matches/templates/matches/_scoreboard.html:123
+#: apps/matches/templates/matches/_scoreboard.html:129
 #: apps/players/templates/players/doubles_pair_form.html:30
 #: apps/players/templates/players/player_form.html:30
 #: apps/teams/templates/teams/team_form.html:27
@@ -431,11 +452,11 @@ msgstr "عملیات"
 msgid "Save"
 msgstr "ذخیره"
 
-#: apps/matches/templates/matches/_scoreboard.html:101
+#: apps/matches/templates/matches/_scoreboard.html:134
 msgid "Delete this set?"
 msgstr "این ست حذف شود؟"
 
-#: apps/matches/templates/matches/_scoreboard.html:102
+#: apps/matches/templates/matches/_scoreboard.html:135
 #: apps/players/templates/players/_doubles_pair_rows.html:14
 #: apps/players/templates/players/_player_rows.html:24
 #: apps/teams/templates/teams/_team_rows.html:24
@@ -446,15 +467,15 @@ msgstr "این ست حذف شود؟"
 msgid "Delete"
 msgstr "حذف"
 
-#: apps/matches/templates/matches/_scoreboard.html:113
+#: apps/matches/templates/matches/_scoreboard.html:146
 msgid "No sets recorded yet."
 msgstr "هنوز ستی ثبت نشده است."
 
-#: apps/matches/templates/matches/_scoreboard.html:133
+#: apps/matches/templates/matches/_scoreboard.html:154
 msgid "Correction history"
 msgstr ""
 
-#: apps/matches/templates/matches/_scoreboard.html:138
+#: apps/matches/templates/matches/_scoreboard.html:159
 #, fuzzy, python-format
 #| msgid "Round %(n)s"
 msgid "set %(n)s"
@@ -553,27 +574,27 @@ msgstr ""
 msgid "Record a default for the chosen side?"
 msgstr ""
 
-#: apps/matches/views.py:92
+#: apps/matches/views.py:91
 msgid "Please enter a valid score for both sides."
 msgstr "لطفاً امتیاز معتبری برای هر دو طرف وارد کنید."
 
-#: apps/matches/views.py:147
+#: apps/matches/views.py:146
 #, fuzzy
 #| msgid "No sets recorded yet."
 msgid "Walkover recorded."
 msgstr "هنوز ستی ثبت نشده است."
 
-#: apps/matches/views.py:152
+#: apps/matches/views.py:151
 msgid "Retirement recorded."
 msgstr ""
 
-#: apps/matches/views.py:157
+#: apps/matches/views.py:156
 #, fuzzy
 #| msgid "No sets recorded yet."
 msgid "Default recorded."
 msgstr "هنوز ستی ثبت نشده است."
 
-#: apps/matches/views.py:166
+#: apps/matches/views.py:165
 msgid "Choose which participant won."
 msgstr ""
 
