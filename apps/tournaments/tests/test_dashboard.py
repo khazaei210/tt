@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.matches.models import Match, MatchStatus
+from apps.matches.models import Match, MatchSet, MatchStatus
 from apps.players.models import Player
 from apps.tournaments.models import (
     Competition,
@@ -121,6 +121,19 @@ class ManagerDashboardServiceTests(TestCase):
         self.assertEqual(row.total_matches, 3)
         self.assertEqual(row.completed_matches, 1)
         self.assertEqual(row.progress_percent, 33)
+
+    def test_live_match_with_no_sets_has_no_score_summary(self):
+        dashboard = build_manager_dashboard(self.manager)
+        live = dashboard.live_matches[0]
+        self.assertIsNone(live.live_score_summary)
+
+    def test_live_match_score_summary_reflects_recorded_sets(self):
+        MatchSet.objects.create(match=self.live_match, set_number=1, participant_a_score=11, participant_b_score=8)
+        MatchSet.objects.create(match=self.live_match, set_number=2, participant_a_score=6, participant_b_score=11)
+        dashboard = build_manager_dashboard(self.manager)
+        live = dashboard.live_matches[0]
+        self.assertEqual(live.live_score_summary.sets_score, "1-1")
+        self.assertEqual(live.live_score_summary.last_set_score, "6-11")
 
     def test_bye_participants_excluded_from_participant_count(self):
         Participant.objects.create(competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, is_bye=True)

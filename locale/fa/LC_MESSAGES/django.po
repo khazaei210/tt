@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-05 20:01+0000\n"
+"POT-Creation-Date: 2026-09-05 20:10+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -93,8 +93,8 @@ msgid "Ready"
 msgstr "آماده"
 
 #: apps/matches/models.py:9
-#: apps/matches/templates/matches/scorer_dashboard.html:35
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:81
+#: apps/matches/templates/matches/scorer_dashboard.html:43
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:89
 msgid "Live"
 msgstr "در حال برگزاری"
 
@@ -257,54 +257,54 @@ msgstr "امتیاز برنده نمی‌تواند بیشتر از %(cap)s با
 msgid "The winning margin must be at least %(margin)s points."
 msgstr "اختلاف امتیاز برنده باید حداقل %(margin)s باشد."
 
-#: apps/matches/services.py:60
+#: apps/matches/services.py:62
 msgid "This group already has a generated schedule."
 msgstr "این گروه از قبل دارای برنامه مسابقات تولیدشده است."
 
-#: apps/matches/services.py:64
+#: apps/matches/services.py:66
 msgid "A group needs at least two participants to generate a schedule."
 msgstr "برای تولید برنامه مسابقات، گروه باید حداقل دو شرکت‌کننده داشته باشد."
 
-#: apps/matches/services.py:111
+#: apps/matches/services.py:113
 msgid "This stage already has a generated bracket."
 msgstr "این مرحله از قبل دارای جدول تولیدشده است."
 
-#: apps/matches/services.py:119
+#: apps/matches/services.py:121
 msgid "A knockout stage needs at least two participants to generate a bracket."
 msgstr "برای تولید جدول حذفی، مرحله باید حداقل دو شرکت‌کننده داشته باشد."
 
-#: apps/matches/services.py:179
+#: apps/matches/services.py:181
 msgid "Only a round-robin stage can advance qualifiers to a knockout stage."
 msgstr ""
 
-#: apps/matches/services.py:181
+#: apps/matches/services.py:183
 msgid "Set how many qualifiers advance per group before advancing."
 msgstr ""
 
-#: apps/matches/services.py:185
+#: apps/matches/services.py:187
 msgid "This stage has no groups to qualify participants from."
 msgstr ""
 
-#: apps/matches/services.py:187
+#: apps/matches/services.py:189
 msgid ""
 "Every match in this stage must be completed before advancing qualifiers."
 msgstr ""
 
-#: apps/matches/services.py:193
+#: apps/matches/services.py:195
 msgid "This competition has no knockout stage immediately after this one."
 msgstr ""
 
-#: apps/matches/services.py:232
+#: apps/matches/services.py:234
 #, fuzzy
 #| msgid "No sets recorded yet."
 msgid "Not yet decided"
 msgstr "هنوز ستی ثبت نشده است."
 
-#: apps/matches/services.py:234
+#: apps/matches/services.py:236
 msgid "winner"
 msgstr ""
 
-#: apps/matches/services.py:255
+#: apps/matches/services.py:257
 #, fuzzy
 #| msgid ""
 #| "This match is already completed. Explicitly correct it to change a score."
@@ -313,12 +313,12 @@ msgstr ""
 "این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌صورت ویژه "
 "اصلاح کنید."
 
-#: apps/matches/services.py:260
+#: apps/matches/services.py:262
 #, python-format
 msgid "Set number must be between 1 and %(n)s."
 msgstr "شماره ست باید بین ۱ و %(n)s باشد."
 
-#: apps/matches/services.py:311
+#: apps/matches/services.py:313
 #, fuzzy
 #| msgid ""
 #| "This match is already completed. Explicitly correct it to change a score."
@@ -329,17 +329,17 @@ msgstr ""
 "این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌صورت ویژه "
 "اصلاح کنید."
 
-#: apps/matches/services.py:418
+#: apps/matches/services.py:420
 #, fuzzy
 #| msgid "This pair already exists."
 msgid "This match is already decided."
 msgstr "این زوج قبلاً ثبت شده است."
 
-#: apps/matches/services.py:429
+#: apps/matches/services.py:431
 msgid "The winner must be one of this match's two participants."
 msgstr ""
 
-#: apps/matches/services.py:437
+#: apps/matches/services.py:439
 #, fuzzy
 #| msgid ""
 #| "This match is already completed. Explicitly correct it to change a score."
@@ -349,7 +349,7 @@ msgstr ""
 "این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌صورت ویژه "
 "اصلاح کنید."
 
-#: apps/matches/services.py:498
+#: apps/matches/services.py:500
 msgid "role must be \"referee\" or \"scorekeeper\"."
 msgstr ""
 
@@ -490,12 +490,12 @@ msgstr "دور %(n)s"
 #: apps/matches/templates/matches/match_detail.html:4
 #: apps/matches/templates/matches/match_detail.html:21
 #: apps/matches/templates/matches/scorer_dashboard.html:29
-#: apps/matches/templates/matches/scorer_dashboard.html:57
-#: apps/matches/templates/matches/scorer_dashboard.html:82
+#: apps/matches/templates/matches/scorer_dashboard.html:65
+#: apps/matches/templates/matches/scorer_dashboard.html:90
 #: apps/tournaments/templates/tournaments/group_detail.html:85
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:75
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:105
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:130
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:113
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:138
 #: apps/tournaments/templates/tournaments/stage_detail.html:87
 msgid "vs"
 msgstr "در برابر"
@@ -505,10 +505,10 @@ msgid "Match"
 msgstr "بازی"
 
 #: apps/matches/templates/matches/match_detail.html:16
-#: apps/matches/templates/matches/scorer_dashboard.html:61
-#: apps/matches/templates/matches/scorer_dashboard.html:86
+#: apps/matches/templates/matches/scorer_dashboard.html:69
+#: apps/matches/templates/matches/scorer_dashboard.html:94
 #: apps/tournaments/templates/tournaments/group_detail.html:79
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:109
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:117
 #: apps/tournaments/views.py:336
 #, python-format
 msgid "Round %(n)s"
@@ -538,27 +538,41 @@ msgstr ""
 msgid "Live now"
 msgstr "در حال برگزاری"
 
-#: apps/matches/templates/matches/scorer_dashboard.html:42
+#: apps/matches/templates/matches/scorer_dashboard.html:37
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:83
+#, fuzzy
+#| msgid "Save"
+msgid "last set"
+msgstr "ذخیره"
+
+#: apps/matches/templates/matches/scorer_dashboard.html:39
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:85
+#, fuzzy
+#| msgid "No stages yet."
+msgid "No sets yet"
+msgstr "هنوز مرحله‌ای ثبت نشده است."
+
+#: apps/matches/templates/matches/scorer_dashboard.html:50
 msgid "No live matches assigned to you right now."
 msgstr ""
 
-#: apps/matches/templates/matches/scorer_dashboard.html:48
+#: apps/matches/templates/matches/scorer_dashboard.html:56
 #, fuzzy
 #| msgid "Upcoming"
 msgid "Your pending matches"
 msgstr "پیش رو"
 
-#: apps/matches/templates/matches/scorer_dashboard.html:67
+#: apps/matches/templates/matches/scorer_dashboard.html:75
 #, fuzzy
 #| msgid "No participants assigned yet."
 msgid "No pending matches assigned to you."
 msgstr "هنوز شرکت‌کننده‌ای به این گروه اختصاص نیافته است."
 
-#: apps/matches/templates/matches/scorer_dashboard.html:73
+#: apps/matches/templates/matches/scorer_dashboard.html:81
 msgid "Available to pick up"
 msgstr ""
 
-#: apps/matches/templates/matches/scorer_dashboard.html:92
+#: apps/matches/templates/matches/scorer_dashboard.html:100
 msgid "No unassigned matches waiting."
 msgstr ""
 
@@ -1585,7 +1599,7 @@ msgid "Live matches"
 msgstr ""
 
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:31
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:96
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:104
 #, fuzzy
 #| msgid "Upcoming"
 msgid "Upcoming matches"
@@ -1613,19 +1627,19 @@ msgstr ""
 msgid "No matches scheduled yet."
 msgstr "هنوز برنامه مسابقاتی تولید نشده است."
 
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:88
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:96
 msgid "No live matches right now."
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:115
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:123
 msgid "No upcoming matches."
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:121
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:129
 msgid "Recently completed"
 msgstr ""
 
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:142
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:150
 #, fuzzy
 #| msgid "No competitions yet."
 msgid "No completed matches yet."
