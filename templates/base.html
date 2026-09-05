@@ -169,6 +169,44 @@
             const next = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
             input.value = next;
         }
+
+        // Match clock: any element with data-match-clock="<ISO start time>"
+        // shows live-ticking elapsed time; adding data-match-clock-end
+        // shows a fixed duration instead (no ticking). Re-scans the whole
+        // document on every htmx swap rather than tracking specific
+        // elements, since swapped-in content (matches/_scoreboard.html,
+        // the scorer dashboard) has no other hook to announce new clocks —
+        // cheap given there are only ever a handful of these per page.
+        window.__ttClockIntervals = [];
+
+        function ttFormatDuration(ms) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const pad = (n) => String(n).padStart(2, '0');
+            return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function ttInitMatchClocks() {
+            window.__ttClockIntervals.forEach(clearInterval);
+            window.__ttClockIntervals = [];
+            document.querySelectorAll('[data-match-clock]').forEach((el) => {
+                const start = new Date(el.dataset.matchClock).getTime();
+                const endAttr = el.dataset.matchClockEnd;
+                const end = endAttr ? new Date(endAttr).getTime() : null;
+                const tick = () => {
+                    el.textContent = ttFormatDuration((end !== null ? end : Date.now()) - start);
+                };
+                tick();
+                if (end === null) {
+                    window.__ttClockIntervals.push(setInterval(tick, 1000));
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', ttInitMatchClocks);
+        document.body.addEventListener('htmx:afterSwap', ttInitMatchClocks);
     </script>
     {% block extra_body %}{% endblock %}
 </body>

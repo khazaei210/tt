@@ -4,6 +4,14 @@
         <span class="badge {% if match.status == 'live' %}badge-error{% elif is_decided %}badge-success{% else %}badge-outline{% endif %}">
             {{ match.get_status_display }}
         </span>
+        {% if match.status == "live" and match.start_time %}
+            <span class="font-mono text-sm" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}"></span>
+        {% elif match.start_time and match.end_time %}
+            <span class="text-sm text-base-content/60">
+                {% translate "Duration:" %}
+                <span class="font-mono" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}" data-match-clock-end="{{ match.end_time|date:'c' }}"></span>
+            </span>
+        {% endif %}
         {% if match.winner %}
             <span class="text-sm text-base-content/60">{% blocktranslate with winner=match.winner.display_name %}Winner: {{ winner }}{% endblocktranslate %}</span>
         {% endif %}
