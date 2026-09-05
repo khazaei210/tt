@@ -131,3 +131,45 @@ class MatchSet(models.Model):
 
     def __str__(self):
         return f"{_('Set')} {self.set_number}: {self.participant_a_score}-{self.participant_b_score}"
+
+
+class MatchCorrectionAction(models.TextChoices):
+    SET_SCORE_CHANGED = "set_score_changed", _("Set score changed")
+    SET_SCORE_DELETED = "set_score_deleted", _("Set score deleted")
+    RESULT_CORRECTED = "result_corrected", _("Result corrected")
+
+
+class MatchCorrection(models.Model):
+    """An audit trail entry for a change to a value that was already
+    recorded — as opposed to normal progress (entering the next set,
+    reaching a first-time result).
+
+    CLAUDE.md section 33: completed results aren't silently overwritten,
+    and corrections should stay traceable. previous_value/new_value are
+    short human-readable summaries (e.g. "11-8" or "Walkover — winner:
+    Ali Rezaei") rather than a generic structured diff — enough to show
+    what changed on the match page without a bespoke schema per action
+    type.
+    """
+
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="corrections")
+    action = models.CharField(_("Action"), max_length=30, choices=MatchCorrectionAction.choices)
+    set_number = models.PositiveSmallIntegerField(_("Set number"), null=True, blank=True)
+    previous_value = models.CharField(_("Previous value"), max_length=200)
+    new_value = models.CharField(_("New value"), max_length=200, blank=True)
+    performed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="match_corrections",
+        verbose_name=_("Performed by"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("Match correction")
+
+    def __str__(self):
+        return f"{self.match} — {self.get_action_display()}: {self.previous_value} → {self.new_value}"

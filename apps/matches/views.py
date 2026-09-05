@@ -51,6 +51,7 @@ def _scoreboard_context(request, match):
         "can_score": can_score_matches(request.user, match.competition.tournament),
         "is_decided": match.status in TERMINAL_MATCH_STATUSES,
         "special_results": SPECIAL_RESULTS,
+        "corrections": match.corrections.select_related("performed_by")[:20],
     }
 
 
@@ -83,6 +84,7 @@ def match_set_save(request, pk):
                 form.cleaned_data["participant_a_score"],
                 form.cleaned_data["participant_b_score"],
                 allow_correction=request.POST.get("allow_correction") == "1",
+                performed_by=request.user,
             )
         except (ScoreValidationError, MatchAlreadyCompletedError, InvalidSetNumberError) as exc:
             messages.error(request, str(exc))
@@ -100,7 +102,15 @@ def match_set_delete(request, pk, set_number):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     match = get_object_or_404(Match, pk=pk)
-    delete_set_score(match, set_number)
+    try:
+        delete_set_score(
+            match,
+            set_number,
+            allow_correction=request.POST.get("allow_correction") == "1",
+            performed_by=request.user,
+        )
+    except MatchAlreadyCompletedError as exc:
+        messages.error(request, str(exc))
 
     if request.htmx:
         match.refresh_from_db()
@@ -156,7 +166,12 @@ def _record_special_result(request, pk, record_func, success_message):
         messages.error(request, _("Choose which participant won."))
     else:
         try:
-            record_func(match, winner_id, allow_correction=request.POST.get("allow_correction") == "1")
+            record_func(
+                match,
+                winner_id,
+                allow_correction=request.POST.get("allow_correction") == "1",
+                performed_by=request.user,
+            )
         except (InvalidWinnerError, MatchAlreadyCompletedError) as exc:
             messages.error(request, str(exc))
         else:

@@ -125,11 +125,19 @@ class DeleteSetScoreTests(ScoreServiceTestCase):
         self.match.refresh_from_db()
         self.assertEqual(self.match.status, MatchStatus.COMPLETED)
 
-        delete_set_score(self.match, 3)
+        delete_set_score(self.match, 3, allow_correction=True)
         self.match.refresh_from_db()
         self.assertEqual(self.match.status, MatchStatus.LIVE)
         self.assertIsNone(self.match.winner_id)
         self.assertEqual(self.match.sets.count(), 2)
+
+    def test_deleting_from_a_decided_match_requires_allow_correction(self):
+        record_set_score(self.match, 1, 11, 5)
+        record_set_score(self.match, 2, 11, 8)
+        record_set_score(self.match, 3, 11, 9)
+        with self.assertRaises(MatchAlreadyCompletedError):
+            delete_set_score(self.match, 3)
+        self.assertEqual(self.match.sets.count(), 3)
 
 
 class KnockoutPropagationTests(TestCase):
@@ -199,6 +207,6 @@ class KnockoutPropagationTests(TestCase):
         final.refresh_from_db()
         self.assertIsNotNone(final.participant_a_id)
 
-        delete_set_score(semis[0], 2)  # back to 1-0, no longer decided (best of 3 needs 2)
+        delete_set_score(semis[0], 2, allow_correction=True)  # back to 1-0, no longer decided (best of 3 needs 2)
         final.refresh_from_db()
         self.assertIsNone(final.participant_a_id)

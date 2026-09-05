@@ -7,7 +7,7 @@ from apps.tournaments.services.knockout import generate_knockout_bracket
 from apps.tournaments.services.round_robin import generate_round_robin
 from apps.tournaments.services.standings import MatchRecord, compute_standings
 
-from .models import Match, MatchSet, MatchStatus, TERMINAL_MATCH_STATUSES
+from .models import Match, MatchCorrection, MatchCorrectionAction, MatchSet, MatchStatus, TERMINAL_MATCH_STATUSES
 from .scoring import compute_match_result, validate_set_score
 
 
@@ -224,16 +224,33 @@ def _points_to_win_for_set(rule, set_number):
     return rule.points_per_set
 
 
+def _describe_result(match):
+    """Short human-readable summary of a match's decided state, for
+    MatchCorrection's previous_value/new_value (CLAUDE.md section 33: keep
+    corrections traceable without inventing a bespoke structured diff)."""
+    if match.status not in TERMINAL_MATCH_STATUSES:
+        return str(_("Not yet decided"))
+    winner_name = match.winner.display_name if match.winner_id else "—"
+    return f"{match.get_status_display()} — {_('winner')}: {winner_name}"
+
+
 @transaction.atomic
-def record_set_score(match, set_number, participant_a_score, participant_b_score, *, allow_correction=False):
+def record_set_score(
+    match, set_number, participant_a_score, participant_b_score, *, allow_correction=False, performed_by=None
+):
     """Validate and persist one set's score, then refresh the match result.
 
     Raises MatchAlreadyCompletedError if the match is already decided and
     allow_correction wasn't explicitly passed (CLAUDE.md: completed
     matches must not be silently overwritten) and InvalidSetNumberError if
     set_number is out of range for the competition's best-of-sets format.
+
+    Overwriting an already-recorded set's numbers, or correcting a decided
+    match, logs a MatchCorrection (performed_by is who did it, for the
+    audit trail — CLAUDE.md section 33).
     """
-    if match.status in TERMINAL_MATCH_STATUSES and not allow_correction:
+    was_terminal = match.status in TERMINAL_MATCH_STATUSES
+    if was_terminal and not allow_correction:
         raise MatchAlreadyCompletedError(
             _("This match is already decided. Explicitly correct it to change a score.")
         )
@@ -247,6 +264,9 @@ def record_set_score(match, set_number, participant_a_score, participant_b_score
         participant_a_score, participant_b_score, points_to_win=points_to_win, win_by=rule.win_by, cap_at=rule.cap_at
     )
 
+    previous_result = _describe_result(match) if was_terminal else None
+    existing_set = match.sets.filter(set_number=set_number).first()
+
     MatchSet.objects.update_or_create(
         match=match,
         set_number=set_number,
@@ -254,12 +274,68 @@ def record_set_score(match, set_number, participant_a_score, participant_b_score
     )
     _refresh_match_result(match, rule)
 
+    if existing_set is not None and (
+        existing_set.participant_a_score != participant_a_score
+        or existing_set.participant_b_score != participant_b_score
+    ):
+        MatchCorrection.objects.create(
+            match=match,
+            action=MatchCorrectionAction.SET_SCORE_CHANGED,
+            set_number=set_number,
+            previous_value=f"{existing_set.participant_a_score}-{existing_set.participant_b_score}",
+            new_value=f"{participant_a_score}-{participant_b_score}",
+            performed_by=performed_by,
+        )
+    if was_terminal:
+        MatchCorrection.objects.create(
+            match=match,
+            action=MatchCorrectionAction.RESULT_CORRECTED,
+            previous_value=previous_result,
+            new_value=_describe_result(match),
+            performed_by=performed_by,
+        )
+
 
 @transaction.atomic
-def delete_set_score(match, set_number):
-    match.sets.filter(set_number=set_number).delete()
+def delete_set_score(match, set_number, *, allow_correction=False, performed_by=None):
+    """Remove one set's recorded score and refresh the match result.
+
+    Raises MatchAlreadyCompletedError if the match is already decided and
+    allow_correction wasn't explicitly passed — deleting a recorded score
+    from a decided match is exactly the kind of silent overwrite CLAUDE.md
+    section 33 rules out, same as record_set_score's guard.
+    """
+    was_terminal = match.status in TERMINAL_MATCH_STATUSES
+    if was_terminal and not allow_correction:
+        raise MatchAlreadyCompletedError(
+            _("This match is already decided. Explicitly correct it to delete a recorded score.")
+        )
+
+    existing_set = match.sets.filter(set_number=set_number).first()
+    if existing_set is None:
+        return
+
+    previous_result = _describe_result(match) if was_terminal else None
+    existing_set.delete()
     rule = get_effective_rule(match.competition)
     _refresh_match_result(match, rule)
+
+    MatchCorrection.objects.create(
+        match=match,
+        action=MatchCorrectionAction.SET_SCORE_DELETED,
+        set_number=set_number,
+        previous_value=f"{existing_set.participant_a_score}-{existing_set.participant_b_score}",
+        new_value="",
+        performed_by=performed_by,
+    )
+    if was_terminal:
+        MatchCorrection.objects.create(
+            match=match,
+            action=MatchCorrectionAction.RESULT_CORRECTED,
+            previous_value=previous_result,
+            new_value=_describe_result(match),
+            performed_by=performed_by,
+        )
 
 
 def _refresh_match_result(match, rule):
@@ -354,35 +430,55 @@ def _validate_winner(match, winner_id):
 
 
 @transaction.atomic
-def _finalize_match(match, *, winner_id, status, allow_correction=False):
-    if match.status in TERMINAL_MATCH_STATUSES and not allow_correction:
+def _finalize_match(match, *, winner_id, status, allow_correction=False, performed_by=None):
+    was_terminal = match.status in TERMINAL_MATCH_STATUSES
+    if was_terminal and not allow_correction:
         raise MatchAlreadyCompletedError(
             _("This match is already decided. Explicitly correct it to change the result.")
         )
     _validate_winner(match, winner_id)
+    previous_result = _describe_result(match) if was_terminal else None
 
     match.winner_id = winner_id
     match.status = status
     match.end_time = match.end_time or timezone.now()
     match.save(update_fields=["winner", "status", "end_time"])
     _propagate_knockout_winner(match)
+
+    if was_terminal:
+        MatchCorrection.objects.create(
+            match=match,
+            action=MatchCorrectionAction.RESULT_CORRECTED,
+            previous_value=previous_result,
+            new_value=_describe_result(match),
+            performed_by=performed_by,
+        )
     return match
 
 
-def record_walkover(match, winner_id, *, allow_correction=False):
+def record_walkover(match, winner_id, *, allow_correction=False, performed_by=None):
     """The opponent didn't show up — winner_id advances with no sets played."""
-    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.WALKOVER, allow_correction=allow_correction)
+    return _finalize_match(
+        match, winner_id=winner_id, status=MatchStatus.WALKOVER, allow_correction=allow_correction,
+        performed_by=performed_by,
+    )
 
 
-def record_retirement(match, winner_id, *, allow_correction=False):
+def record_retirement(match, winner_id, *, allow_correction=False, performed_by=None):
     """A participant retired mid-match — winner_id wins; any sets already
     recorded are left in place as a record of how far the match got."""
-    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.RETIRED, allow_correction=allow_correction)
+    return _finalize_match(
+        match, winner_id=winner_id, status=MatchStatus.RETIRED, allow_correction=allow_correction,
+        performed_by=performed_by,
+    )
 
 
-def record_default(match, winner_id, *, allow_correction=False):
+def record_default(match, winner_id, *, allow_correction=False, performed_by=None):
     """A participant was disqualified/defaulted — winner_id wins."""
-    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.DEFAULT, allow_correction=allow_correction)
+    return _finalize_match(
+        match, winner_id=winner_id, status=MatchStatus.DEFAULT, allow_correction=allow_correction,
+        performed_by=performed_by,
+    )
 
 
 def claim_match(match, user, role):
