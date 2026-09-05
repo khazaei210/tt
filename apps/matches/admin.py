@@ -10,7 +10,8 @@ class MatchSetInline(admin.TabularInline):
 
 @admin.register(Match)
 class MatchAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "competition", "group", "round_number", "status", "winner")
+    list_display = ("__str__", "competition", "group", "round_number", "status", "winner", "referee", "scorekeeper")
     list_filter = ("status", "competition")
+    autocomplete_fields = ("referee", "scorekeeper")
     search_fields = ("participant_a__display_name", "participant_b__display_name")
     inlines = [MatchSetInline]
