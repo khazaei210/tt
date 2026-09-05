@@ -11,9 +11,19 @@
         <p class="text-base-content/60">
             <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="link">{{ competition.tournament.name }}</a>
             · {{ competition.get_participant_type_display }}
+            {% if competition.ranking_category %}
+                · <a href="{% url 'rankings:category_detail' competition.ranking_category.pk %}" class="link">{{ competition.ranking_category.name }} {% translate "ranking" %}</a>
+            {% endif %}
         </p>
     </div>
     <div class="flex gap-2">
+        {% if can_manage and can_award_ranking_points %}
+            <form method="post" action="{% url 'rankings:award_points' competition.pk %}"
+                  onsubmit="return confirm('{% translate "Award ranking points for this competition\'s final placements?" %}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-sm">{% translate "Award ranking points" %}</button>
+            </form>
+        {% endif %}
         {% if can_manage %}
             <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
         {% endif %}

@@ -26,6 +26,18 @@ class InvalidSetNumberError(Exception):
     pass
 
 
+class StageNotCompleteError(Exception):
+    pass
+
+
+class QualifiersNotConfiguredError(Exception):
+    pass
+
+
+class NoKnockoutStageError(Exception):
+    pass
+
+
 @transaction.atomic
 def generate_group_schedule(group, *, legs=1, seed=None):
     """Generate and persist a round-robin schedule for a Group.
@@ -76,23 +88,24 @@ def _get_or_create_bye_participant(competition):
 
 
 @transaction.atomic
-def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed=None):
+def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed=None, participant_ids=None):
     """Generate and persist a knockout bracket for a Stage.
 
-    Draws from every Participant in the stage's Competition (a knockout
-    stage that follows a group stage, drawing only the qualifiers, is a
-    tournament-progression feature for a later phase — for now a knockout
-    Stage uses the full competition participant pool, which is already the
-    correct behavior for the common case of a single-stage knockout
-    competition).
+    By default, draws from every Participant in the stage's Competition,
+    ordered by their competition-wide seed — the correct behavior for a
+    single-stage knockout competition. Pass an explicit participant_ids
+    (already in the desired seed order) to bracket a specific subset
+    instead — used by advance_to_next_stage() to bracket only a preceding
+    group stage's qualifiers, not the whole competition.
     """
     if stage.matches.exists():
         raise ScheduleAlreadyGeneratedError(_("This stage already has a generated bracket."))
 
-    participants_qs = stage.competition.participants.filter(is_bye=False).order_by(
-        F("seed").asc(nulls_last=True), "pk"
-    )
-    participant_ids = list(participants_qs.values_list("id", flat=True))
+    if participant_ids is None:
+        participants_qs = stage.competition.participants.filter(is_bye=False).order_by(
+            F("seed").asc(nulls_last=True), "pk"
+        )
+        participant_ids = list(participants_qs.values_list("id", flat=True))
     if len(participant_ids) < 2:
         raise NotEnoughParticipantsError(_("A knockout stage needs at least two participants to generate a bracket."))
 
@@ -133,6 +146,57 @@ def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed
 @transaction.atomic
 def clear_stage_bracket(stage):
     stage.matches.filter(group__isnull=True).delete()
+
+
+@transaction.atomic
+def advance_to_next_stage(source_stage):
+    """Take a completed round-robin stage's group qualifiers and bracket
+    them into its competition's next (knockout) stage.
+
+    Seeding interleaves by group rank (every group's winner first, then
+    every group's runner-up, and so on) rather than group order, so seed 1
+    and 2 are two different groups' winners — the standard "top seeds can't
+    meet early" property from generate_knockout_bracket's seed_positions()
+    only holds if seed order doesn't cluster group-mates together.
+
+    Raises StageNotCompleteError if any group still has unplayed matches,
+    QualifiersNotConfiguredError if source_stage.qualifiers_per_group isn't
+    set, and NoKnockoutStageError if the competition has no knockout stage
+    right after this one.
+    """
+    from apps.tournaments.models import StageFormat
+
+    if source_stage.stage_format != StageFormat.ROUND_ROBIN:
+        raise NoKnockoutStageError(_("Only a round-robin stage can advance qualifiers to a knockout stage."))
+    if not source_stage.qualifiers_per_group:
+        raise QualifiersNotConfiguredError(_("Set how many qualifiers advance per group before advancing."))
+
+    groups = list(source_stage.groups.order_by("order"))
+    if not groups:
+        raise NotEnoughParticipantsError(_("This stage has no groups to qualify participants from."))
+    if source_stage.matches.exclude(status=MatchStatus.COMPLETED).exists():
+        raise StageNotCompleteError(_("Every match in this stage must be completed before advancing qualifiers."))
+
+    next_stage = source_stage.competition.stages.filter(
+        order=source_stage.order + 1, stage_format=StageFormat.KNOCKOUT
+    ).first()
+    if next_stage is None:
+        raise NoKnockoutStageError(_("This competition has no knockout stage immediately after this one."))
+
+    per_group_qualifiers = [
+        [row["participant"].id for row in compute_group_standings(group)[: source_stage.qualifiers_per_group]]
+        for group in groups
+    ]
+    max_qualifiers = max((len(q) for q in per_group_qualifiers), default=0)
+    seeded_ids = [
+        participant_id
+        for rank_index in range(max_qualifiers)
+        for group_qualifiers in per_group_qualifiers
+        if rank_index < len(group_qualifiers)
+        for participant_id in [group_qualifiers[rank_index]]
+    ]
+
+    return generate_stage_bracket(next_stage, seeded=True, participant_ids=seeded_ids)
 
 
 def get_effective_rule(competition):

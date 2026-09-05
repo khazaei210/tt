@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ category.name }}{% endblock %}
+{% block page_title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <h1 class="text-2xl font-bold">{{ category.name }}</h1>
+    <a href="{% url 'rankings:category_list' %}" class="btn btn-ghost">{% translate "Back to rankings" %}</a>
+</div>
+
+{% if rankings %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-zebra">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{% translate "Player" %}</th>
+                <th class="text-center">{% translate "Points" %}</th>
+                <th class="text-center">{% translate "Change" %}</th>
+                <th class="text-center">{% translate "Tournaments" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ranking in rankings %}
+            <tr>
+                <td>{{ ranking.current_rank|default:"—" }}</td>
+                <td>{{ ranking.player.full_name }}</td>
+                <td class="text-center font-semibold">{{ ranking.points }}</td>
+                <td class="text-center">
+                    {% with change=ranking.rank_change %}
+                        {% if change is None or change == 0 %}
+                            <span class="text-base-content/40">—</span>
+                        {% elif change > 0 %}
+                            <span class="text-success">▲ {{ change }}</span>
+                        {% else %}
+                            <span class="text-error">▼ {{ change|cut:"-" }}</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td class="text-center">{{ ranking.tournaments_played }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-base-100 rounded-box shadow p-6 text-base-content/60">
+    {% translate "No players ranked yet in this category." %}
+</div>
+{% endif %}
+{% endblock %}

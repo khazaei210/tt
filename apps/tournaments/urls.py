@@ -22,6 +22,7 @@ urlpatterns = [
     path("stages/<int:pk>/delete/", views.stage_delete, name="stage_delete"),
     path("stages/<int:pk>/bracket/generate/", views.stage_bracket_generate, name="stage_bracket_generate"),
     path("stages/<int:pk>/bracket/clear/", views.stage_bracket_clear, name="stage_bracket_clear"),
+    path("stages/<int:pk>/advance/", views.stage_advance, name="stage_advance"),
     path("stages/<int:stage_pk>/groups/add/", views.GroupCreateView.as_view(), name="group_add"),
     path("groups/<int:pk>/delete/", views.group_delete, name="group_delete"),
     path("groups/<int:pk>/", views.GroupDetailView.as_view(), name="group_detail"),

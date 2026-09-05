@@ -75,6 +75,15 @@ class Competition(models.Model):
     name = models.CharField(_("Name"), max_length=200)
     participant_type = models.CharField(_("Participant type"), max_length=20, choices=ParticipantType.choices)
     is_active = models.BooleanField(_("Active"), default=True)
+    ranking_category = models.ForeignKey(
+        "rankings.RankingCategory",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="competitions",
+        verbose_name=_("Ranking category"),
+        help_text=_("If set, final placements in this competition can award points to this global ranking."),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -125,6 +134,15 @@ class Stage(models.Model):
     name = models.CharField(_("Name"), max_length=150)
     stage_format = models.CharField(_("Format"), max_length=20, choices=StageFormat.choices)
     order = models.PositiveIntegerField(_("Order"), default=0)
+    qualifiers_per_group = models.PositiveIntegerField(
+        _("Qualifiers per group"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "For a round-robin stage only: how many top finishers from each group advance to the "
+            "competition's next (knockout) stage."
+        ),
+    )
 
     class Meta:
         ordering = ["competition", "order"]
