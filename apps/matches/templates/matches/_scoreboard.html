@@ -97,6 +97,7 @@
                             <button type="button" class="btn btn-xs btn-error btn-outline"
                                     hx-post="{% url 'matches:set_delete' match.pk set.set_number %}"
                                     hx-target="#scoreboard" hx-swap="outerHTML"
+                                    {% if is_decided %}hx-vals='{"allow_correction": "1"}'{% endif %}
                                     hx-confirm="{% translate "Delete this set?" %}">
                                 {% translate "Delete" %}
                             </button>
@@ -126,4 +127,20 @@
             </tbody>
         </table>
     </div>
+
+    {% if can_score and corrections %}
+    <div class="mt-4">
+        <h3 class="text-sm font-semibold text-base-content/60 mb-1">{% translate "Correction history" %}</h3>
+        <ul class="text-xs text-base-content/60 space-y-1">
+            {% for correction in corrections %}
+            <li>
+                {{ correction.created_at|date:"Y-m-d H:i" }} —
+                {% if correction.set_number %}{% blocktranslate with n=correction.set_number %}set {{ n }}{% endblocktranslate %},{% endif %}
+                {{ correction.previous_value }} → {{ correction.new_value|default:"—" }}
+                {% if correction.performed_by %}({{ correction.performed_by }}){% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </div>

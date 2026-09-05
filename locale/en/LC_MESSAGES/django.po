@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-05 18:45+0000\n"
+"POT-Creation-Date: 2026-09-05 18:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -179,7 +179,7 @@ msgstr ""
 msgid "TBD"
 msgstr ""
 
-#: apps/matches/models.py:122
+#: apps/matches/models.py:122 apps/matches/models.py:157
 msgid "Set number"
 msgstr ""
 
@@ -194,6 +194,38 @@ msgstr ""
 #: apps/matches/models.py:133
 #: apps/matches/templates/matches/_scoreboard.html:78
 msgid "Set"
+msgstr ""
+
+#: apps/matches/models.py:137
+msgid "Set score changed"
+msgstr ""
+
+#: apps/matches/models.py:138
+msgid "Set score deleted"
+msgstr ""
+
+#: apps/matches/models.py:139
+msgid "Result corrected"
+msgstr ""
+
+#: apps/matches/models.py:156
+msgid "Action"
+msgstr ""
+
+#: apps/matches/models.py:158
+msgid "Previous value"
+msgstr ""
+
+#: apps/matches/models.py:159
+msgid "New value"
+msgstr ""
+
+#: apps/matches/models.py:166
+msgid "Performed by"
+msgstr ""
+
+#: apps/matches/models.py:172
+msgid "Match correction"
 msgstr ""
 
 #: apps/matches/scoring.py:31
@@ -219,66 +251,80 @@ msgstr ""
 msgid "The winning margin must be at least %(margin)s points."
 msgstr ""
 
-#: apps/matches/services.py:56
+#: apps/matches/services.py:60
 msgid "This group already has a generated schedule."
 msgstr ""
 
-#: apps/matches/services.py:60
+#: apps/matches/services.py:64
 msgid "A group needs at least two participants to generate a schedule."
 msgstr ""
 
-#: apps/matches/services.py:107
+#: apps/matches/services.py:111
 msgid "This stage already has a generated bracket."
 msgstr ""
 
-#: apps/matches/services.py:115
+#: apps/matches/services.py:119
 msgid "A knockout stage needs at least two participants to generate a bracket."
 msgstr ""
 
-#: apps/matches/services.py:175
+#: apps/matches/services.py:179
 msgid "Only a round-robin stage can advance qualifiers to a knockout stage."
 msgstr ""
 
-#: apps/matches/services.py:177
+#: apps/matches/services.py:181
 msgid "Set how many qualifiers advance per group before advancing."
 msgstr ""
 
-#: apps/matches/services.py:181
+#: apps/matches/services.py:185
 msgid "This stage has no groups to qualify participants from."
 msgstr ""
 
-#: apps/matches/services.py:183
+#: apps/matches/services.py:187
 msgid ""
 "Every match in this stage must be completed before advancing qualifiers."
 msgstr ""
 
-#: apps/matches/services.py:189
+#: apps/matches/services.py:193
 msgid "This competition has no knockout stage immediately after this one."
 msgstr ""
 
+#: apps/matches/services.py:232
+msgid "Not yet decided"
+msgstr ""
+
 #: apps/matches/services.py:234
+msgid "winner"
+msgstr ""
+
+#: apps/matches/services.py:255
 msgid "This match is already decided. Explicitly correct it to change a score."
 msgstr ""
 
-#: apps/matches/services.py:239
+#: apps/matches/services.py:260
 #, python-format
 msgid "Set number must be between 1 and %(n)s."
 msgstr ""
 
-#: apps/matches/services.py:338
+#: apps/matches/services.py:311
+msgid ""
+"This match is already decided. Explicitly correct it to delete a recorded "
+"score."
+msgstr ""
+
+#: apps/matches/services.py:418
 msgid "This match is already decided."
 msgstr ""
 
-#: apps/matches/services.py:349
+#: apps/matches/services.py:429
 msgid "The winner must be one of this match's two participants."
 msgstr ""
 
-#: apps/matches/services.py:356
+#: apps/matches/services.py:437
 msgid ""
 "This match is already decided. Explicitly correct it to change the result."
 msgstr ""
 
-#: apps/matches/services.py:402
+#: apps/matches/services.py:498
 msgid "role must be \"referee\" or \"scorekeeper\"."
 msgstr ""
 
@@ -346,7 +392,7 @@ msgid "Actions"
 msgstr ""
 
 #: apps/matches/templates/matches/_scoreboard.html:96
-#: apps/matches/templates/matches/_scoreboard.html:122
+#: apps/matches/templates/matches/_scoreboard.html:123
 #: apps/players/templates/players/doubles_pair_form.html:30
 #: apps/players/templates/players/player_form.html:30
 #: apps/teams/templates/teams/team_form.html:27
@@ -358,11 +404,11 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: apps/matches/templates/matches/_scoreboard.html:100
+#: apps/matches/templates/matches/_scoreboard.html:101
 msgid "Delete this set?"
 msgstr ""
 
-#: apps/matches/templates/matches/_scoreboard.html:101
+#: apps/matches/templates/matches/_scoreboard.html:102
 #: apps/players/templates/players/_doubles_pair_rows.html:14
 #: apps/players/templates/players/_player_rows.html:24
 #: apps/teams/templates/teams/_team_rows.html:24
@@ -373,8 +419,17 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: apps/matches/templates/matches/_scoreboard.html:112
+#: apps/matches/templates/matches/_scoreboard.html:113
 msgid "No sets recorded yet."
+msgstr ""
+
+#: apps/matches/templates/matches/_scoreboard.html:133
+msgid "Correction history"
+msgstr ""
+
+#: apps/matches/templates/matches/_scoreboard.html:138
+#, python-format
+msgid "set %(n)s"
 msgstr ""
 
 #: apps/matches/templates/matches/match_detail.html:4
@@ -460,23 +515,23 @@ msgstr ""
 msgid "Record a default for the chosen side?"
 msgstr ""
 
-#: apps/matches/views.py:90
+#: apps/matches/views.py:92
 msgid "Please enter a valid score for both sides."
 msgstr ""
 
-#: apps/matches/views.py:137
+#: apps/matches/views.py:147
 msgid "Walkover recorded."
 msgstr ""
 
-#: apps/matches/views.py:142
+#: apps/matches/views.py:152
 msgid "Retirement recorded."
 msgstr ""
 
-#: apps/matches/views.py:147
+#: apps/matches/views.py:157
 msgid "Default recorded."
 msgstr ""
 
-#: apps/matches/views.py:156
+#: apps/matches/views.py:166
 msgid "Choose which participant won."
 msgstr ""
 
