@@ -24,10 +24,26 @@
 {% if stage.stage_format == "round_robin" %}
     <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">{% translate "Groups" %}</h2>
-        {% if can_manage %}
-            <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
-        {% endif %}
+        <div class="flex gap-2">
+            {% if can_manage and next_knockout_stage %}
+                <form method="post" action="{% url 'tournaments:stage_advance' stage.pk %}"
+                      onsubmit="return confirm('{% translate "Advance each group's top qualifiers to the next stage's bracket?" %}');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline" {% if not can_advance_qualifiers %}disabled{% endif %}>
+                        {% translate "Advance qualifiers" %}
+                    </button>
+                </form>
+            {% endif %}
+            {% if can_manage %}
+                <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+            {% endif %}
+        </div>
     </div>
+    {% if can_manage and next_knockout_stage and not stage.qualifiers_per_group %}
+        <p class="text-sm text-base-content/60 mb-2">
+            {% translate "Set \"Qualifiers per group\" on this stage to enable advancing to" %} {{ next_knockout_stage.name }}.
+        </p>
+    {% endif %}
     <div class="overflow-x-auto bg-base-100 rounded-box shadow">
         <table class="table">
             <thead>

@@ -37,11 +37,12 @@ class TournamentForm(forms.ModelForm):
 class CompetitionForm(forms.ModelForm):
     class Meta:
         model = Competition
-        fields = ["name", "participant_type", "is_active"]
+        fields = ["name", "participant_type", "is_active", "ranking_category"]
         widgets = {
             "name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "participant_type": forms.Select(attrs={"class": SELECT_CLASS}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox"}),
+            "ranking_category": forms.Select(attrs={"class": SELECT_CLASS}),
         }
 
     def __init__(self, *args, tournament=None, **kwargs):
@@ -73,11 +74,12 @@ class CompetitionRuleForm(forms.ModelForm):
 class StageForm(forms.ModelForm):
     class Meta:
         model = Stage
-        fields = ["name", "stage_format", "order"]
+        fields = ["name", "stage_format", "order", "qualifiers_per_group"]
         widgets = {
             "name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "stage_format": forms.Select(attrs={"class": SELECT_CLASS}),
             "order": forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 0}),
+            "qualifiers_per_group": forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 1}),
         }
 
     def __init__(self, *args, competition=None, **kwargs):

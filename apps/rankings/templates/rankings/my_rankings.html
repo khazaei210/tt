@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "My ranking" %}{% endblock %}
+{% block page_title %}{% translate "My ranking" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">{% translate "My ranking" %}</h1>
+    <a href="{% url 'rankings:category_list' %}" class="btn btn-ghost">{% translate "All rankings" %}</a>
+</div>
+
+{% if not player %}
+<div class="bg-base-100 rounded-box shadow p-6 text-base-content/60">
+    {% translate "Your account isn't linked to a player profile." %}
+</div>
+{% else %}
+    {% if rankings %}
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+        <table class="table table-zebra">
+            <thead>
+                <tr>
+                    <th>{% translate "Category" %}</th>
+                    <th class="text-center">{% translate "Rank" %}</th>
+                    <th class="text-center">{% translate "Points" %}</th>
+                    <th class="text-center">{% translate "Tournaments" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ranking in rankings %}
+                <tr>
+                    <td><a href="{% url 'rankings:category_detail' ranking.category.pk %}" class="link">{{ ranking.category.name }}</a></td>
+                    <td class="text-center">{{ ranking.current_rank|default:"—" }}</td>
+                    <td class="text-center font-semibold">{{ ranking.points }}</td>
+                    <td class="text-center">{{ ranking.tournaments_played }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-base-100 rounded-box shadow p-6 text-base-content/60 mb-6">
+        {% translate "You have no ranking points yet." %}
+    </div>
+    {% endif %}
+
+    <h2 class="text-lg font-semibold mb-2">{% translate "Recent ranking events" %}</h2>
+    {% if events %}
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table table-zebra">
+            <thead>
+                <tr>
+                    <th>{% translate "Date" %}</th>
+                    <th>{% translate "Competition" %}</th>
+                    <th>{% translate "Category" %}</th>
+                    <th class="text-center">{% translate "Placement" %}</th>
+                    <th class="text-center">{% translate "Points" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td>{{ event.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ event.competition|default:"—" }}</td>
+                    <td>{{ event.category.name }}</td>
+                    <td class="text-center">#{{ event.placement }}</td>
+                    <td class="text-center font-semibold">+{{ event.points_awarded }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-base-100 rounded-box shadow p-6 text-base-content/60">
+        {% translate "No ranking events yet." %}
+    </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

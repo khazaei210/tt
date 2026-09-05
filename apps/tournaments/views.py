@@ -9,8 +9,12 @@ from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from apps.matches.services import (
+    NoKnockoutStageError,
     NotEnoughParticipantsError,
+    QualifiersNotConfiguredError,
     ScheduleAlreadyGeneratedError,
+    StageNotCompleteError,
+    advance_to_next_stage,
     clear_group_schedule,
     clear_stage_bracket,
     compute_group_standings,
@@ -208,6 +212,7 @@ class CompetitionDetailView(DetailView):
         )
         context["participant_form"] = ParticipantForm(competition=self.object)
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.tournament)
+        context["can_award_ranking_points"] = self.object.ranking_category_id is not None
         return context
 
 
@@ -291,6 +296,26 @@ def stage_bracket_generate(request, pk):
 
 
 @tournament_manager_required(_tournament_from_stage_pk)
+def stage_advance(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    try:
+        advance_to_next_stage(stage)
+    except (
+        NotEnoughParticipantsError,
+        StageNotCompleteError,
+        QualifiersNotConfiguredError,
+        NoKnockoutStageError,
+        ScheduleAlreadyGeneratedError,
+    ) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, _("Qualifiers advanced to the next stage."))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
 def stage_bracket_clear(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -317,6 +342,16 @@ class StageDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["groups"] = self.object.groups.all()
+        if self.object.stage_format == StageFormat.ROUND_ROBIN:
+            next_stage = self.object.competition.stages.filter(
+                order=self.object.order + 1, stage_format=StageFormat.KNOCKOUT
+            ).first()
+            context["next_knockout_stage"] = next_stage
+            context["can_advance_qualifiers"] = (
+                bool(self.object.qualifiers_per_group)
+                and next_stage is not None
+                and not next_stage.matches.exists()
+            )
         if self.object.stage_format == StageFormat.KNOCKOUT:
             bracket_matches = list(
                 self.object.matches.filter(group__isnull=True)
