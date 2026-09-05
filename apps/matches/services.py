@@ -1,12 +1,13 @@
 from django.db import transaction
 from django.db.models import F, Max
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.tournaments.services.knockout import generate_knockout_bracket
 from apps.tournaments.services.round_robin import generate_round_robin
 from apps.tournaments.services.standings import MatchRecord, compute_standings
 
-from .models import Match, MatchSet, MatchStatus
+from .models import Match, MatchSet, MatchStatus, TERMINAL_MATCH_STATUSES
 from .scoring import compute_match_result, validate_set_score
 
 
@@ -35,6 +36,14 @@ class QualifiersNotConfiguredError(Exception):
 
 
 class NoKnockoutStageError(Exception):
+    pass
+
+
+class InvalidWinnerError(Exception):
+    pass
+
+
+class InvalidOfficialRoleError(Exception):
     pass
 
 
@@ -224,9 +233,9 @@ def record_set_score(match, set_number, participant_a_score, participant_b_score
     matches must not be silently overwritten) and InvalidSetNumberError if
     set_number is out of range for the competition's best-of-sets format.
     """
-    if match.status == MatchStatus.COMPLETED and not allow_correction:
+    if match.status in TERMINAL_MATCH_STATUSES and not allow_correction:
         raise MatchAlreadyCompletedError(
-            _("This match is already completed. Explicitly correct it to change a score.")
+            _("This match is already decided. Explicitly correct it to change a score.")
         )
 
     rule = get_effective_rule(match.competition)
@@ -257,18 +266,20 @@ def _refresh_match_result(match, rule):
     all_sets = list(match.sets.order_by("set_number").values_list("participant_a_score", "participant_b_score"))
     result = compute_match_result(all_sets, best_of_sets=rule.best_of_sets)
 
-    was_completed = match.status == MatchStatus.COMPLETED
+    was_decided = match.status in TERMINAL_MATCH_STATUSES
     if result.is_complete:
         match.winner_id = match.participant_a_id if result.winner == "a" else match.participant_b_id
         match.status = MatchStatus.COMPLETED
+        match.end_time = match.end_time or timezone.now()
     else:
         match.winner_id = None
         match.status = MatchStatus.LIVE if all_sets else MatchStatus.SCHEDULED
-    match.save(update_fields=["status", "winner"])
+        match.end_time = None
+    match.save(update_fields=["status", "winner", "end_time"])
 
     if result.is_complete:
         _propagate_knockout_winner(match)
-    elif was_completed:
+    elif was_decided:
         _clear_untouched_propagation(match)
 
 
@@ -317,6 +328,79 @@ def _clear_untouched_propagation(match):
     field = "participant_a_id" if match.bracket_slot % 2 == 0 else "participant_b_id"
     setattr(next_match, field, None)
     next_match.save(update_fields=[field])
+
+
+@transaction.atomic
+def start_match(match):
+    """Mark a match LIVE and stamp its start time (once).
+
+    A no-op if the match is already LIVE (e.g. the referee's page was
+    reloaded); raises MatchAlreadyCompletedError if the match is already
+    decided — you can't "start" a match that's over.
+    """
+    if match.status in TERMINAL_MATCH_STATUSES:
+        raise MatchAlreadyCompletedError(_("This match is already decided."))
+    if match.status == MatchStatus.LIVE:
+        return match
+    match.status = MatchStatus.LIVE
+    match.start_time = match.start_time or timezone.now()
+    match.save(update_fields=["status", "start_time"])
+    return match
+
+
+def _validate_winner(match, winner_id):
+    if winner_id not in (match.participant_a_id, match.participant_b_id):
+        raise InvalidWinnerError(_("The winner must be one of this match's two participants."))
+
+
+@transaction.atomic
+def _finalize_match(match, *, winner_id, status, allow_correction=False):
+    if match.status in TERMINAL_MATCH_STATUSES and not allow_correction:
+        raise MatchAlreadyCompletedError(
+            _("This match is already decided. Explicitly correct it to change the result.")
+        )
+    _validate_winner(match, winner_id)
+
+    match.winner_id = winner_id
+    match.status = status
+    match.end_time = match.end_time or timezone.now()
+    match.save(update_fields=["winner", "status", "end_time"])
+    _propagate_knockout_winner(match)
+    return match
+
+
+def record_walkover(match, winner_id, *, allow_correction=False):
+    """The opponent didn't show up — winner_id advances with no sets played."""
+    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.WALKOVER, allow_correction=allow_correction)
+
+
+def record_retirement(match, winner_id, *, allow_correction=False):
+    """A participant retired mid-match — winner_id wins; any sets already
+    recorded are left in place as a record of how far the match got."""
+    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.RETIRED, allow_correction=allow_correction)
+
+
+def record_default(match, winner_id, *, allow_correction=False):
+    """A participant was disqualified/defaulted — winner_id wins."""
+    return _finalize_match(match, winner_id=winner_id, status=MatchStatus.DEFAULT, allow_correction=allow_correction)
+
+
+def claim_match(match, user, role):
+    """Assign user as this match's referee or scorekeeper.
+
+    Simply overwrites any existing assignment — reassigning isn't a
+    protected action the way a scored result is; whoever has scoring
+    access to this match can pick it up or hand it to someone else.
+    """
+    if role == "referee":
+        match.referee = user
+        match.save(update_fields=["referee"])
+    elif role == "scorekeeper":
+        match.scorekeeper = user
+        match.save(update_fields=["scorekeeper"])
+    else:
+        raise InvalidOfficialRoleError(_('role must be "referee" or "scorekeeper".'))
+    return match
 
 
 def compute_group_standings(group):

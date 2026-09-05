@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Scoring dashboard" %}{% endblock %}
+{% block page_title %}{% translate "Scoring dashboard" %}{% endblock %}
+
+{% block content %}
+{% if not dashboard.has_scoring_role %}
+    <div class="hero bg-base-100 rounded-box shadow py-16">
+        <div class="hero-content text-center">
+            <div class="max-w-md">
+                <h2 class="text-xl font-semibold mb-2">{% translate "No matches to score" %}</h2>
+                <p class="text-base-content/60">
+                    {% translate "You don't have a Referee, Scorekeeper, Tournament Admin or Manager role on any tournament yet." %}
+                </p>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <h2 class="text-lg font-semibold mb-2">{% translate "Live now" %}</h2>
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+        <table class="table">
+            <tbody>
+                {% for match in dashboard.live_matches %}
+                <tr>
+                    <td>
+                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                            {{ match.participant_a.display_name|default:"—" }}
+                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                            {{ match.participant_b.display_name|default:"—" }}
+                        </a>
+                        <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
+                    </td>
+                    <td class="text-right"><span class="badge badge-error badge-sm">{% translate "Live" %}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td class="text-center text-base-content/60 py-6">{% translate "No live matches assigned to you right now." %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="text-lg font-semibold mb-2">{% translate "Your pending matches" %}</h2>
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
+        <table class="table">
+            <tbody>
+                {% for match in dashboard.pending_matches %}
+                <tr>
+                    <td>
+                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                            {{ match.participant_a.display_name|default:"TBD" }}
+                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                            {{ match.participant_b.display_name|default:"TBD" }}
+                        </a>
+                        <div class="text-xs text-base-content/60">
+                            {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+                        </div>
+                    </td>
+                    <td class="text-right"><span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td class="text-center text-base-content/60 py-6">{% translate "No pending matches assigned to you." %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="text-lg font-semibold mb-2">{% translate "Available to pick up" %}</h2>
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table">
+            <tbody>
+                {% for match in dashboard.unassigned_matches %}
+                <tr>
+                    <td>
+                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                            {{ match.participant_a.display_name|default:"TBD" }}
+                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                            {{ match.participant_b.display_name|default:"TBD" }}
+                        </a>
+                        <div class="text-xs text-base-content/60">
+                            {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+                        </div>
+                    </td>
+                    <td class="text-right"><span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td class="text-center text-base-content/60 py-6">{% translate "No unassigned matches waiting." %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

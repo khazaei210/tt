@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -12,6 +13,14 @@ class MatchStatus(models.TextChoices):
     WALKOVER = "walkover", _("Walkover")
     RETIRED = "retired", _("Retired")
     DEFAULT = "default", _("Default")
+
+
+# A match in one of these statuses has a decided winner and is done being
+# played — further changes are "corrections", not normal progress (see
+# services.py's allow_correction guard on every function that can reach one
+# of these statuses; CLAUDE.md section 33: completed results aren't
+# silently overwritten).
+TERMINAL_MATCH_STATUSES = (MatchStatus.COMPLETED, MatchStatus.WALKOVER, MatchStatus.RETIRED, MatchStatus.DEFAULT)
 
 
 class Match(models.Model):
@@ -61,6 +70,24 @@ class Match(models.Model):
         on_delete=models.PROTECT,
         related_name="matches_won",
     )
+    referee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="matches_refereed",
+        verbose_name=_("Referee"),
+    )
+    scorekeeper = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="matches_scorekept",
+        verbose_name=_("Scorekeeper"),
+    )
+    start_time = models.DateTimeField(_("Start time"), null=True, blank=True)
+    end_time = models.DateTimeField(_("End time"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

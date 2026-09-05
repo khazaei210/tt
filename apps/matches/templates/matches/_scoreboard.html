@@ -1,0 +1,129 @@
+{% load i18n %}
+<div id="scoreboard">
+    <div class="flex items-center gap-3 mb-2">
+        <span class="badge {% if match.status == 'live' %}badge-error{% elif is_decided %}badge-success{% else %}badge-outline{% endif %}">
+            {{ match.get_status_display }}
+        </span>
+        {% if match.winner %}
+            <span class="text-sm text-base-content/60">{% blocktranslate with winner=match.winner.display_name %}Winner: {{ winner }}{% endblocktranslate %}</span>
+        {% endif %}
+    </div>
+
+    <div class="text-sm text-base-content/60 mb-4">
+        {% blocktranslate with n=rule.best_of_sets %}Best of {{ n }} sets{% endblocktranslate %}
+        · {% blocktranslate with p=rule.points_per_set %}{{ p }} points per set{% endblocktranslate %}
+        · {% blocktranslate with n=rule.win_by %}Win by {{ n }}{% endblocktranslate %}
+        {% if rule.cap_at %}· {% blocktranslate with cap=rule.cap_at %}Capped at {{ cap }}{% endblocktranslate %}{% endif %}
+    </div>
+
+    {% if can_score %}
+    <div class="flex flex-wrap items-center gap-4 mb-4 bg-base-100 rounded-box shadow p-3 text-sm">
+        <div>
+            {% translate "Referee:" %}
+            <span class="font-medium">{{ match.referee|default:"—" }}</span>
+            {% if match.referee_id != request.user.id %}
+            <button type="button" class="btn btn-2xs btn-ghost link"
+                    hx-post="{% url 'matches:claim' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML"
+                    hx-vals='{"role": "referee"}'>{% translate "Take" %}</button>
+            {% endif %}
+        </div>
+        <div>
+            {% translate "Scorekeeper:" %}
+            <span class="font-medium">{{ match.scorekeeper|default:"—" }}</span>
+            {% if match.scorekeeper_id != request.user.id %}
+            <button type="button" class="btn btn-2xs btn-ghost link"
+                    hx-post="{% url 'matches:claim' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML"
+                    hx-vals='{"role": "scorekeeper"}'>{% translate "Take" %}</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+        {% if match.status == "scheduled" or match.status == "ready" %}
+        <button type="button" class="btn btn-sm btn-primary"
+                hx-post="{% url 'matches:start' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML">
+            {% translate "Start match" %}
+        </button>
+        {% endif %}
+        {% if not is_decided and match.participant_a and match.participant_b %}
+            {% for action, url_name, label, confirm in special_results %}
+            <div class="dropdown">
+                <label tabindex="0" class="btn btn-sm btn-outline">{{ label }}</label>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-10 w-52 p-2">
+                    <li>
+                        <button type="button"
+                                hx-post="{% url url_name match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML"
+                                hx-vals='{"winner": "a"}' hx-confirm="{{ confirm }}">
+                            {{ match.participant_a.display_name }} {% translate "wins" %}
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button"
+                                hx-post="{% url url_name match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML"
+                                hx-vals='{"winner": "b"}' hx-confirm="{{ confirm }}">
+                            {{ match.participant_b.display_name }} {% translate "wins" %}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% translate "Set" %}</th>
+                    <th>{{ match.participant_a.display_name|default:"A" }}</th>
+                    <th>{{ match.participant_b.display_name|default:"B" }}</th>
+                    {% if can_score %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for set in sets %}
+                <tr>
+                    {% if can_score %}
+                    <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML" class="contents">
+                        {% csrf_token %}
+                        <input type="hidden" name="set_number" value="{{ set.set_number }}">
+                        {% if is_decided %}<input type="hidden" name="allow_correction" value="1">{% endif %}
+                        <td>{{ set.set_number }}</td>
+                        <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered w-20 text-center"></td>
+                        <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered w-20 text-center"></td>
+                        <td class="text-right space-x-2 rtl:space-x-reverse">
+                            <button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button>
+                            <button type="button" class="btn btn-xs btn-error btn-outline"
+                                    hx-post="{% url 'matches:set_delete' match.pk set.set_number %}"
+                                    hx-target="#scoreboard" hx-swap="outerHTML"
+                                    hx-confirm="{% translate "Delete this set?" %}">
+                                {% translate "Delete" %}
+                            </button>
+                        </td>
+                    </form>
+                    {% else %}
+                        <td>{{ set.set_number }}</td>
+                        <td>{{ set.participant_a_score }}</td>
+                        <td>{{ set.participant_b_score }}</td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                    <tr><td colspan="4" class="text-center text-base-content/60 py-6">{% translate "No sets recorded yet." %}</td></tr>
+                {% endfor %}
+                {% if next_set_number and can_score %}
+                <tr>
+                    <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML" class="contents">
+                        {% csrf_token %}
+                        <input type="hidden" name="set_number" value="{{ next_set_number }}">
+                        <td>{{ next_set_number }}</td>
+                        <td>{{ set_form.participant_a_score }}</td>
+                        <td>{{ set_form.participant_b_score }}</td>
+                        <td class="text-right"><button type="submit" class="btn btn-xs btn-primary">{% translate "Save" %}</button></td>
+                    </form>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
