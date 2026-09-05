@@ -12,6 +12,7 @@ from django.db.models import Q
 from apps.tournaments.models import StaffRole, TournamentStaff
 
 from .models import Match, MatchStatus
+from .services import summarize_live_score
 
 MATCH_ROLES = (
     StaffRole.TOURNAMENT_ADMIN,
@@ -55,8 +56,12 @@ def build_scorer_dashboard(user) -> ScorerDashboard:
 
     assigned_to_me = matches_qs.filter(Q(referee=user) | Q(scorekeeper=user))
     dashboard.live_matches = list(
-        assigned_to_me.filter(status=MatchStatus.LIVE).order_by("round_number", "pk")[:MATCH_LIST_LIMIT]
+        assigned_to_me.filter(status=MatchStatus.LIVE)
+        .prefetch_related("sets")
+        .order_by("round_number", "pk")[:MATCH_LIST_LIMIT]
     )
+    for match in dashboard.live_matches:
+        match.live_score_summary = summarize_live_score(match)
     dashboard.pending_matches = list(
         assigned_to_me.filter(status__in=(MatchStatus.SCHEDULED, MatchStatus.READY)).order_by(
             "round_number", "pk"

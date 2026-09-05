@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from django.db import transaction
 from django.db.models import F, Max
 from django.utils import timezone
@@ -497,6 +499,37 @@ def claim_match(match, user, role):
     else:
         raise InvalidOfficialRoleError(_('role must be "referee" or "scorekeeper".'))
     return match
+
+
+@dataclass(frozen=True)
+class LiveScoreSummary:
+    sets_score: str
+    last_set_score: str
+
+
+def summarize_live_score(match):
+    """A compact "sets won so far / most recent set" summary for a match
+    row on a dashboard, or None if no set has been recorded yet.
+
+    There's no point-by-point live tracking in this system — only
+    completed sets are ever stored (record_set_score) — so "the current
+    score" for a match still in progress is exactly this: how many sets
+    each side has won, and the last set actually recorded.
+
+    Expects match.sets to already be prefetched by the caller; called
+    once per row on a dashboard listing, so an extra query per match
+    here would be an N+1 (CLAUDE.md section 32).
+    """
+    sets = list(match.sets.all())
+    if not sets:
+        return None
+    sets_won_a = sum(1 for s in sets if s.participant_a_score > s.participant_b_score)
+    sets_won_b = sum(1 for s in sets if s.participant_b_score > s.participant_a_score)
+    last = sets[-1]
+    return LiveScoreSummary(
+        sets_score=f"{sets_won_a}-{sets_won_b}",
+        last_set_score=f"{last.participant_a_score}-{last.participant_b_score}",
+    )
 
 
 def compute_group_standings(group):

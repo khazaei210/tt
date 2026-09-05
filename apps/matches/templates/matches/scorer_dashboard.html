@@ -31,6 +31,14 @@
                         </a>
                         <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
                     </td>
+                    <td class="text-center">
+                        {% if match.live_score_summary %}
+                            <span class="font-mono font-semibold" dir="ltr">{{ match.live_score_summary.sets_score }}</span>
+                            <span class="text-xs text-base-content/60 block" dir="ltr">{% translate "last set" %} {{ match.live_score_summary.last_set_score }}</span>
+                        {% else %}
+                            <span class="text-xs text-base-content/40">{% translate "No sets yet" %}</span>
+                        {% endif %}
+                    </td>
                     <td class="text-right">
                         <span class="badge badge-error badge-sm">{% translate "Live" %}</span>
                         {% if match.start_time %}
@@ -39,7 +47,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td class="text-center text-base-content/60 py-6">{% translate "No live matches assigned to you right now." %}</td></tr>
+                <tr><td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No live matches assigned to you right now." %}</td></tr>
                 {% endfor %}
             </tbody>
         </table>

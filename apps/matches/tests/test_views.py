@@ -134,3 +134,17 @@ class ScorerDashboardViewTests(MatchScoringViewTestCase):
         self.client.login(username="scorekeeper", password="pw")
         response = self.client.get(reverse("matches:scorer_dashboard"))
         self.assertIn(self.match, response.context["dashboard"].unassigned_matches)
+
+    def test_live_match_gets_a_score_summary(self):
+        from apps.matches.models import MatchSet
+
+        self.match.scorekeeper = self.scorekeeper
+        self.match.status = MatchStatus.LIVE
+        self.match.save(update_fields=["scorekeeper", "status"])
+        MatchSet.objects.create(match=self.match, set_number=1, participant_a_score=11, participant_b_score=9)
+
+        self.client.login(username="scorekeeper", password="pw")
+        response = self.client.get(reverse("matches:scorer_dashboard"))
+        live = response.context["dashboard"].live_matches[0]
+        self.assertEqual(live.live_score_summary.sets_score, "1-0")
+        self.assertEqual(live.live_score_summary.last_set_score, "11-9")

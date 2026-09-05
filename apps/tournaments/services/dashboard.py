@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from django.db.models import Case, Count, Q, When
 
 from apps.matches.models import Match, MatchStatus
+from apps.matches.services import summarize_live_score
 
 from ..models import StaffRole, Tournament, TournamentStatus, TournamentStaff
 
@@ -121,9 +122,15 @@ def build_manager_dashboard(user) -> ManagerDashboard:
         for t in tournaments_qs
     ]
 
+    live_matches = list(
+        matches_qs.filter(status=MatchStatus.LIVE).prefetch_related("sets")[:MATCH_LIST_LIMIT]
+    )
+    for match in live_matches:
+        match.live_score_summary = summarize_live_score(match)
+
     return ManagerDashboard(
         tournaments=tournaments,
-        live_matches=list(matches_qs.filter(status=MatchStatus.LIVE)[:MATCH_LIST_LIMIT]),
+        live_matches=live_matches,
         upcoming_matches=list(
             matches_qs.filter(status__in=(MatchStatus.SCHEDULED, MatchStatus.READY)).order_by(
                 "round_number", "pk"
