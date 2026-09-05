@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-05 18:56+0000\n"
+"POT-Creation-Date: 2026-09-05 19:12+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -122,7 +122,7 @@ msgstr "انصراف در حین بازی"
 msgid "Default"
 msgstr "شکست فنی"
 
-#: apps/matches/models.py:42 apps/matches/models.py:117
+#: apps/matches/models.py:42 apps/matches/models.py:124
 msgid "Round"
 msgstr "دور"
 
@@ -137,98 +137,98 @@ msgid ""
 msgstr ""
 "جایگاه در دور، برای نمایش و پیشروی جدول حذفی. برای دوره‌ای استفاده نمی‌شود."
 
-#: apps/matches/models.py:63 apps/tournaments/models.py:191
+#: apps/matches/models.py:70 apps/tournaments/models.py:191
 #: apps/tournaments/models.py:237 apps/tournaments/models.py:241
 #: apps/tournaments/templates/tournaments/stage_detail.html:85
 #: apps/tournaments/templates/tournaments/stage_detail.html:90
 msgid "BYE"
 msgstr "استراحت"
 
-#: apps/matches/models.py:64
+#: apps/matches/models.py:71
 msgid "Third place match"
 msgstr "دیدار رده‌بندی"
 
-#: apps/matches/models.py:65 apps/players/templates/players/player_list.html:35
+#: apps/matches/models.py:72 apps/players/templates/players/player_list.html:35
 #: apps/teams/templates/teams/team_list.html:35 apps/tournaments/models.py:20
-#: apps/tournaments/templates/tournaments/tournament_detail.html:44
+#: apps/tournaments/templates/tournaments/tournament_detail.html:45
 #: apps/tournaments/templates/tournaments/tournament_list.html:33
 msgid "Status"
 msgstr "وضعیت"
 
-#: apps/matches/models.py:79 apps/tournaments/models.py:38
+#: apps/matches/models.py:86 apps/tournaments/models.py:38
 msgid "Referee"
 msgstr ""
 
-#: apps/matches/models.py:87 apps/tournaments/models.py:39
+#: apps/matches/models.py:94 apps/tournaments/models.py:39
 msgid "Scorekeeper"
 msgstr ""
 
-#: apps/matches/models.py:89
+#: apps/matches/models.py:96
 #, fuzzy
 #| msgid "Start date"
 msgid "Start time"
 msgstr "تاریخ شروع"
 
-#: apps/matches/models.py:90
+#: apps/matches/models.py:97
 #, fuzzy
 #| msgid "End date"
 msgid "End time"
 msgstr "تاریخ پایان"
 
-#: apps/matches/models.py:115 apps/matches/models.py:116
+#: apps/matches/models.py:122 apps/matches/models.py:123
 msgid "TBD"
 msgstr "نامشخص"
 
-#: apps/matches/models.py:122 apps/matches/models.py:157
+#: apps/matches/models.py:129 apps/matches/models.py:164
 msgid "Set number"
 msgstr "شماره ست"
 
-#: apps/matches/models.py:123
+#: apps/matches/models.py:130
 msgid "Score A"
 msgstr "امتیاز الف"
 
-#: apps/matches/models.py:124
+#: apps/matches/models.py:131
 msgid "Score B"
 msgstr "امتیاز ب"
 
-#: apps/matches/models.py:133
+#: apps/matches/models.py:140
 #: apps/matches/templates/matches/_scoreboard.html:78
 msgid "Set"
 msgstr "ست"
 
-#: apps/matches/models.py:137
+#: apps/matches/models.py:144
 msgid "Set score changed"
 msgstr ""
 
-#: apps/matches/models.py:138
+#: apps/matches/models.py:145
 msgid "Set score deleted"
 msgstr ""
 
-#: apps/matches/models.py:139
+#: apps/matches/models.py:146
 #, fuzzy
 #| msgid "No sets recorded yet."
 msgid "Result corrected"
 msgstr "هنوز ستی ثبت نشده است."
 
-#: apps/matches/models.py:156
+#: apps/matches/models.py:163
 #, fuzzy
 #| msgid "Actions"
 msgid "Action"
 msgstr "عملیات"
 
-#: apps/matches/models.py:158
+#: apps/matches/models.py:165
 msgid "Previous value"
 msgstr ""
 
-#: apps/matches/models.py:159
+#: apps/matches/models.py:166
 msgid "New value"
 msgstr ""
 
-#: apps/matches/models.py:166
+#: apps/matches/models.py:173
 msgid "Performed by"
 msgstr ""
 
-#: apps/matches/models.py:172
+#: apps/matches/models.py:179
 msgid "Match correction"
 msgstr ""
 
@@ -411,7 +411,7 @@ msgstr ""
 #: apps/tournaments/templates/tournaments/_participant_panel.html:9
 #: apps/tournaments/templates/tournaments/competition_detail.html:75
 #: apps/tournaments/templates/tournaments/stage_detail.html:53
-#: apps/tournaments/templates/tournaments/tournament_detail.html:45
+#: apps/tournaments/templates/tournaments/tournament_detail.html:46
 #: apps/tournaments/templates/tournaments/tournament_list.html:34
 msgid "Actions"
 msgstr "عملیات"
@@ -707,7 +707,7 @@ msgstr "جستجو بر اساس نام یا باشگاه…"
 #: apps/tournaments/models.py:159
 #: apps/tournaments/templates/tournaments/competition_detail.html:72
 #: apps/tournaments/templates/tournaments/stage_detail.html:51
-#: apps/tournaments/templates/tournaments/tournament_detail.html:40
+#: apps/tournaments/templates/tournaments/tournament_detail.html:41
 #: apps/tournaments/templates/tournaments/tournament_list.html:29
 msgid "Name"
 msgstr "نام"
@@ -743,6 +743,7 @@ msgstr ""
 #: apps/rankings/templates/rankings/category_detail.html:20
 #: apps/rankings/templates/rankings/my_rankings.html:25
 #: apps/rankings/templates/rankings/my_rankings.html:57
+#: apps/reports/templates/reports/player_statistics.html:32
 #: apps/tournaments/templates/tournaments/group_detail.html:36
 msgid "Points"
 msgstr "امتیازها"
@@ -895,6 +896,7 @@ msgid "Date"
 msgstr ""
 
 #: apps/rankings/templates/rankings/my_rankings.html:54
+#: apps/reports/templates/reports/player_statistics.html:44
 #, fuzzy
 #| msgid "Competitions"
 msgid "Competition"
@@ -915,6 +917,132 @@ msgstr ""
 msgid ""
 "No new ranking points to award — everyone eligible was already credited."
 msgstr ""
+
+#: apps/reports/apps.py:8
+msgid "Reports"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:4
+#, python-format
+msgid "%(name)s — Statistics"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:5
+msgid "Player statistics"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:13
+#, fuzzy
+#| msgid "Back to teams"
+msgid "Back to players"
+msgstr "بازگشت به تیم‌ها"
+
+#: apps/reports/templates/reports/player_statistics.html:18
+#, fuzzy
+#| msgid "Tournaments"
+msgid "Matches played"
+msgstr "تورنمنت‌ها"
+
+#: apps/reports/templates/reports/player_statistics.html:22
+msgid "Win rate"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:24
+#, python-format
+msgid "%(w)s wins — %(l)s losses"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:27
+#: apps/tournaments/templates/tournaments/group_detail.html:34
+msgid "Sets"
+msgstr "ست‌ها"
+
+#: apps/reports/templates/reports/player_statistics.html:29
+#: apps/reports/templates/reports/player_statistics.html:34
+#, python-format
+msgid "diff %(d)s"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:38
+#, fuzzy
+#| msgid "Upcoming"
+msgid "Recent matches"
+msgstr "پیش رو"
+
+#: apps/reports/templates/reports/player_statistics.html:43
+msgid "Opponent"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:45
+msgid "Result"
+msgstr ""
+
+#: apps/reports/templates/reports/player_statistics.html:59
+#: apps/tournaments/templates/tournaments/group_detail.html:31
+msgid "Won"
+msgstr "برد"
+
+#: apps/reports/templates/reports/player_statistics.html:61
+#: apps/tournaments/templates/tournaments/group_detail.html:32
+msgid "Lost"
+msgstr "باخت"
+
+#: apps/reports/templates/reports/player_statistics.html:66
+#, fuzzy
+#| msgid "No schedule generated yet."
+msgid "No matches played yet."
+msgstr "هنوز برنامه مسابقاتی تولید نشده است."
+
+#: apps/reports/templates/reports/tournament_report.html:4
+#, python-format
+msgid "%(name)s — Report"
+msgstr ""
+
+#: apps/reports/templates/reports/tournament_report.html:5
+#: apps/reports/templates/reports/tournament_report.html:11
+#, fuzzy
+#| msgid "Tournaments"
+msgid "Tournament report"
+msgstr "تورنمنت‌ها"
+
+#: apps/reports/templates/reports/tournament_report.html:13
+#: apps/tournaments/templates/tournaments/competition_detail.html:30
+msgid "Back to tournament"
+msgstr "بازگشت به تورنمنت"
+
+#: apps/reports/templates/reports/tournament_report.html:30
+#: apps/tournaments/templates/tournaments/competition_detail.html:84
+#: apps/tournaments/templates/tournaments/group_detail.html:19
+#: apps/tournaments/templates/tournaments/manager_dashboard.html:35
+#: apps/tournaments/templates/tournaments/tournament_detail.html:44
+msgid "Participants"
+msgstr "شرکت‌کنندگان"
+
+#: apps/reports/templates/reports/tournament_report.html:34
+#, fuzzy
+#| msgid "Match"
+msgid "Matches"
+msgstr "بازی"
+
+#: apps/reports/templates/reports/tournament_report.html:38
+#, fuzzy
+#| msgid "Completed"
+msgid "Complete"
+msgstr "پایان‌یافته"
+
+#: apps/reports/templates/reports/tournament_report.html:48
+msgid "Final placements"
+msgstr ""
+
+#: apps/reports/templates/reports/tournament_report.html:58
+msgid "Final placements not available yet."
+msgstr ""
+
+#: apps/reports/templates/reports/tournament_report.html:66
+#, fuzzy
+#| msgid "This group already has a generated schedule."
+msgid "This tournament has no competitions yet."
+msgstr "این گروه از قبل دارای برنامه مسابقات تولیدشده است."
 
 #: apps/teams/models.py:10 apps/teams/templates/teams/team_list.html:32
 msgid "Short name"
@@ -1045,7 +1173,7 @@ msgid "Team"
 msgstr "تیم"
 
 #: apps/tournaments/models.py:76
-#: apps/tournaments/templates/tournaments/tournament_detail.html:41
+#: apps/tournaments/templates/tournaments/tournament_detail.html:42
 msgid "Participant type"
 msgstr "نوع شرکت‌کننده"
 
@@ -1226,10 +1354,6 @@ msgstr ""
 msgid "Edit competition"
 msgstr "ویرایش مسابقه"
 
-#: apps/tournaments/templates/tournaments/competition_detail.html:30
-msgid "Back to tournament"
-msgstr "بازگشت به تورنمنت"
-
 #: apps/tournaments/templates/tournaments/competition_detail.html:37
 msgid "Rules"
 msgstr "قوانین"
@@ -1253,7 +1377,7 @@ msgid "No rules configured yet — using defaults once set."
 msgstr "هنوز قوانینی تنظیم نشده است — پس از تنظیم، مقادیر پیش‌فرض اعمال می‌شود."
 
 #: apps/tournaments/templates/tournaments/competition_detail.html:63
-#: apps/tournaments/templates/tournaments/tournament_detail.html:42
+#: apps/tournaments/templates/tournaments/tournament_detail.html:43
 msgid "Stages"
 msgstr "مراحل"
 
@@ -1264,17 +1388,10 @@ msgstr "مراحل"
 msgid "Add stage"
 msgstr "افزودن مرحله"
 
-#: apps/tournaments/templates/tournaments/competition_detail.html:84
-#: apps/tournaments/templates/tournaments/group_detail.html:19
-#: apps/tournaments/templates/tournaments/manager_dashboard.html:35
-#: apps/tournaments/templates/tournaments/tournament_detail.html:43
-msgid "Participants"
-msgstr "شرکت‌کنندگان"
-
 #: apps/tournaments/templates/tournaments/competition_form.html:4
 #: apps/tournaments/templates/tournaments/competition_form.html:5
 #: apps/tournaments/templates/tournaments/competition_form.html:10
-#: apps/tournaments/templates/tournaments/tournament_detail.html:32
+#: apps/tournaments/templates/tournaments/tournament_detail.html:33
 msgid "Add competition"
 msgstr "افزودن مسابقه"
 
@@ -1296,21 +1413,9 @@ msgstr "جدول رده‌بندی"
 msgid "Played"
 msgstr "بازی"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:31
-msgid "Won"
-msgstr "برد"
-
-#: apps/tournaments/templates/tournaments/group_detail.html:32
-msgid "Lost"
-msgstr "باخت"
-
 #: apps/tournaments/templates/tournaments/group_detail.html:33
 msgid "Pts"
 msgstr "امتیاز"
-
-#: apps/tournaments/templates/tournaments/group_detail.html:34
-msgid "Sets"
-msgstr "ست‌ها"
 
 #: apps/tournaments/templates/tournaments/group_detail.html:35
 msgid "Set diff"
@@ -1501,18 +1606,22 @@ msgstr "شامل دیدار رده‌بندی"
 msgid "Generate bracket"
 msgstr "تولید جدول حذفی"
 
-#: apps/tournaments/templates/tournaments/tournament_detail.html:19
+#: apps/tournaments/templates/tournaments/tournament_detail.html:18
+msgid "Report"
+msgstr ""
+
+#: apps/tournaments/templates/tournaments/tournament_detail.html:20
 #: apps/tournaments/templates/tournaments/tournament_form.html:4
 #: apps/tournaments/templates/tournaments/tournament_form.html:5
 #: apps/tournaments/templates/tournaments/tournament_form.html:10
 msgid "Edit tournament"
 msgstr "ویرایش تورنمنت"
 
-#: apps/tournaments/templates/tournaments/tournament_detail.html:21
+#: apps/tournaments/templates/tournaments/tournament_detail.html:22
 msgid "Back to tournaments"
 msgstr "بازگشت به تورنمنت‌ها"
 
-#: apps/tournaments/templates/tournaments/tournament_detail.html:30
+#: apps/tournaments/templates/tournaments/tournament_detail.html:31
 msgid "Competitions"
 msgstr "مسابقات"
 

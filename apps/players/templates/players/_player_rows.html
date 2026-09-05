@@ -1,7 +1,7 @@
 {% load i18n %}
 {% for player in players %}
 <tr id="player-row-{{ player.pk }}">
-    <td>{{ player.full_name }}</td>
+    <td><a href="{% url 'reports:player_statistics' player.pk %}" class="link">{{ player.full_name }}</a></td>
     <td>{{ player.get_gender_display }}</td>
     <td>{{ player.club|default:"—" }}</td>
     <td>{{ player.country|default:"—" }}</td>

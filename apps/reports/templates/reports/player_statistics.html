@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% blocktranslate with name=player.full_name %}{{ name }} — Statistics{% endblocktranslate %}{% endblock %}
+{% block page_title %}{% translate "Player statistics" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ player.full_name }}</h1>
+        <p class="text-base-content/60">{{ player.club|default:"—" }}{% if player.country %} · {{ player.country }}{% endif %}</p>
+    </div>
+    <a href="{% url 'players:list' %}" class="btn btn-ghost">{% translate "Back to players" %}</a>
+</div>
+
+<div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full mb-6">
+    <div class="stat">
+        <div class="stat-title">{% translate "Matches played" %}</div>
+        <div class="stat-value">{{ stats.matches_played }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Win rate" %}</div>
+        <div class="stat-value text-primary">{{ stats.win_percentage }}%</div>
+        <div class="stat-desc">{% blocktranslate with w=stats.wins l=stats.losses %}{{ w }} wins — {{ l }} losses{% endblocktranslate %}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Sets" %}</div>
+        <div class="stat-value text-lg">{{ stats.sets_won }}-{{ stats.sets_lost }}</div>
+        <div class="stat-desc">{% blocktranslate with d=stats.set_difference %}diff {{ d }}{% endblocktranslate %}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">{% translate "Points" %}</div>
+        <div class="stat-value text-lg">{{ stats.points_scored }}-{{ stats.points_conceded }}</div>
+        <div class="stat-desc">{% blocktranslate with d=stats.point_difference %}diff {{ d }}{% endblocktranslate %}</div>
+    </div>
+</div>
+
+<h2 class="text-lg font-semibold mb-2">{% translate "Recent matches" %}</h2>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% translate "Opponent" %}</th>
+                <th>{% translate "Competition" %}</th>
+                <th class="text-right">{% translate "Result" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in stats.recent_matches %}
+            <tr>
+                <td>
+                    <a href="{% url 'matches:detail' row.match.pk %}" class="link link-primary">
+                        {{ row.opponent.display_name|default:"—" }}
+                    </a>
+                </td>
+                <td class="text-base-content/60 text-sm">{{ row.match.competition.name }}</td>
+                <td class="text-right">
+                    {% if row.won %}
+                        <span class="badge badge-success badge-sm">{% translate "Won" %}</span>
+                    {% else %}
+                        <span class="badge badge-ghost badge-sm">{% translate "Lost" %}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No matches played yet." %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
