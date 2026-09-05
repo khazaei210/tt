@@ -46,6 +46,25 @@ notes.
 5. Visit http://localhost:8000/ — you should see a page confirming the
    database connection and an HTMX round-trip.
 
+### VPS firewall note
+
+`docker-compose.yml` publishes the dev server's port 8000 to `0.0.0.0`, and
+`DEBUG=True` in dev — reachable from the whole internet on a VPS with no
+firewall. On this project's VPS, port 8000 is restricted to `localhost`
+only at the host level: a systemd oneshot service,
+`tt-port8000-firewall.service` (unit at
+`/etc/systemd/system/tt-port8000-firewall.service`, script at
+`/usr/local/sbin/tt-port8000-firewall.sh`), applies loopback-only iptables
+rules to both the `INPUT` chain and Docker's `DOCKER-USER` chain (port 8000
+is NAT'd by Docker, so a plain `INPUT` rule alone doesn't cover external
+traffic) after `docker.service` starts, so the rule survives a reboot.
+
+This lives outside the git repo (host-level config, not project code) and
+would need to be recreated if this project ever moves to a different
+server. If you need to reach the dev server from another machine, use an
+SSH tunnel (`ssh -L 8000:localhost:8000 user@vps`) rather than opening the
+port back up.
+
 ### Common commands
 
 ```bash
