@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% blocktranslate with name=tournament.name %}{{ name }} — Report{% endblocktranslate %}{% endblock %}
+{% block page_title %}{% translate "Tournament report" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-bold">{{ tournament.name }}</h1>
+        <p class="text-base-content/60">{% translate "Tournament report" %}</p>
+    </div>
+    <a href="{% url 'tournaments:detail' tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+</div>
+
+{% if report.competitions %}
+<div class="grid gap-4">
+    {% for row in report.competitions %}
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+                <h2 class="card-title">
+                    <a href="{% url 'tournaments:competition_detail' row.competition.pk %}" class="link">{{ row.competition.name }}</a>
+                </h2>
+                <span class="badge badge-outline">{{ row.competition.get_participant_type_display }}</span>
+            </div>
+
+            <div class="stats stats-vertical sm:stats-horizontal bg-base-200 mt-2">
+                <div class="stat py-2">
+                    <div class="stat-title text-xs">{% translate "Participants" %}</div>
+                    <div class="stat-value text-lg">{{ row.participant_count }}</div>
+                </div>
+                <div class="stat py-2">
+                    <div class="stat-title text-xs">{% translate "Matches" %}</div>
+                    <div class="stat-value text-lg">{{ row.matches_decided }}/{{ row.matches_total }}</div>
+                </div>
+                <div class="stat py-2">
+                    <div class="stat-title text-xs">{% translate "Complete" %}</div>
+                    <div class="stat-value text-lg">{{ row.completion_percent }}%</div>
+                </div>
+            </div>
+
+            {% if row.matches_total %}
+            <progress class="progress progress-primary w-full mt-2" value="{{ row.completion_percent }}" max="100"></progress>
+            {% endif %}
+
+            {% if row.placements %}
+            <h3 class="text-sm font-semibold text-base-content/60 mt-3 mb-1">{% translate "Final placements" %}</h3>
+            <ul class="text-sm space-y-1">
+                {% for placement, participant in row.placements %}
+                <li class="flex items-center gap-2">
+                    <span class="badge badge-sm {% if placement == 1 %}badge-warning{% elif placement == 2 %}badge-ghost{% else %}badge-outline{% endif %}">#{{ placement }}</span>
+                    {{ participant.display_name }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% elif row.matches_total %}
+            <p class="text-sm text-base-content/60 mt-3">{% translate "Final placements not available yet." %}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-base-100 rounded-box shadow p-6 text-base-content/60">
+    {% translate "This tournament has no competitions yet." %}
+</div>
+{% endif %}
+{% endblock %}

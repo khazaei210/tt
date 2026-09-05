@@ -15,6 +15,7 @@
         </p>
     </div>
     <div class="flex gap-2">
+        <a href="{% url 'reports:tournament_report' tournament.pk %}" class="btn btn-outline">{% translate "Report" %}</a>
         {% if can_manage %}
             <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline">{% translate "Edit tournament" %}</a>
         {% endif %}

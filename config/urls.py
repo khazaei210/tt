@@ -15,6 +15,7 @@ urlpatterns += i18n_patterns(
     path("tournaments/", include("apps.tournaments.urls")),
     path("matches/", include("apps.matches.urls")),
     path("rankings/", include("apps.rankings.urls")),
+    path("reports/", include("apps.reports.urls")),
     path("", include("apps.core.urls")),
     prefix_default_language=True,
 )
