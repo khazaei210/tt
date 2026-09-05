@@ -18,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: docker/web/Dockerfile
+      target: dev
     env_file: .env
     volumes:
       - .:/app

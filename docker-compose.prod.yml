@@ -1,0 +1,54 @@
+# Production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
+#
+# Differences from docker-compose.yml (local dev):
+# - web builds the "prod" Dockerfile target: source copied into the image
+#   (not bind-mounted), Tailwind CSS pre-built, non-root user, gunicorn
+#   instead of the Django dev server.
+# - No "tailwind" watcher service — CSS is built once at image build time.
+# - Requires a real .env: DJANGO_SETTINGS_MODULE=config.settings.prod,
+#   a real DJANGO_SECRET_KEY, DJANGO_DEBUG=False, DJANGO_ALLOWED_HOSTS and
+#   DJANGO_CSRF_TRUSTED_ORIGINS set to your real domain(s), and database
+#   credentials — see .env.example.
+#
+# This does not include a reverse proxy (nginx/Caddy/a cloud load
+# balancer). config.settings.prod enables SECURE_SSL_REDIRECT and secure
+# cookies on the assumption that TLS is terminated in front of this
+# service and forwarded with an X-Forwarded-Proto header — put one there
+# before exposing this publicly, or those settings will just produce
+# redirect loops over plain HTTP.
+#
+# Migrations are not run automatically (see docker/web/entrypoint.sh) —
+# run them explicitly after the stack is up:
+#   docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      target: prod
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

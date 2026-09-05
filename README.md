@@ -60,11 +60,34 @@ docker compose down                                   # stop everything
 Tailwind v4 uses CSS-first configuration — there is no `tailwind.config.js`.
 Content sources are declared with `@source` directives in
 `theme/src/input.css`. The compiled `static/css/dist/styles.css` is a build
-artifact (git-ignored); it is regenerated automatically by the `tailwind`
-service in dev. A production image build should run
-`npm --prefix theme ci && npm --prefix theme run build` before
-`collectstatic` — not yet wired into `docker/web/Dockerfile`, which currently
-targets local development only.
+artifact (git-ignored); in dev it's regenerated automatically by the
+`tailwind` service. The production image (see below) builds it once, from a
+dedicated Node stage in `docker/web/Dockerfile`, before `collectstatic` runs.
+
+## Production deployment
+
+```bash
+cp .env.prod.example .env   # then fill in every value — see the file's comments
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+```
+
+This builds the `docker/web/Dockerfile`'s `prod` target instead of `dev`:
+the Tailwind/DaisyUI CSS is pre-built (no `tailwind` watcher service), the
+source tree is copied into the image rather than bind-mounted, the
+container runs as a non-root user, and gunicorn serves the app instead of
+Django's dev server. `docker/web/entrypoint.sh` runs `collectstatic` at
+container start (it needs real settings/env, which are only available at
+deploy time) and then execs gunicorn; migrations are deliberately not
+run automatically — see the entrypoint script's comment for why.
+
+`config.settings.prod` turns on `SECURE_SSL_REDIRECT`, secure cookies, and
+HSTS, all on the assumption that a TLS-terminating reverse proxy (nginx,
+Caddy, a cloud load balancer) sits in front of this service and forwards
+the original scheme via `X-Forwarded-Proto` — this repo does not include
+that proxy. Don't expose the `web` container directly to the internet
+without one in front of it.
 
 ## Project layout
 
