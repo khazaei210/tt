@@ -4,6 +4,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
+from apps.core.csv_utils import csv_response
 from apps.tournaments.models import Competition
 from apps.tournaments.permissions import tournament_manager_required
 
@@ -20,6 +21,17 @@ def category_detail(request, pk):
     category = get_object_or_404(RankingCategory, pk=pk)
     rankings = category.player_rankings.select_related("player").order_by("current_rank", "-points")
     return render(request, "rankings/category_detail.html", {"category": category, "rankings": rankings})
+
+
+def category_csv(request, pk):
+    category = get_object_or_404(RankingCategory, pk=pk)
+    rankings = category.player_rankings.select_related("player").order_by("current_rank", "-points")
+    header = [_("Rank"), _("Player"), _("Points"), _("Tournaments played")]
+    rows = [
+        [ranking.current_rank, ranking.player.full_name, ranking.points, ranking.tournaments_played]
+        for ranking in rankings
+    ]
+    return csv_response(f"ranking-{category.pk}.csv", header, rows)
 
 
 @login_required

@@ -10,7 +10,12 @@
         <h1 class="text-2xl font-bold">{{ tournament.name }}</h1>
         <p class="text-base-content/60">{% translate "Tournament report" %}</p>
     </div>
-    <a href="{% url 'tournaments:detail' tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+    <div class="flex gap-2">
+        {% if report.competitions %}
+            <a href="{% url 'reports:tournament_report_csv' tournament.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
+        {% endif %}
+        <a href="{% url 'tournaments:detail' tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+    </div>
 </div>
 
 {% if report.competitions %}

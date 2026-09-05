@@ -7,7 +7,12 @@
 {% block content %}
 <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
     <h1 class="text-2xl font-bold">{{ category.name }}</h1>
-    <a href="{% url 'rankings:category_list' %}" class="btn btn-ghost">{% translate "Back to rankings" %}</a>
+    <div class="flex gap-2">
+        {% if rankings %}
+            <a href="{% url 'rankings:category_csv' category.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
+        {% endif %}
+        <a href="{% url 'rankings:category_list' %}" class="btn btn-ghost">{% translate "Back to rankings" %}</a>
+    </div>
 </div>
 
 {% if rankings %}

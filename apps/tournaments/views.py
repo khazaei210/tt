@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from apps.core.csv_utils import csv_response
 from apps.matches.services import (
     NoKnockoutStageError,
     NotEnoughParticipantsError,
@@ -450,6 +451,23 @@ class GroupDetailView(DetailView):
         context["standings"] = compute_group_standings(self.object)
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.stage.competition.tournament)
         return context
+
+
+def group_standings_csv(request, pk):
+    group = get_object_or_404(Group, pk=pk)
+    header = [
+        _("Rank"), _("Participant"), _("Played"), _("Won"), _("Lost"), _("Match points"),
+        _("Sets won"), _("Sets lost"), _("Set difference"), _("Points scored"), _("Points conceded"), _("Point difference"),
+    ]
+    rows = [
+        [
+            row["rank"], row["participant"].display_name, row["played"], row["wins"], row["losses"], row["match_points"],
+            row["sets_won"], row["sets_lost"], row["set_difference"], row["points_scored"], row["points_conceded"],
+            row["point_difference"],
+        ]
+        for row in compute_group_standings(group)
+    ]
+    return csv_response(f"standings-{group.pk}.csv", header, rows)
 
 
 @tournament_manager_required(_tournament_from_group_pk)
