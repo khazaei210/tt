@@ -77,7 +77,12 @@
                                 </a>
                                 <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
                             </td>
-                            <td class="text-right"><span class="badge badge-error badge-sm">{% translate "Live" %}</span></td>
+                            <td class="text-right">
+                                <span class="badge badge-error badge-sm">{% translate "Live" %}</span>
+                                {% if match.start_time %}
+                                <div class="font-mono text-xs text-base-content/60 mt-1" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}"></div>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr><td class="text-center text-base-content/60 py-6">{% translate "No live matches right now." %}</td></tr>
