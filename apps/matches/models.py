@@ -46,18 +46,25 @@ class Match(models.Model):
         blank=True,
         help_text=_("Position within the round, for knockout bracket rendering/progression. Unused for round robin."),
     )
+    # RESTRICT, not PROTECT, on the three Participant FKs below: deleting a
+    # single Participant while it still has matches must still be blocked,
+    # but deleting an entire Tournament has to cascade through Stage/Match
+    # down to Participant in one operation — PROTECT would refuse that even
+    # though the referencing Match rows are being deleted in the same
+    # cascade, since PROTECT is unconditional. RESTRICT allows exactly that
+    # case while still blocking a standalone Participant delete.
     participant_a = models.ForeignKey(
         "tournaments.Participant",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         related_name="matches_as_participant_a",
     )
     participant_b = models.ForeignKey(
         "tournaments.Participant",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         related_name="matches_as_participant_b",
     )
     is_bye = models.BooleanField(_("BYE"), default=False)
@@ -67,7 +74,7 @@ class Match(models.Model):
         "tournaments.Participant",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         related_name="matches_won",
     )
     referee = models.ForeignKey(
