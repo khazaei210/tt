@@ -82,7 +82,11 @@ class Competition(models.Model):
         on_delete=models.SET_NULL,
         related_name="competitions",
         verbose_name=_("Ranking category"),
-        help_text=_("If set, final placements in this competition can award points to this global ranking."),
+        help_text=_(
+            "Elo ratings update after every match, and final placements can award points, to this global "
+            "ranking. Defaults to the shared 'Overall' category automatically — clear this to keep a "
+            "specific competition (e.g. a casual friendly) out of the global ranking."
+        ),
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -98,6 +102,13 @@ class Competition(models.Model):
 
     def get_absolute_url(self):
         return reverse("tournaments:competition_detail", kwargs={"pk": self.pk})
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.ranking_category_id is None:
+            from apps.rankings.services import get_default_ranking_category
+
+            self.ranking_category = get_default_ranking_category()
+        super().save(*args, **kwargs)
 
 
 class CompetitionRule(models.Model):
