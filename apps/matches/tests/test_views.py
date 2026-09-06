@@ -135,6 +135,22 @@ class ScorerDashboardViewTests(MatchScoringViewTestCase):
         response = self.client.get(reverse("matches:scorer_dashboard"))
         self.assertIn(self.match, response.context["dashboard"].unassigned_matches)
 
+    def test_pending_match_has_one_tap_start_button(self):
+        self.match.scorekeeper = self.scorekeeper
+        self.match.save(update_fields=["scorekeeper"])
+        self.client.login(username="scorekeeper", password="pw")
+        response = self.client.get(reverse("matches:scorer_dashboard"))
+        self.assertContains(response, reverse("matches:start", args=[self.match.pk]))
+
+    def test_one_tap_start_from_dashboard_starts_match(self):
+        self.match.scorekeeper = self.scorekeeper
+        self.match.save(update_fields=["scorekeeper"])
+        self.client.login(username="scorekeeper", password="pw")
+        response = self.client.post(reverse("matches:start", args=[self.match.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.status, MatchStatus.LIVE)
+
     def test_live_match_gets_a_score_summary(self):
         from apps.matches.models import MatchSet
 
