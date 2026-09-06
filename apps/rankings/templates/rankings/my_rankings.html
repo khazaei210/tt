@@ -41,6 +41,74 @@
     {% empty_panel no_points_msg extra_class="mb-6" %}
     {% endif %}
 
+    {% translate "Elo ratings" as elo_label %}
+    {% sectionheader title=elo_label %}{% endsectionheader %}
+    {% if elo_ratings %}
+    {% table_card table_class="table-zebra" extra_class="mb-6" %}
+        <thead>
+            <tr>
+                <th>{% translate "Category" %}</th>
+                <th class="text-center">{% translate "Rank" %}</th>
+                <th class="text-center">{% translate "Rating" %}</th>
+                <th class="text-center">{% translate "Matches" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rating in elo_ratings %}
+            <tr>
+                <td><a href="{% url 'rankings:elo_leaderboard' rating.category.pk %}" class="link">{{ rating.category.name }}</a></td>
+                <td class="text-center">{{ rating.current_rank|default:"—" }}</td>
+                <td class="text-center font-semibold">{{ rating.rating|floatformat:0 }}</td>
+                <td class="text-center">{{ rating.matches_played }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
+    {% else %}
+    {% translate "You have no Elo rating yet." as no_elo_msg %}
+    {% empty_panel no_elo_msg extra_class="mb-6" %}
+    {% endif %}
+
+    {% translate "Recent Elo changes" as recent_elo_label %}
+    {% sectionheader title=recent_elo_label %}{% endsectionheader %}
+    {% if elo_events %}
+    {% table_card table_class="table-zebra" extra_class="mb-6" %}
+        <thead>
+            <tr>
+                <th>{% translate "Date" %}</th>
+                <th>{% translate "Category" %}</th>
+                <th>{% translate "Opponent" %}</th>
+                <th class="text-center">{% translate "Result" %}</th>
+                <th class="text-center">{% translate "Change" %}</th>
+                <th class="text-center">{% translate "Rating after" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in elo_events %}
+            <tr>
+                <td>{{ event.created_at|date:"Y-m-d" }}</td>
+                <td>{{ event.category.name }}</td>
+                <td>{{ event.opponent_participant|default:"—" }}</td>
+                <td class="text-center">
+                    {% if event.won %}
+                        <span class="badge badge-success">{% translate "Win" %}</span>
+                    {% else %}
+                        <span class="badge badge-error">{% translate "Loss" %}</span>
+                    {% endif %}
+                </td>
+                <td class="text-center {% if event.delta > 0 %}text-success{% elif event.delta < 0 %}text-error{% endif %}">
+                    {% if event.delta > 0 %}+{% endif %}{{ event.delta|floatformat:1 }}
+                </td>
+                <td class="text-center font-semibold">{{ event.rating_after|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
+    {% else %}
+    {% translate "No Elo rating changes yet." as no_elo_events_msg %}
+    {% empty_panel no_elo_events_msg extra_class="mb-6" %}
+    {% endif %}
+
     {% translate "Recent ranking events" as recent_events_label %}
     {% sectionheader title=recent_events_label %}{% endsectionheader %}
     {% if events %}

@@ -360,6 +360,10 @@ def _refresh_match_result(match, rule):
     elif was_decided:
         _clear_untouched_propagation(match)
 
+    from apps.rankings.elo import sync_elo_ratings
+
+    sync_elo_ratings(match)
+
 
 def _next_bracket_match(match):
     if match.group_id is not None or match.bracket_slot is None:
@@ -446,6 +450,10 @@ def _finalize_match(match, *, winner_id, status, allow_correction=False, perform
     match.end_time = match.end_time or timezone.now()
     match.save(update_fields=["winner", "status", "end_time"])
     _propagate_knockout_winner(match)
+
+    from apps.rankings.elo import sync_elo_ratings
+
+    sync_elo_ratings(match)
 
     if was_terminal:
         MatchCorrection.objects.create(

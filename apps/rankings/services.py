@@ -116,7 +116,7 @@ def determine_final_placements(competition):
     return {row["participant"].id: row["rank"] for row in rows}
 
 
-def _players_for_participant(participant):
+def players_for_participant(participant):
     """The Player(s) a Participant's ranking points should go to.
 
     Individual: the player. Doubles: both players in the pair, each in
@@ -166,7 +166,7 @@ def award_ranking_points(competition, *, category=None):
             continue
         points = scale.get(placement, 0)
 
-        for player in _players_for_participant(participant):
+        for player in players_for_participant(participant):
             if RankingEvent.objects.filter(player=player, category=category, competition=competition).exists():
                 continue
 

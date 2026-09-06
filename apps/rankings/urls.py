@@ -9,5 +9,7 @@ urlpatterns = [
     path("me/", views.my_rankings, name="my_rankings"),
     path("<int:pk>/", views.category_detail, name="category_detail"),
     path("<int:pk>/export.csv", views.category_csv, name="category_csv"),
+    path("<int:pk>/elo/", views.elo_leaderboard, name="elo_leaderboard"),
+    path("<int:pk>/elo/export.csv", views.elo_csv, name="elo_csv"),
     path("competitions/<int:pk>/award/", views.award_points, name="award_points"),
 ]

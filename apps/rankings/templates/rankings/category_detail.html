@@ -7,6 +7,7 @@
 {% block content %}
 {% pageheader category.name %}
 {% pageheader_actions %}
+    <a href="{% url 'rankings:elo_leaderboard' category.pk %}" class="btn btn-outline">{% translate "Elo leaderboard" %}</a>
     {% if rankings %}
         <a href="{% url 'rankings:category_csv' category.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
     {% endif %}
