@@ -29,4 +29,32 @@
         </div>
     </form>
 {% endform_card %}
+
+{% if object %}
+{% translate "Login account" as login_form_title %}
+{% form_card login_form_title %}
+    {% if object.user %}
+        <p class="mb-3">
+            {% blocktranslate with username=object.user.username %}This player can sign in as <strong>{{ username }}</strong>.{% endblocktranslate %}
+        </p>
+        {% translate "Reset this player's password? The old one stops working immediately." as reset_password_confirm %}
+        <form method="post" action="{% url 'players:reset_password' object.pk %}"
+              onsubmit="return confirm('{{ reset_password_confirm|escapejs }}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline">{% translate "Reset password" %}</button>
+        </form>
+    {% else %}
+        <p class="mb-3 text-base-content/60">{% translate "This player doesn't have a login yet." %}</p>
+        <form method="post" action="{% url 'players:create_login' object.pk %}" class="flex items-end gap-2 flex-wrap">
+            {% csrf_token %}
+            <div class="flex-1 min-w-48">
+                <label class="label"><span class="label-text">{% translate "Username" %}</span></label>
+                <input type="text" name="username" value="{{ suggested_username }}"
+                       class="input input-bordered w-full" dir="ltr">
+            </div>
+            <button type="submit" class="btn btn-primary">{% translate "Create login" %}</button>
+        </form>
+    {% endif %}
+{% endform_card %}
+{% endif %}
 {% endblock %}
