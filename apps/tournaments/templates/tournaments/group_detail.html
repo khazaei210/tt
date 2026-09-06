@@ -58,8 +58,9 @@
 <div class="flex items-center justify-between mt-6 mb-2">
     <h2 class="text-lg font-semibold">{% translate "Schedule" %}</h2>
     {% if schedule_matches %}
+        {% translate "Clear the generated schedule? This deletes all matches for this group." as clear_schedule_confirm %}
         <form method="post" action="{% url 'tournaments:group_schedule_clear' group.pk %}"
-              onsubmit="return confirm('{% translate "Clear the generated schedule? This deletes all matches for this group." %}');">
+              onsubmit="return confirm('{{ clear_schedule_confirm|escapejs }}');">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline btn-error">{% translate "Clear schedule" %}</button>
         </form>
