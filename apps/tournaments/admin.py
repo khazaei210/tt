@@ -1,21 +1,23 @@
 from django.contrib import admin
 
+from apps.core.admin import ModelAdmin, TabularInline
+
 from .models import Competition, CompetitionRule, Group, Participant, Stage, Tournament, TournamentStaff
 
 
-class CompetitionInline(admin.TabularInline):
+class CompetitionInline(TabularInline):
     model = Competition
     extra = 0
 
 
-class TournamentStaffInline(admin.TabularInline):
+class TournamentStaffInline(TabularInline):
     model = TournamentStaff
     extra = 0
     autocomplete_fields = ["user"]
 
 
 @admin.register(Tournament)
-class TournamentAdmin(admin.ModelAdmin):
+class TournamentAdmin(ModelAdmin):
     list_display = ("name", "location", "start_date", "end_date", "status")
     list_filter = ("status",)
     search_fields = ("name", "location")
@@ -23,25 +25,25 @@ class TournamentAdmin(admin.ModelAdmin):
 
 
 @admin.register(TournamentStaff)
-class TournamentStaffAdmin(admin.ModelAdmin):
+class TournamentStaffAdmin(ModelAdmin):
     list_display = ("user", "tournament", "role")
     list_filter = ("role",)
     search_fields = ("user__username", "tournament__name")
     autocomplete_fields = ["user"]
 
 
-class StageInline(admin.TabularInline):
+class StageInline(TabularInline):
     model = Stage
     extra = 0
 
 
-class ParticipantInline(admin.TabularInline):
+class ParticipantInline(TabularInline):
     model = Participant
     extra = 0
 
 
 @admin.register(Competition)
-class CompetitionAdmin(admin.ModelAdmin):
+class CompetitionAdmin(ModelAdmin):
     list_display = ("name", "tournament", "participant_type", "is_active")
     list_filter = ("participant_type", "is_active")
     search_fields = ("name", "tournament__name")
@@ -49,29 +51,29 @@ class CompetitionAdmin(admin.ModelAdmin):
 
 
 @admin.register(CompetitionRule)
-class CompetitionRuleAdmin(admin.ModelAdmin):
+class CompetitionRuleAdmin(ModelAdmin):
     list_display = ("competition", "best_of_sets", "points_per_set", "win_by")
 
 
-class GroupInline(admin.TabularInline):
+class GroupInline(TabularInline):
     model = Group
     extra = 0
 
 
 @admin.register(Stage)
-class StageAdmin(admin.ModelAdmin):
+class StageAdmin(ModelAdmin):
     list_display = ("name", "competition", "stage_format", "order")
     list_filter = ("stage_format",)
     inlines = [GroupInline]
 
 
 @admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
+class GroupAdmin(ModelAdmin):
     list_display = ("name", "stage", "order")
 
 
 @admin.register(Participant)
-class ParticipantAdmin(admin.ModelAdmin):
+class ParticipantAdmin(ModelAdmin):
     list_display = ("display_name", "competition", "participant_type", "seed", "is_bye")
     list_filter = ("participant_type", "is_bye")
     search_fields = ("display_name",)
