@@ -33,7 +33,7 @@
     {% endsectionheader %}
     {% if can_manage and next_knockout_stage and not stage.qualifiers_per_group %}
         <p class="text-sm text-base-content/60 mb-2">
-            {% translate "Set \"Qualifiers per group\" on this stage to enable advancing to" %} {{ next_knockout_stage.name }}.
+            {% blocktranslate with stage_name=next_knockout_stage.name %}Set "Qualifiers per group" on this stage to enable advancing to {{ stage_name }}.{% endblocktranslate %}
         </p>
     {% endif %}
     {% table_card %}

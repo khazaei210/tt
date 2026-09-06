@@ -39,4 +39,4 @@ class ReportViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "text/csv")
         content = response.content.decode("utf-8-sig")
-        self.assertIn("Stage", content)  # header row present even with no matches
+        self.assertIn("مرحله", content)  # header row present even with no matches (fa: "Stage")
