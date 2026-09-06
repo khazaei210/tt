@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{% blocktranslate with name=category.name %}{{ name }} — Elo{% endblocktranslate %}{% endblock %}
+{% block page_title %}{% blocktranslate with name=category.name %}{{ name }} — Elo{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+{% blocktranslate with name=category.name asvar elo_title %}{{ name }} — Elo leaderboard{% endblocktranslate %}
+{% pageheader elo_title %}
+{% pageheader_actions %}
+    {% if ratings %}
+        <a href="{% url 'rankings:elo_csv' category.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
+    {% endif %}
+    <a href="{% url 'rankings:category_detail' category.pk %}" class="btn btn-ghost">{% translate "Placement points" %}</a>
+{% endpageheader %}
+
+{% if ratings %}
+{% table_card table_class="table-zebra" %}
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>{% translate "Player" %}</th>
+            <th class="text-center">{% translate "Rating" %}</th>
+            <th class="text-center">{% translate "Change" %}</th>
+            <th class="text-center">{% translate "Matches" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rating in ratings %}
+        <tr>
+            <td>{{ rating.current_rank|default:"—" }}</td>
+            <td>{{ rating.player.full_name }}</td>
+            <td class="text-center font-semibold">{{ rating.rating|floatformat:0 }}</td>
+            <td class="text-center">
+                {% with change=rating.rank_change %}
+                    {% if change is None or change == 0 %}
+                        <span class="text-base-content/40">—</span>
+                    {% elif change > 0 %}
+                        <span class="text-success">▲ {{ change }}</span>
+                    {% else %}
+                        <span class="text-error">▼ {{ change|cut:"-" }}</span>
+                    {% endif %}
+                {% endwith %}
+            </td>
+            <td class="text-center">{{ rating.matches_played }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+{% endtable_card %}
+{% else %}
+{% translate "No rated matches yet in this category." as no_ratings_msg %}
+{% empty_panel no_ratings_msg %}
+{% endif %}
+{% endblock %}

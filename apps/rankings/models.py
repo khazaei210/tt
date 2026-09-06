@@ -88,6 +88,84 @@ class PlayerRanking(models.Model):
         return self.previous_rank - self.current_rank
 
 
+class EloRating(models.Model):
+    """A player's live Elo rating in one RankingCategory.
+
+    Distinct from PlayerRanking (placement-based points awarded once a
+    competition finishes, see apps.rankings.services.award_ranking_points):
+    this updates after every individual completed match, per standard
+    table-tennis Elo rules (apps.rankings.elo). The two systems intentionally
+    coexist — CLAUDE.md section 19 keeps tournament standings, placement
+    points and any future ranking algorithm as separate, independently
+    evolvable concepts.
+    """
+
+    player = models.ForeignKey("players.Player", on_delete=models.CASCADE, related_name="elo_ratings")
+    category = models.ForeignKey(RankingCategory, on_delete=models.CASCADE, related_name="elo_ratings")
+    rating = models.FloatField(_("Rating"), default=1500.0)
+    matches_played = models.PositiveIntegerField(_("Matches played"), default=0)
+    previous_rank = models.PositiveIntegerField(_("Previous rank"), null=True, blank=True)
+    current_rank = models.PositiveIntegerField(_("Current rank"), null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "-rating", "player"]
+        constraints = [
+            models.UniqueConstraint(fields=["player", "category"], name="unique_elo_rating_per_player_and_category"),
+        ]
+        indexes = [
+            models.Index(fields=["category", "current_rank"]),
+        ]
+        verbose_name = _("Elo rating")
+
+    def __str__(self):
+        return f"{self.player} — {self.category}: {round(self.rating)}"
+
+    @property
+    def rank_change(self):
+        if self.previous_rank is None or self.current_rank is None:
+            return None
+        return self.previous_rank - self.current_rank
+
+
+class EloRatingEvent(models.Model):
+    """Audit trail entry for one match's effect on one player's Elo rating.
+
+    Kept separate from EloRating (which only holds the running total) for
+    the same reason as RankingEvent (CLAUDE.md section 33), and additionally
+    so a later correction to the match result can be reversed: apps.rankings
+    elo.sync_elo_ratings finds a match's existing events, undoes their
+    rating_before/rating_after delta, deletes them, then re-applies the
+    match's current result if it's still in a ratable state.
+    """
+
+    match = models.ForeignKey("matches.Match", on_delete=models.CASCADE, related_name="elo_events")
+    player = models.ForeignKey("players.Player", on_delete=models.CASCADE, related_name="elo_events")
+    category = models.ForeignKey(RankingCategory, on_delete=models.CASCADE, related_name="elo_events")
+    opponent_participant = models.ForeignKey(
+        "tournaments.Participant",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    won = models.BooleanField(_("Won"))
+    rating_before = models.FloatField(_("Rating before"))
+    rating_after = models.FloatField(_("Rating after"))
+    delta = models.FloatField(_("Delta"))
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["match", "player"], name="unique_elo_event_per_match_and_player"),
+        ]
+        verbose_name = _("Elo rating event")
+
+    def __str__(self):
+        return f"{self.player} — {self.match}: {self.delta:+.1f}"
+
+
 class RankingEvent(models.Model):
     """Audit trail entry for one award of ranking points to one player.
 

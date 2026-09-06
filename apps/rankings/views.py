@@ -23,6 +23,23 @@ def category_detail(request, pk):
     return render(request, "rankings/category_detail.html", {"category": category, "rankings": rankings})
 
 
+def elo_leaderboard(request, pk):
+    category = get_object_or_404(RankingCategory, pk=pk)
+    ratings = category.elo_ratings.select_related("player").order_by("current_rank", "-rating")
+    return render(request, "rankings/elo_leaderboard.html", {"category": category, "ratings": ratings})
+
+
+def elo_csv(request, pk):
+    category = get_object_or_404(RankingCategory, pk=pk)
+    ratings = category.elo_ratings.select_related("player").order_by("current_rank", "-rating")
+    header = [_("Rank"), _("Player"), _("Rating"), _("Matches played")]
+    rows = [
+        [rating.current_rank, rating.player.full_name, round(rating.rating), rating.matches_played]
+        for rating in ratings
+    ]
+    return csv_response(f"elo-{category.pk}.csv", header, rows)
+
+
 def category_csv(request, pk):
     category = get_object_or_404(RankingCategory, pk=pk)
     rankings = category.player_rankings.select_related("player").order_by("current_rank", "-points")
@@ -39,7 +56,21 @@ def my_rankings(request):
     player = getattr(request.user, "player_profile", None)
     rankings = player.rankings.select_related("category").order_by("category__name") if player else []
     events = player.ranking_events.select_related("category", "competition")[:20] if player else []
-    return render(request, "rankings/my_rankings.html", {"player": player, "rankings": rankings, "events": events})
+    elo_ratings = player.elo_ratings.select_related("category").order_by("category__name") if player else []
+    elo_events = (
+        player.elo_events.select_related("category", "match", "opponent_participant")[:20] if player else []
+    )
+    return render(
+        request,
+        "rankings/my_rankings.html",
+        {
+            "player": player,
+            "rankings": rankings,
+            "events": events,
+            "elo_ratings": elo_ratings,
+            "elo_events": elo_events,
+        },
+    )
 
 
 def _tournament_from_competition_pk(request, pk, **kwargs):
