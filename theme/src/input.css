@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: corporate --default;
+  themes: fantasy --default;
 }
 
 /* Explicit template sources: entry point lives in theme/src/, templates

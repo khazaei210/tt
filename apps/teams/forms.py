@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.core.forms import JalaliDateField, JalaliDateWidget
 from apps.players.models import Player
 
 from .models import Team, TeamMembership
@@ -24,9 +25,12 @@ class TeamMembershipForm(forms.ModelForm):
     class Meta:
         model = TeamMembership
         fields = ["player", "joined_on"]
+        field_classes = {
+            "joined_on": JalaliDateField,
+        }
         widgets = {
             "player": forms.Select(attrs={"class": SELECT_CLASS}),
-            "joined_on": forms.DateInput(attrs={"class": INPUT_CLASS, "type": "date"}),
+            "joined_on": JalaliDateWidget(attrs={"class": INPUT_CLASS}),
         }
 
     def __init__(self, *args, team=None, **kwargs):

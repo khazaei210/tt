@@ -1,9 +1,13 @@
-{% load i18n %}
+{% load i18n ui_kit %}
 <div id="scoreboard">
     <div class="flex items-center gap-3 mb-2">
-        <span class="badge {% if match.status == 'live' %}badge-error{% elif is_decided %}badge-success{% else %}badge-outline{% endif %}">
-            {{ match.get_status_display }}
-        </span>
+        {% if match.status == 'live' %}
+            {% status_badge match.get_status_display variant="error" %}
+        {% elif is_decided %}
+            {% status_badge match.get_status_display variant="success" %}
+        {% else %}
+            {% status_badge match.get_status_display variant="outline" %}
+        {% endif %}
         {% if match.status == "live" and match.start_time %}
             <span class="font-mono text-sm" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}"></span>
         {% elif match.start_time and match.end_time %}
@@ -80,7 +84,7 @@
     {% endif %}
 
     {% if next_set_number and can_score %}
-    <div class="bg-base-100 rounded-box shadow p-4 mb-4">
+    {% card extra_class="mb-4" %}
         <div class="text-sm text-base-content/60 mb-3 text-center">
             {% blocktranslate with n=next_set_number %}Enter set {{ n }}{% endblocktranslate %}
         </div>
@@ -109,53 +113,52 @@
             </div>
             <button type="submit" class="btn btn-primary btn-lg w-full mt-4">{% translate "Save set" %}</button>
         </form>
-    </div>
+    {% endcard %}
     {% endif %}
 
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>{% translate "Set" %}</th>
-                    <th>{{ match.participant_a.display_name|default:"A" }}</th>
-                    <th>{{ match.participant_b.display_name|default:"B" }}</th>
-                    {% if can_score %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for set in sets %}
-                <tr>
-                    {% if can_score %}
-                    <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML" class="contents">
-                        {% csrf_token %}
-                        <input type="hidden" name="set_number" value="{{ set.set_number }}">
-                        {% if is_decided %}<input type="hidden" name="allow_correction" value="1">{% endif %}
-                        <td>{{ set.set_number }}</td>
-                        <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
-                        <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
-                        <td class="text-right space-x-2 rtl:space-x-reverse">
-                            <button type="submit" class="btn btn-sm btn-primary">{% translate "Save" %}</button>
-                            <button type="button" class="btn btn-sm btn-error btn-outline"
-                                    hx-post="{% url 'matches:set_delete' match.pk set.set_number %}"
-                                    hx-target="#scoreboard" hx-swap="outerHTML"
-                                    {% if is_decided %}hx-vals='{"allow_correction": "1"}'{% endif %}
-                                    hx-confirm="{% translate "Delete this set?" %}">
-                                {% translate "Delete" %}
-                            </button>
-                        </td>
-                    </form>
-                    {% else %}
-                        <td>{{ set.set_number }}</td>
-                        <td>{{ set.participant_a_score }}</td>
-                        <td>{{ set.participant_b_score }}</td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                    <tr><td colspan="4" class="text-center text-base-content/60 py-6">{% translate "No sets recorded yet." %}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% table_card %}
+        <thead>
+            <tr>
+                <th>{% translate "Set" %}</th>
+                <th>{{ match.participant_a.display_name|default:"A" }}</th>
+                <th>{{ match.participant_b.display_name|default:"B" }}</th>
+                {% if can_score %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for set in sets %}
+            <tr>
+                {% if can_score %}
+                <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML" class="contents">
+                    {% csrf_token %}
+                    <input type="hidden" name="set_number" value="{{ set.set_number }}">
+                    {% if is_decided %}<input type="hidden" name="allow_correction" value="1">{% endif %}
+                    <td>{{ set.set_number }}</td>
+                    <td><input type="number" name="participant_a_score" value="{{ set.participant_a_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
+                    <td><input type="number" name="participant_b_score" value="{{ set.participant_b_score }}" min="0" class="input input-bordered input-sm w-20 text-center"></td>
+                    <td class="text-right space-x-2 rtl:space-x-reverse">
+                        <button type="submit" class="btn btn-sm btn-primary">{% translate "Save" %}</button>
+                        <button type="button" class="btn btn-sm btn-error btn-outline"
+                                hx-post="{% url 'matches:set_delete' match.pk set.set_number %}"
+                                hx-target="#scoreboard" hx-swap="outerHTML"
+                                {% if is_decided %}hx-vals='{"allow_correction": "1"}'{% endif %}
+                                hx-confirm="{% translate "Delete this set?" %}">
+                            {% translate "Delete" %}
+                        </button>
+                    </td>
+                </form>
+                {% else %}
+                    <td>{{ set.set_number }}</td>
+                    <td>{{ set.participant_a_score }}</td>
+                    <td>{{ set.participant_b_score }}</td>
+                {% endif %}
+            </tr>
+            {% empty %}
+                {% translate "No sets recorded yet." as no_sets_msg %}
+                {% empty_row no_sets_msg colspan=4 %}
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
 
     {% if can_score and corrections %}
     <div class="mt-4">

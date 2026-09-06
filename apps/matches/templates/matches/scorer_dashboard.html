@@ -1,106 +1,100 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Scoring dashboard" %}{% endblock %}
 {% block page_title %}{% translate "Scoring dashboard" %}{% endblock %}
 
 {% block content %}
 {% if not dashboard.has_scoring_role %}
-    <div class="hero bg-base-100 rounded-box shadow py-16">
-        <div class="hero-content text-center">
-            <div class="max-w-md">
-                <h2 class="text-xl font-semibold mb-2">{% translate "No matches to score" %}</h2>
-                <p class="text-base-content/60">
-                    {% translate "You don't have a Referee, Scorekeeper, Tournament Admin or Manager role on any tournament yet." %}
-                </p>
-            </div>
-        </div>
-    </div>
+    {% translate "No matches to score" as no_scoring_title %}
+    {% translate "You don't have a Referee, Scorekeeper, Tournament Admin or Manager role on any tournament yet." as no_scoring_desc %}
+    {% hero_empty_state no_scoring_title no_scoring_desc %}
 {% else %}
-    <h2 class="text-lg font-semibold mb-2">{% translate "Live now" %}</h2>
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
-        <table class="table">
-            <tbody>
-                {% for match in dashboard.live_matches %}
-                <tr>
-                    <td>
-                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
-                            {{ match.participant_a.display_name|default:"—" }}
-                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
-                            {{ match.participant_b.display_name|default:"—" }}
-                        </a>
-                        <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
-                    </td>
-                    <td class="text-center">
-                        {% if match.live_score_summary %}
-                            <span class="font-mono font-semibold" dir="ltr">{{ match.live_score_summary.sets_score }}</span>
-                            <span class="text-xs text-base-content/60 block" dir="ltr">{% translate "last set" %} {{ match.live_score_summary.last_set_score }}</span>
-                        {% else %}
-                            <span class="text-xs text-base-content/40">{% translate "No sets yet" %}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-right">
-                        <span class="badge badge-error badge-sm">{% translate "Live" %}</span>
-                        {% if match.start_time %}
-                        <div class="font-mono text-xs text-base-content/60 mt-1" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}"></div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No live matches assigned to you right now." %}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% translate "Live now" as live_now_label %}
+    {% translate "Live" as live_label %}
+    {% sectionheader title=live_now_label %}{% endsectionheader %}
+    {% table_card extra_class="mb-6" %}
+        <tbody>
+            {% for match in dashboard.live_matches %}
+            <tr>
+                <td>
+                    <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                        {{ match.participant_a.display_name|default:"—" }}
+                        <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                        {{ match.participant_b.display_name|default:"—" }}
+                    </a>
+                    <div class="text-xs text-base-content/60">{{ match.competition.name }}</div>
+                </td>
+                <td class="text-center">
+                    {% if match.live_score_summary %}
+                        <span class="font-mono font-semibold" dir="ltr">{{ match.live_score_summary.sets_score }}</span>
+                        <span class="text-xs text-base-content/60 block" dir="ltr">{% translate "last set" %} {{ match.live_score_summary.last_set_score }}</span>
+                    {% else %}
+                        <span class="text-xs text-base-content/40">{% translate "No sets yet" %}</span>
+                    {% endif %}
+                </td>
+                <td class="text-right">
+                    {% status_badge live_label variant="error" size="sm" %}
+                    {% if match.start_time %}
+                    <div class="font-mono text-xs text-base-content/60 mt-1" dir="ltr" data-match-clock="{{ match.start_time|date:'c' }}"></div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+                {% translate "No live matches assigned to you right now." as no_live_msg %}
+                {% empty_row no_live_msg colspan=3 %}
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
 
-    <h2 class="text-lg font-semibold mb-2">{% translate "Your pending matches" %}</h2>
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
-        <table class="table">
-            <tbody>
-                {% for match in dashboard.pending_matches %}
-                <tr>
-                    <td>
-                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
-                            {{ match.participant_a.display_name|default:"TBD" }}
-                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
-                            {{ match.participant_b.display_name|default:"TBD" }}
-                        </a>
-                        <div class="text-xs text-base-content/60">
-                            {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
-                        </div>
-                    </td>
-                    <td class="text-right"><span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span></td>
-                </tr>
-                {% empty %}
-                <tr><td class="text-center text-base-content/60 py-6">{% translate "No pending matches assigned to you." %}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% translate "Your pending matches" as pending_label %}
+    {% sectionheader title=pending_label %}{% endsectionheader %}
+    {% table_card extra_class="mb-6" %}
+        <tbody>
+            {% for match in dashboard.pending_matches %}
+            <tr>
+                <td>
+                    <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                        {{ match.participant_a.display_name|default:"TBD" }}
+                        <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                        {{ match.participant_b.display_name|default:"TBD" }}
+                    </a>
+                    <div class="text-xs text-base-content/60">
+                        {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+                    </div>
+                </td>
+                <td class="text-right">{% status_badge match.get_status_display size="sm" %}</td>
+            </tr>
+            {% empty %}
+                {% translate "No pending matches assigned to you." as no_pending_msg %}
+                {% empty_row no_pending_msg %}
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
 
-    <h2 class="text-lg font-semibold mb-2">{% translate "Available to pick up" %}</h2>
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
-        <table class="table">
-            <tbody>
-                {% for match in dashboard.unassigned_matches %}
-                <tr>
-                    <td>
-                        <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
-                            {{ match.participant_a.display_name|default:"TBD" }}
-                            <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
-                            {{ match.participant_b.display_name|default:"TBD" }}
-                        </a>
-                        <div class="text-xs text-base-content/60">
-                            {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
-                        </div>
-                    </td>
-                    <td class="text-right"><span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span></td>
-                </tr>
-                {% empty %}
-                <tr><td class="text-center text-base-content/60 py-6">{% translate "No unassigned matches waiting." %}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% translate "Available to pick up" as available_label %}
+    {% sectionheader title=available_label %}{% endsectionheader %}
+    {% table_card %}
+        <tbody>
+            {% for match in dashboard.unassigned_matches %}
+            <tr>
+                <td>
+                    <a href="{% url 'matches:detail' match.pk %}" class="link link-primary">
+                        {{ match.participant_a.display_name|default:"TBD" }}
+                        <span class="text-base-content/40 mx-1">{% translate "vs" %}</span>
+                        {{ match.participant_b.display_name|default:"TBD" }}
+                    </a>
+                    <div class="text-xs text-base-content/60">
+                        {{ match.competition.name }} · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+                    </div>
+                </td>
+                <td class="text-right">{% status_badge match.get_status_display size="sm" %}</td>
+            </tr>
+            {% empty %}
+                {% translate "No unassigned matches waiting." as no_unassigned_msg %}
+                {% empty_row no_unassigned_msg %}
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
 {% endif %}
 {% endblock %}

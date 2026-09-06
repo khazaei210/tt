@@ -1,66 +1,56 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{{ stage.name }}{% endblock %}
 {% block page_title %}{{ stage.name }}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <div>
-        <h1 class="text-2xl font-bold">{{ stage.name }}</h1>
-        <p class="text-base-content/60">
-            <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="link">{{ stage.competition.name }}</a>
-            · {{ stage.get_stage_format_display }}
-        </p>
-    </div>
-    <div class="flex gap-2">
-        {% if can_manage %}
-            <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
-        {% endif %}
-        <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost">{% translate "Back to competition" %}</a>
-    </div>
-</div>
+{% pageheader stage.name %}
+    <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="link">{{ stage.competition.name }}</a>
+    · {{ stage.get_stage_format_display }}
+{% pageheader_actions %}
+    {% if can_manage %}
+        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
+    {% endif %}
+    <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost">{% translate "Back to competition" %}</a>
+{% endpageheader %}
 
 {% if stage.stage_format == "round_robin" %}
-    <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-semibold">{% translate "Groups" %}</h2>
-        <div class="flex gap-2">
-            {% if can_manage and next_knockout_stage %}
-                <form method="post" action="{% url 'tournaments:stage_advance' stage.pk %}"
-                      onsubmit="return confirm('{% translate "Advance each group's top qualifiers to the next stage's bracket?" %}');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline" {% if not can_advance_qualifiers %}disabled{% endif %}>
-                        {% translate "Advance qualifiers" %}
-                    </button>
-                </form>
-            {% endif %}
-            {% if can_manage %}
-                <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
-            {% endif %}
-        </div>
-    </div>
+    {% translate "Groups" as groups_label %}
+    {% sectionheader title=groups_label %}
+        {% if can_manage and next_knockout_stage %}
+            <form method="post" action="{% url 'tournaments:stage_advance' stage.pk %}"
+                  onsubmit="return confirm('{% translate "Advance each group's top qualifiers to the next stage's bracket?" %}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline" {% if not can_advance_qualifiers %}disabled{% endif %}>
+                    {% translate "Advance qualifiers" %}
+                </button>
+            </form>
+        {% endif %}
+        {% if can_manage %}
+            <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+        {% endif %}
+    {% endsectionheader %}
     {% if can_manage and next_knockout_stage and not stage.qualifiers_per_group %}
         <p class="text-sm text-base-content/60 mb-2">
             {% translate "Set \"Qualifiers per group\" on this stage to enable advancing to" %} {{ next_knockout_stage.name }}.
         </p>
     {% endif %}
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>{% translate "Name" %}</th>
-                    <th>{% translate "Order" %}</th>
-                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% include "tournaments/_group_rows.html" %}
-            </tbody>
-        </table>
-    </div>
+    {% table_card %}
+        <thead>
+            <tr>
+                <th>{% translate "Name" %}</th>
+                <th>{% translate "Order" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% include "tournaments/_group_rows.html" %}
+        </tbody>
+    {% endtable_card %}
 {% else %}
-    <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-semibold">{% translate "Bracket" %}</h2>
+    {% translate "Bracket" as bracket_label %}
+    {% sectionheader title=bracket_label %}
         {% if has_bracket and can_manage %}
             <form method="post" action="{% url 'tournaments:stage_bracket_clear' stage.pk %}"
                   onsubmit="return confirm('{% translate "Clear the generated bracket? This deletes all matches for this stage." %}');">
@@ -68,13 +58,13 @@
                 <button type="submit" class="btn btn-sm btn-outline btn-error">{% translate "Clear bracket" %}</button>
             </form>
         {% endif %}
-    </div>
+    {% endsectionheader %}
 
     {% if has_bracket %}
         <div class="overflow-x-auto">
             <div class="flex gap-4 pb-2" style="min-width: max-content;">
                 {% for round in bracket_rounds %}
-                <div class="bg-base-100 rounded-box shadow p-4 min-w-56">
+                {% card extra_class="min-w-56" %}
                     <h3 class="font-semibold mb-2">{{ round.label }}</h3>
                     <ul class="space-y-2">
                         {% for match in round.matches %}
@@ -82,23 +72,23 @@
                             {% if not match.is_bye and match.participant_a and match.participant_b %}<a href="{% url 'matches:detail' match.pk %}" class="block">{% endif %}
                             <div class="flex items-center justify-between">
                                 <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ match.participant_a.display_name|default:"—" }}</span>
-                                {% if match.participant_a.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
+                                {% if match.participant_a.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}
                             </div>
                             <div class="text-center text-base-content/40 text-xs">{% translate "vs" %}</div>
                             <div class="flex items-center justify-between">
                                 <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name|default:"—" }}</span>
-                                {% if match.participant_b.is_bye %}<span class="badge badge-ghost badge-xs">{% translate "BYE" %}</span>{% endif %}
+                                {% if match.participant_b.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}
                             </div>
                             {% if not match.is_bye and match.participant_a and match.participant_b %}</a>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
-                </div>
+                {% endcard %}
                 {% endfor %}
             </div>
         </div>
     {% else %}
-        <div class="bg-base-100 rounded-box shadow p-4">
+        {% card %}
             <p class="text-base-content/60 mb-4">{% translate "No bracket generated yet." %}</p>
             <form method="post" action="{% url 'tournaments:stage_bracket_generate' stage.pk %}" class="flex items-end gap-4 flex-wrap">
                 {% csrf_token %}
@@ -115,7 +105,7 @@
                 </label>
                 <button type="submit" class="btn btn-primary">{% translate "Generate bracket" %}</button>
             </form>
-        </div>
+        {% endcard %}
     {% endif %}
 {% endif %}
 {% endblock %}

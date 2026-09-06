@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n ui_kit %}
 {% for competition in competitions %}
 <tr id="competition-row-{{ competition.pk }}">
     <td><a href="{% url 'tournaments:competition_detail' competition.pk %}" class="link link-primary">{{ competition.name }}</a></td>
@@ -7,9 +7,11 @@
     <td>{{ competition.participants.count }}</td>
     <td>
         {% if competition.is_active %}
-            <span class="badge badge-success">{% translate "Active" %}</span>
+            {% translate "Active" as active_label %}
+            {% status_badge active_label variant="success" %}
         {% else %}
-            <span class="badge badge-ghost">{% translate "Inactive" %}</span>
+            {% translate "Inactive" as inactive_label %}
+            {% status_badge inactive_label variant="ghost" %}
         {% endif %}
     </td>
     {% if can_manage %}

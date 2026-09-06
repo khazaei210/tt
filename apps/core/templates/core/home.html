@@ -1,25 +1,17 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block content %}
-<div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full mb-6">
-    <div class="stat">
-        <div class="stat-title">{% translate "Tournaments" %}</div>
-        <div class="stat-value text-primary">{{ tournament_count }}</div>
-    </div>
-    <div class="stat">
-        <div class="stat-title">{% translate "Players" %}</div>
-        <div class="stat-value text-secondary">{{ player_count }}</div>
-    </div>
-    <div class="stat">
-        <div class="stat-title">{% translate "Teams" %}</div>
-        <div class="stat-value text-accent">{{ team_count }}</div>
-    </div>
-    <div class="stat">
-        <div class="stat-title">{% translate "Doubles pairs" %}</div>
-        <div class="stat-value">{{ pair_count }}</div>
-    </div>
-</div>
+{% translate "Tournaments" as tournaments_label %}
+{% translate "Players" as players_label %}
+{% translate "Teams" as teams_label %}
+{% translate "Doubles pairs" as pairs_label %}
+{% stats_row extra_class="mb-6" %}
+    {% stat title=tournaments_label value=tournament_count value_class="text-primary" %}
+    {% stat title=players_label value=player_count value_class="text-secondary" %}
+    {% stat title=teams_label value=team_count value_class="text-accent" %}
+    {% stat title=pairs_label value=pair_count %}
+{% endstats_row %}
 
 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
     <a href="{% url 'tournaments:list' %}" class="card bg-base-100 shadow hover:shadow-md transition-shadow">

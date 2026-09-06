@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Add pair" %}{% endblock %}
 {% block page_title %}{% translate "Add pair" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto bg-base-100 rounded-box shadow p-6">
-    <h1 class="text-2xl font-bold mb-6">{% translate "Add pair" %}</h1>
+{% translate "Add pair" as form_title %}
+{% form_card form_title %}
     {% if form.non_field_errors %}
         <div class="alert alert-error mb-4">
             {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
@@ -30,5 +30,5 @@
             <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
         </div>
     </form>
-</div>
+{% endform_card %}
 {% endblock %}
