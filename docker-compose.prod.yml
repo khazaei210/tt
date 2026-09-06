@@ -1,14 +1,30 @@
-# Production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
+# Production stack:
+#   docker compose -p tt_prod --env-file .env.prod -f docker-compose.prod.yml up -d --build
+# Always pass:
+# - -p tt_prod (a distinct Compose project name) when this runs on the same
+#   host/checkout as the dev stack (docker-compose.yml) — without it,
+#   Compose derives the project name from the directory for both, and
+#   they'd collide on container/volume names.
+# - --env-file .env.prod — Compose only reads a bare ".env" for the
+#   ${POSTGRES_DB} etc. interpolation below (db:'s "environment:" block);
+#   the web service's own env_file: key (further down) is a separate
+#   mechanism and doesn't cover this. Without this flag those variables
+#   resolve empty and Postgres starts with blank db/user/password.
 #
 # Differences from docker-compose.yml (local dev):
 # - web builds the "prod" Dockerfile target: source copied into the image
 #   (not bind-mounted), Tailwind CSS pre-built, non-root user, gunicorn
 #   instead of the Django dev server.
 # - No "tailwind" watcher service — CSS is built once at image build time.
-# - Requires a real .env: DJANGO_SETTINGS_MODULE=config.settings.prod,
-#   a real DJANGO_SECRET_KEY, DJANGO_DEBUG=False, DJANGO_ALLOWED_HOSTS and
-#   DJANGO_CSRF_TRUSTED_ORIGINS set to your real domain(s), and database
-#   credentials — see .env.example.
+# - Reads .env.prod, not .env — the dev stack's env_file — so both can run
+#   from the same checkout without one clobbering the other. Requires a
+#   real .env.prod: DJANGO_SETTINGS_MODULE=config.settings.prod, a real
+#   DJANGO_SECRET_KEY, DJANGO_DEBUG=False, DJANGO_ALLOWED_HOSTS and
+#   DJANGO_CSRF_TRUSTED_ORIGINS set to your real domain(s) (or IP, if
+#   DJANGO_BEHIND_TLS_PROXY=False), and database credentials — see
+#   .env.prod.example.
+# - Host port 80, not 8000 (which the dev stack already binds), so both can
+#   run at once without a port conflict.
 #
 # This does not include a reverse proxy (nginx/Caddy/a cloud load
 # balancer). config.settings.prod enables SECURE_SSL_REDIRECT and secure
@@ -19,7 +35,7 @@
 #
 # Migrations are not run automatically (see docker/web/entrypoint.sh) —
 # run them explicitly after the stack is up:
-#   docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+#   docker compose -p tt_prod -f docker-compose.prod.yml exec web python manage.py migrate
 
 services:
   db:
@@ -42,9 +58,9 @@ services:
       context: .
       dockerfile: docker/web/Dockerfile
       target: prod
-    env_file: .env
+    env_file: .env.prod
     ports:
-      - "8000:8000"
+      - "80:8000"
     depends_on:
       db:
         condition: service_healthy
