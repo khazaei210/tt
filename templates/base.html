@@ -1,12 +1,14 @@
 {% load i18n static %}
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" data-theme="corporate">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" data-theme="fantasy">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% translate "Table Tennis Tournaments" %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/jalalidatepicker.min.css' %}">
     <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+    <script src="{% static 'vendor/jalalidatepicker.min.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-base-200">
@@ -207,6 +209,18 @@
 
         document.addEventListener('DOMContentLoaded', ttInitMatchClocks);
         document.body.addEventListener('htmx:afterSwap', ttInitMatchClocks);
+
+        // Persian (Jalali) date picker for every input[data-jdp] (see
+        // apps/core/forms.py's JalaliDateWidget). startWatch attaches a
+        // delegated focus listener on <body>, so inputs swapped in later
+        // by HTMX pick it up automatically — no re-init needed.
+        document.addEventListener('DOMContentLoaded', () => {
+            jalaliDatepicker.startWatch({
+                autoHide: true,
+                showTodayBtn: true,
+                showEmptyBtn: true,
+            });
+        });
     </script>
     {% block extra_body %}{% endblock %}
 </body>

@@ -1,6 +1,8 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.forms import JalaliDateField, JalaliDateWidget
+
 from .models import DoublesPair, Player
 
 INPUT_CLASS = "input input-bordered w-full"
@@ -19,11 +21,14 @@ class PlayerForm(forms.ModelForm):
             "country",
             "is_active",
         ]
+        field_classes = {
+            "date_of_birth": JalaliDateField,
+        }
         widgets = {
             "first_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "last_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "gender": forms.Select(attrs={"class": SELECT_CLASS}),
-            "date_of_birth": forms.DateInput(attrs={"class": INPUT_CLASS, "type": "date"}),
+            "date_of_birth": JalaliDateWidget(attrs={"class": INPUT_CLASS}),
             "club": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "country": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox"}),

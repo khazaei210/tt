@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.forms import JalaliDateField, JalaliDateWidget
 from apps.players.models import DoublesPair, Player
 from apps.teams.models import Team
 
@@ -24,11 +25,15 @@ class TournamentForm(forms.ModelForm):
     class Meta:
         model = Tournament
         fields = ["name", "location", "start_date", "end_date", "status", "description"]
+        field_classes = {
+            "start_date": JalaliDateField,
+            "end_date": JalaliDateField,
+        }
         widgets = {
             "name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "location": forms.TextInput(attrs={"class": INPUT_CLASS}),
-            "start_date": forms.DateInput(attrs={"class": INPUT_CLASS, "type": "date"}),
-            "end_date": forms.DateInput(attrs={"class": INPUT_CLASS, "type": "date"}),
+            "start_date": JalaliDateWidget(attrs={"class": INPUT_CLASS}),
+            "end_date": JalaliDateWidget(attrs={"class": INPUT_CLASS}),
             "status": forms.Select(attrs={"class": SELECT_CLASS}),
             "description": forms.Textarea(attrs={"class": TEXTAREA_CLASS, "rows": 3}),
         }
