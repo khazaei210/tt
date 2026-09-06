@@ -13,8 +13,9 @@
     {% endif %}
 {% pageheader_actions %}
     {% if can_manage and can_award_ranking_points %}
+        {% translate "Award ranking points for this competition's final placements?" as award_points_confirm %}
         <form method="post" action="{% url 'rankings:award_points' competition.pk %}"
-              onsubmit="return confirm('{% translate "Award ranking points for this competition\'s final placements?" %}');">
+              onsubmit="return confirm('{{ award_points_confirm|escapejs }}');">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline btn-sm">{% translate "Award ranking points" %}</button>
         </form>

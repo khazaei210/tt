@@ -19,8 +19,9 @@
     {% translate "Groups" as groups_label %}
     {% sectionheader title=groups_label %}
         {% if can_manage and next_knockout_stage %}
+            {% translate "Advance each group's top qualifiers to the next stage's bracket?" as advance_confirm %}
             <form method="post" action="{% url 'tournaments:stage_advance' stage.pk %}"
-                  onsubmit="return confirm('{% translate "Advance each group's top qualifiers to the next stage's bracket?" %}');">
+                  onsubmit="return confirm('{{ advance_confirm|escapejs }}');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline" {% if not can_advance_qualifiers %}disabled{% endif %}>
                     {% translate "Advance qualifiers" %}
@@ -52,8 +53,9 @@
     {% translate "Bracket" as bracket_label %}
     {% sectionheader title=bracket_label %}
         {% if has_bracket and can_manage %}
+            {% translate "Clear the generated bracket? This deletes all matches for this stage." as clear_bracket_confirm %}
             <form method="post" action="{% url 'tournaments:stage_bracket_clear' stage.pk %}"
-                  onsubmit="return confirm('{% translate "Clear the generated bracket? This deletes all matches for this stage." %}');">
+                  onsubmit="return confirm('{{ clear_bracket_confirm|escapejs }}');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline btn-error">{% translate "Clear bracket" %}</button>
             </form>
