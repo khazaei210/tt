@@ -1,23 +1,19 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% blocktranslate with name=player.full_name %}{{ name }} — Statistics{% endblocktranslate %}{% endblock %}
 {% block page_title %}{% translate "Player statistics" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <div>
-        <h1 class="text-2xl font-bold">{{ player.full_name }}</h1>
-        <p class="text-base-content/60">{{ player.club|default:"—" }}{% if player.country %} · {{ player.country }}{% endif %}</p>
-    </div>
+{% pageheader player.full_name %}
+    {{ player.club|default:"—" }}{% if player.country %} · {{ player.country }}{% endif %}
+{% pageheader_actions %}
     <a href="{% url 'players:list' %}" class="btn btn-ghost">{% translate "Back to players" %}</a>
-</div>
+{% endpageheader %}
 
-<div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full mb-6">
-    <div class="stat">
-        <div class="stat-title">{% translate "Matches played" %}</div>
-        <div class="stat-value">{{ stats.matches_played }}</div>
-    </div>
+{% translate "Matches played" as matches_played_label %}
+{% stats_row extra_class="mb-6" %}
+    {% stat title=matches_played_label value=stats.matches_played %}
     <div class="stat">
         <div class="stat-title">{% translate "Win rate" %}</div>
         <div class="stat-value text-primary">{{ stats.win_percentage }}%</div>
@@ -33,39 +29,41 @@
         <div class="stat-value text-lg">{{ stats.points_scored }}-{{ stats.points_conceded }}</div>
         <div class="stat-desc">{% blocktranslate with d=stats.point_difference %}diff {{ d }}{% endblocktranslate %}</div>
     </div>
-</div>
+{% endstats_row %}
 
-<h2 class="text-lg font-semibold mb-2">{% translate "Recent matches" %}</h2>
-<div class="overflow-x-auto bg-base-100 rounded-box shadow">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{% translate "Opponent" %}</th>
-                <th>{% translate "Competition" %}</th>
-                <th class="text-right">{% translate "Result" %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in stats.recent_matches %}
-            <tr>
-                <td>
-                    <a href="{% url 'matches:detail' row.match.pk %}" class="link link-primary">
-                        {{ row.opponent.display_name|default:"—" }}
-                    </a>
-                </td>
-                <td class="text-base-content/60 text-sm">{{ row.match.competition.name }}</td>
-                <td class="text-right">
-                    {% if row.won %}
-                        <span class="badge badge-success badge-sm">{% translate "Won" %}</span>
-                    {% else %}
-                        <span class="badge badge-ghost badge-sm">{% translate "Lost" %}</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3" class="text-center text-base-content/60 py-6">{% translate "No matches played yet." %}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{% translate "Recent matches" as recent_matches_label %}
+{% sectionheader title=recent_matches_label %}{% endsectionheader %}
+{% table_card %}
+    <thead>
+        <tr>
+            <th>{% translate "Opponent" %}</th>
+            <th>{% translate "Competition" %}</th>
+            <th class="text-right">{% translate "Result" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in stats.recent_matches %}
+        <tr>
+            <td>
+                <a href="{% url 'matches:detail' row.match.pk %}" class="link link-primary">
+                    {{ row.opponent.display_name|default:"—" }}
+                </a>
+            </td>
+            <td class="text-base-content/60 text-sm">{{ row.match.competition.name }}</td>
+            <td class="text-right">
+                {% if row.won %}
+                    {% translate "Won" as won_label %}
+                    {% status_badge won_label variant="success" size="sm" %}
+                {% else %}
+                    {% translate "Lost" as lost_label %}
+                    {% status_badge lost_label variant="ghost" size="sm" %}
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        {% translate "No matches played yet." as no_matches_msg %}
+        {% empty_row no_matches_msg colspan=3 %}
+        {% endfor %}
+    </tbody>
+{% endtable_card %}
 {% endblock %}

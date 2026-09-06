@@ -1,15 +1,12 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% if object %}{% translate "Edit competition" %}{% else %}{% translate "Add competition" %}{% endif %}{% endblock %}
 {% block page_title %}{% if object %}{% translate "Edit competition" %}{% else %}{% translate "Add competition" %}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto bg-base-100 rounded-box shadow p-6">
-    <h1 class="text-2xl font-bold mb-6">
-        {% if object %}{% translate "Edit competition" %}{% else %}{% translate "Add competition" %}{% endif %}
-    </h1>
-    <p class="text-base-content/60 mb-4">{{ tournament.name }}</p>
+{% if object %}{% translate "Edit competition" as form_title %}{% else %}{% translate "Add competition" as form_title %}{% endif %}
+{% form_card form_title subtitle=tournament.name %}
     <form method="post" class="space-y-4">
         {% csrf_token %}
         {% for field in form %}
@@ -28,5 +25,5 @@
             <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
         </div>
     </form>
-</div>
+{% endform_card %}
 {% endblock %}

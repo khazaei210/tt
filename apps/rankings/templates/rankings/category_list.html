@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Rankings" %}{% endblock %}
 {% block page_title %}{% translate "Rankings" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold">{% translate "Rankings" %}</h1>
+{% translate "Rankings" as rankings_label %}
+{% pageheader rankings_label %}
+{% pageheader_actions %}
     {% if user.is_authenticated %}
         <a href="{% url 'rankings:my_rankings' %}" class="btn btn-outline btn-sm">{% translate "My ranking" %}</a>
     {% endif %}
-</div>
+{% endpageheader %}
 
 {% if categories %}
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -27,8 +28,7 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="bg-base-100 rounded-box shadow p-6 text-base-content/60">
-    {% translate "No ranking categories have been configured yet." %}
-</div>
+{% translate "No ranking categories have been configured yet." as no_categories_msg %}
+{% empty_panel no_categories_msg %}
 {% endif %}
 {% endblock %}

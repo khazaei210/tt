@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n ui_kit %}
 {% for player in players %}
 <tr id="player-row-{{ player.pk }}">
     <td><a href="{% url 'reports:player_statistics' player.pk %}" class="link">{{ player.full_name }}</a></td>
@@ -7,9 +7,11 @@
     <td>{{ player.country|default:"—" }}</td>
     <td>
         {% if player.is_active %}
-            <span class="badge badge-success">{% translate "Active" %}</span>
+            {% translate "Active" as active_label %}
+            {% status_badge active_label variant="success" %}
         {% else %}
-            <span class="badge badge-ghost">{% translate "Inactive" %}</span>
+            {% translate "Inactive" as inactive_label %}
+            {% status_badge inactive_label variant="ghost" %}
         {% endif %}
     </td>
     {% if can_manage %}

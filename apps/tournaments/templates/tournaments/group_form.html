@@ -1,13 +1,12 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Add group" %}{% endblock %}
 {% block page_title %}{% translate "Add group" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto bg-base-100 rounded-box shadow p-6">
-    <h1 class="text-2xl font-bold mb-6">{% translate "Add group" %}</h1>
-    <p class="text-base-content/60 mb-4">{{ stage.name }}</p>
+{% translate "Add group" as form_title %}
+{% form_card form_title subtitle=stage.name %}
     <form method="post" class="space-y-4">
         {% csrf_token %}
         {% for field in form %}
@@ -26,5 +25,5 @@
             <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
         </div>
     </form>
-</div>
+{% endform_card %}
 {% endblock %}

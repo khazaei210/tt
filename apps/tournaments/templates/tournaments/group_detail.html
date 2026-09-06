@@ -1,22 +1,19 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{{ group.name }}{% endblock %}
 {% block page_title %}{{ group.name }}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <div>
-        <h1 class="text-2xl font-bold">{{ group.name }}</h1>
-        <p class="text-base-content/60">
-            <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="link">{{ group.stage.name }}</a>
-            · <a href="{% url 'tournaments:competition_detail' group.stage.competition.pk %}" class="link">{{ group.stage.competition.name }}</a>
-        </p>
-    </div>
+{% pageheader group.name %}
+    <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="link">{{ group.stage.name }}</a>
+    · <a href="{% url 'tournaments:competition_detail' group.stage.competition.pk %}" class="link">{{ group.stage.competition.name }}</a>
+{% pageheader_actions %}
     <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="btn btn-ghost">{% translate "Back to stage" %}</a>
-</div>
+{% endpageheader %}
 
-<h2 class="text-lg font-semibold mb-2">{% translate "Participants" %}</h2>
+{% translate "Participants" as participants_label %}
+{% sectionheader title=participants_label %}{% endsectionheader %}
 {% include "tournaments/_group_participant_panel.html" %}
 
 {% if standings %}
@@ -24,40 +21,38 @@
     <h2 class="text-lg font-semibold">{% translate "Standings" %}</h2>
     <a href="{% url 'tournaments:group_standings_csv' group.pk %}" class="btn btn-sm btn-outline">{% translate "Export CSV" %}</a>
 </div>
-<div class="overflow-x-auto bg-base-100 rounded-box shadow">
-    <table class="table table-zebra">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>{% translate "Participant" %}</th>
-                <th class="text-center">{% translate "Played" %}</th>
-                <th class="text-center">{% translate "Won" %}</th>
-                <th class="text-center">{% translate "Lost" %}</th>
-                <th class="text-center">{% translate "Pts" %}</th>
-                <th class="text-center">{% translate "Sets" %}</th>
-                <th class="text-center">{% translate "Set diff" %}</th>
-                <th class="text-center">{% translate "Points" %}</th>
-                <th class="text-center">{% translate "Point diff" %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in standings %}
-            <tr>
-                <td>{{ row.rank }}</td>
-                <td>{{ row.participant.display_name }}</td>
-                <td class="text-center">{{ row.played }}</td>
-                <td class="text-center">{{ row.wins }}</td>
-                <td class="text-center">{{ row.losses }}</td>
-                <td class="text-center font-semibold">{{ row.match_points }}</td>
-                <td class="text-center">{{ row.sets_won }}-{{ row.sets_lost }}</td>
-                <td class="text-center">{{ row.set_difference }}</td>
-                <td class="text-center">{{ row.points_scored }}-{{ row.points_conceded }}</td>
-                <td class="text-center">{{ row.point_difference }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{% table_card table_class="table-zebra" %}
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>{% translate "Participant" %}</th>
+            <th class="text-center">{% translate "Played" %}</th>
+            <th class="text-center">{% translate "Won" %}</th>
+            <th class="text-center">{% translate "Lost" %}</th>
+            <th class="text-center">{% translate "Pts" %}</th>
+            <th class="text-center">{% translate "Sets" %}</th>
+            <th class="text-center">{% translate "Set diff" %}</th>
+            <th class="text-center">{% translate "Points" %}</th>
+            <th class="text-center">{% translate "Point diff" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in standings %}
+        <tr>
+            <td>{{ row.rank }}</td>
+            <td>{{ row.participant.display_name }}</td>
+            <td class="text-center">{{ row.played }}</td>
+            <td class="text-center">{{ row.wins }}</td>
+            <td class="text-center">{{ row.losses }}</td>
+            <td class="text-center font-semibold">{{ row.match_points }}</td>
+            <td class="text-center">{{ row.sets_won }}-{{ row.sets_lost }}</td>
+            <td class="text-center">{{ row.set_difference }}</td>
+            <td class="text-center">{{ row.points_scored }}-{{ row.points_conceded }}</td>
+            <td class="text-center">{{ row.point_difference }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+{% endtable_card %}
 {% endif %}
 
 <div class="flex items-center justify-between mt-6 mb-2">
@@ -75,7 +70,7 @@
     {% regroup schedule_matches by round_number as rounds_list %}
     <div class="space-y-4">
         {% for round in rounds_list %}
-        <div class="bg-base-100 rounded-box shadow p-4">
+        {% card %}
             <h3 class="font-semibold mb-2">{% blocktranslate with n=round.grouper %}Round {{ n }}{% endblocktranslate %}</h3>
             <ul class="space-y-1">
                 {% for match in round.list %}
@@ -85,15 +80,15 @@
                         <span class="text-base-content/40">{% translate "vs" %}</span>
                         <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name }}</span>
                     </a>
-                    <span class="badge badge-outline badge-sm">{{ match.get_status_display }}</span>
+                    {% status_badge match.get_status_display size="sm" %}
                 </li>
                 {% endfor %}
             </ul>
-        </div>
+        {% endcard %}
         {% endfor %}
     </div>
 {% else %}
-    <div class="bg-base-100 rounded-box shadow p-4">
+    {% card %}
         <p class="text-base-content/60 mb-4">{% translate "No schedule generated yet." %}</p>
         <form method="post" action="{% url 'tournaments:group_schedule_generate' group.pk %}" class="flex items-end gap-4 flex-wrap">
             {% csrf_token %}
@@ -106,6 +101,6 @@
             </div>
             <button type="submit" class="btn btn-primary">{% translate "Generate schedule" %}</button>
         </form>
-    </div>
+    {% endcard %}
 {% endif %}
 {% endblock %}

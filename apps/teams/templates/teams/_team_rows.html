@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n ui_kit %}
 {% for team in teams %}
 <tr id="team-row-{{ team.pk }}">
     <td><a href="{% url 'teams:detail' team.pk %}" class="link link-primary">{{ team.name }}</a></td>
@@ -7,9 +7,11 @@
     <td>{{ team.member_count }}</td>
     <td>
         {% if team.is_active %}
-            <span class="badge badge-success">{% translate "Active" %}</span>
+            {% translate "Active" as active_label %}
+            {% status_badge active_label variant="success" %}
         {% else %}
-            <span class="badge badge-ghost">{% translate "Inactive" %}</span>
+            {% translate "Inactive" as inactive_label %}
+            {% status_badge inactive_label variant="ghost" %}
         {% endif %}
     </td>
     {% if can_manage %}

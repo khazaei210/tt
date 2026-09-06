@@ -1,38 +1,35 @@
-{% load i18n %}
+{% load i18n ui_kit %}
 <div id="group-participant-panel">
-    <div class="overflow-x-auto bg-base-100 rounded-box shadow mb-4">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>{% translate "Participant" %}</th>
-                    {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for gp in group_participants %}
-                <tr>
-                    <td>{{ gp.participant.display_name }}</td>
-                    {% if can_manage %}
-                    <td class="text-right">
-                        <button type="button"
-                                class="btn btn-xs btn-error btn-outline"
-                                hx-delete="{% url 'tournaments:group_participant_remove' group.pk gp.pk %}"
-                                hx-target="#group-participant-panel"
-                                hx-swap="outerHTML"
-                                hx-confirm="{% translate 'Remove this participant from the group?' %}">
-                            {% translate "Remove" %}
-                        </button>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="2" class="text-center text-base-content/60 py-6">{% translate "No participants assigned yet." %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% table_card extra_class="mb-4" %}
+        <thead>
+            <tr>
+                <th>{% translate "Participant" %}</th>
+                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for gp in group_participants %}
+            <tr>
+                <td>{{ gp.participant.display_name }}</td>
+                {% if can_manage %}
+                <td class="text-right">
+                    <button type="button"
+                            class="btn btn-xs btn-error btn-outline"
+                            hx-delete="{% url 'tournaments:group_participant_remove' group.pk gp.pk %}"
+                            hx-target="#group-participant-panel"
+                            hx-swap="outerHTML"
+                            hx-confirm="{% translate 'Remove this participant from the group?' %}">
+                        {% translate "Remove" %}
+                    </button>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            {% translate "No participants assigned yet." as no_gp_msg %}
+            {% empty_row no_gp_msg colspan=2 %}
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
 
     {% if can_manage %}
     <form hx-post="{% url 'tournaments:group_participant_add' group.pk %}"

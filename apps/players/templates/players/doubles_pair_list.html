@@ -1,29 +1,28 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Doubles pairs" %}{% endblock %}
 {% block page_title %}{% translate "Doubles pairs" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <h1 class="text-2xl font-bold">{% translate "Doubles pairs" %}</h1>
+{% translate "Doubles pairs" as pairs_label %}
+{% pageheader pairs_label %}
+{% pageheader_actions %}
     {% if can_manage %}
         <a href="{% url 'players:pair_add' %}" class="btn btn-primary">{% translate "Add pair" %}</a>
     {% endif %}
-</div>
+{% endpageheader %}
 
-<div class="overflow-x-auto bg-base-100 rounded-box shadow">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{% translate "Player one" %}</th>
-                <th>{% translate "Player two" %}</th>
-                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% include "players/_doubles_pair_rows.html" %}
-        </tbody>
-    </table>
-</div>
+{% table_card %}
+    <thead>
+        <tr>
+            <th>{% translate "Player one" %}</th>
+            <th>{% translate "Player two" %}</th>
+            {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% include "players/_doubles_pair_rows.html" %}
+    </tbody>
+{% endtable_card %}
 {% endblock %}

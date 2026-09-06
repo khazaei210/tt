@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{% translate "Tournaments" %}{% endblock %}
 {% block page_title %}{% translate "Tournaments" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <h1 class="text-2xl font-bold">{% translate "Tournaments" %}</h1>
+{% translate "Tournaments" as tournaments_label %}
+{% pageheader tournaments_label %}
+{% pageheader_actions %}
     <a href="{% url 'tournaments:add' %}" class="btn btn-primary">{% translate "Add tournament" %}</a>
-</div>
+{% endpageheader %}
 
 <div class="mb-4">
     <input type="search"
@@ -22,21 +23,19 @@
            hx-trigger="keyup changed delay:300ms, search">
 </div>
 
-<div class="overflow-x-auto bg-base-100 rounded-box shadow">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{% translate "Name" %}</th>
-                <th>{% translate "Location" %}</th>
-                <th>{% translate "Start date" %}</th>
-                <th>{% translate "End date" %}</th>
-                <th>{% translate "Status" %}</th>
-                <th class="text-right">{% translate "Actions" %}</th>
-            </tr>
-        </thead>
-        <tbody id="tournament-table-body">
-            {% include "tournaments/_tournament_rows.html" %}
-        </tbody>
-    </table>
-</div>
+{% table_card %}
+    <thead>
+        <tr>
+            <th>{% translate "Name" %}</th>
+            <th>{% translate "Location" %}</th>
+            <th>{% translate "Start date" %}</th>
+            <th>{% translate "End date" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th class="text-right">{% translate "Actions" %}</th>
+        </tr>
+    </thead>
+    <tbody id="tournament-table-body">
+        {% include "tournaments/_tournament_rows.html" %}
+    </tbody>
+{% endtable_card %}
 {% endblock %}

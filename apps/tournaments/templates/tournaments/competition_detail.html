@@ -1,38 +1,32 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui_kit %}
 
 {% block title %}{{ competition.name }}{% endblock %}
 {% block page_title %}{{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-    <div>
-        <h1 class="text-2xl font-bold">{{ competition.name }}</h1>
-        <p class="text-base-content/60">
-            <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="link">{{ competition.tournament.name }}</a>
-            · {{ competition.get_participant_type_display }}
-            {% if competition.ranking_category %}
-                · <a href="{% url 'rankings:category_detail' competition.ranking_category.pk %}" class="link">{{ competition.ranking_category.name }} {% translate "ranking" %}</a>
-            {% endif %}
-        </p>
-    </div>
-    <div class="flex gap-2">
-        {% if can_manage and can_award_ranking_points %}
-            <form method="post" action="{% url 'rankings:award_points' competition.pk %}"
-                  onsubmit="return confirm('{% translate "Award ranking points for this competition\'s final placements?" %}');">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline btn-sm">{% translate "Award ranking points" %}</button>
-            </form>
-        {% endif %}
-        {% if stages %}
-            <a href="{% url 'reports:competition_results_csv' competition.pk %}" class="btn btn-outline">{% translate "Export results CSV" %}</a>
-        {% endif %}
-        {% if can_manage %}
-            <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
-        {% endif %}
-        <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
-    </div>
-</div>
+{% pageheader competition.name %}
+    <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="link">{{ competition.tournament.name }}</a>
+    · {{ competition.get_participant_type_display }}
+    {% if competition.ranking_category %}
+        · <a href="{% url 'rankings:category_detail' competition.ranking_category.pk %}" class="link">{{ competition.ranking_category.name }} {% translate "ranking" %}</a>
+    {% endif %}
+{% pageheader_actions %}
+    {% if can_manage and can_award_ranking_points %}
+        <form method="post" action="{% url 'rankings:award_points' competition.pk %}"
+              onsubmit="return confirm('{% translate "Award ranking points for this competition\'s final placements?" %}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline btn-sm">{% translate "Award ranking points" %}</button>
+        </form>
+    {% endif %}
+    {% if stages %}
+        <a href="{% url 'reports:competition_results_csv' competition.pk %}" class="btn btn-outline">{% translate "Export results CSV" %}</a>
+    {% endif %}
+    {% if can_manage %}
+        <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-outline">{% translate "Edit competition" %}</a>
+    {% endif %}
+    <a href="{% url 'tournaments:detail' competition.tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+{% endpageheader %}
 
 <div class="card bg-base-100 shadow mb-6">
     <div class="card-body">
@@ -46,14 +40,18 @@
         </div>
         {% if rule %}
             <div class="flex flex-wrap gap-2 mt-2">
-                <span class="badge badge-outline">{{ rule.get_best_of_sets_display }}</span>
-                <span class="badge badge-outline">{% blocktranslate with points=rule.points_per_set %}{{ points }} points per set{% endblocktranslate %}</span>
-                <span class="badge badge-outline">{% blocktranslate with n=rule.win_by %}Win by {{ n }}{% endblocktranslate %}</span>
+                {% status_badge rule.get_best_of_sets_display %}
+                {% blocktranslate asvar points_per_set_label with points=rule.points_per_set %}{{ points }} points per set{% endblocktranslate %}
+                {% status_badge points_per_set_label %}
+                {% blocktranslate asvar win_by_label with n=rule.win_by %}Win by {{ n }}{% endblocktranslate %}
+                {% status_badge win_by_label %}
                 {% if rule.deciding_set_points %}
-                    <span class="badge badge-outline">{% blocktranslate with points=rule.deciding_set_points %}Deciding set to {{ points }}{% endblocktranslate %}</span>
+                    {% blocktranslate asvar deciding_set_label with points=rule.deciding_set_points %}Deciding set to {{ points }}{% endblocktranslate %}
+                    {% status_badge deciding_set_label %}
                 {% endif %}
                 {% if rule.cap_at %}
-                    <span class="badge badge-outline">{% blocktranslate with cap=rule.cap_at %}Capped at {{ cap }}{% endblocktranslate %}</span>
+                    {% blocktranslate asvar cap_label with cap=rule.cap_at %}Capped at {{ cap }}{% endblocktranslate %}
+                    {% status_badge cap_label %}
                 {% endif %}
             </div>
         {% else %}
@@ -62,28 +60,27 @@
     </div>
 </div>
 
-<div class="flex items-center justify-between mb-2">
-    <h2 class="text-lg font-semibold">{% translate "Stages" %}</h2>
+{% translate "Stages" as stages_label %}
+{% sectionheader title=stages_label %}
     {% if can_manage %}
         <a href="{% url 'tournaments:stage_add' competition.pk %}" class="btn btn-primary btn-sm">{% translate "Add stage" %}</a>
     {% endif %}
-</div>
-<div class="overflow-x-auto bg-base-100 rounded-box shadow mb-6">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{% translate "Name" %}</th>
-                <th>{% translate "Format" %}</th>
-                <th>{% translate "Order" %}</th>
-                {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% include "tournaments/_stage_rows.html" %}
-        </tbody>
-    </table>
-</div>
+{% endsectionheader %}
+{% table_card extra_class="mb-6" %}
+    <thead>
+        <tr>
+            <th>{% translate "Name" %}</th>
+            <th>{% translate "Format" %}</th>
+            <th>{% translate "Order" %}</th>
+            {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% include "tournaments/_stage_rows.html" %}
+    </tbody>
+{% endtable_card %}
 
-<h2 class="text-lg font-semibold mb-2">{% translate "Participants" %}</h2>
+{% translate "Participants" as participants_label %}
+{% sectionheader title=participants_label %}{% endsectionheader %}
 {% include "tournaments/_participant_panel.html" %}
 {% endblock %}
