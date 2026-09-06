@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: fantasy --default;
+  /* Keep in sync with AVAILABLE_THEMES in apps/core/context_processors.py
+     (the sidebar theme picker) — this line controls which themes' CSS is
+     actually built, that list controls which of these are offered. */
+  themes: fantasy --default, light, dark, cupcake, bumblebee, corporate,
+    business, luxury, night, winter, dracula, autumn, forest, emerald,
+    synthwave, valentine;
 }
 
 /* Explicit template sources: entry point lives in theme/src/, templates
