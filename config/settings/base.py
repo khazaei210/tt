@@ -20,6 +20,9 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 
 INSTALLED_APPS = [
+    # Must come before django.contrib.admin: it overrides the admin's
+    # default templates/site to apply its own theme.
+    "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -117,3 +120,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:home"
 LOGOUT_REDIRECT_URL = "core:home"
+
+# --- Admin (django-unfold theme) ---
+UNFOLD = {
+    "SITE_TITLE": "Table Tennis Admin",
+    "SITE_HEADER": "Table Tennis Tournaments",
+    "SITE_SYMBOL": "sports_tennis",
+    "SHOW_LANGUAGES": True,
+}

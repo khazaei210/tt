@@ -1,29 +1,31 @@
 from django.contrib import admin
 
+from apps.core.admin import ModelAdmin, TabularInline
+
 from .models import EloRating, EloRatingEvent, PlayerRanking, RankingCategory, RankingEvent, RankingPointsScale
 
 
-class RankingPointsScaleInline(admin.TabularInline):
+class RankingPointsScaleInline(TabularInline):
     model = RankingPointsScale
     extra = 1
 
 
 @admin.register(RankingCategory)
-class RankingCategoryAdmin(admin.ModelAdmin):
+class RankingCategoryAdmin(ModelAdmin):
     list_display = ["name"]
     search_fields = ["name"]
     inlines = [RankingPointsScaleInline]
 
 
 @admin.register(PlayerRanking)
-class PlayerRankingAdmin(admin.ModelAdmin):
+class PlayerRankingAdmin(ModelAdmin):
     list_display = ["player", "category", "current_rank", "points", "tournaments_played"]
     list_filter = ["category"]
     search_fields = ["player__first_name", "player__last_name"]
 
 
 @admin.register(RankingEvent)
-class RankingEventAdmin(admin.ModelAdmin):
+class RankingEventAdmin(ModelAdmin):
     list_display = ["player", "category", "competition", "placement", "points_awarded", "created_at"]
     list_filter = ["category"]
     search_fields = ["player__first_name", "player__last_name"]
@@ -31,14 +33,14 @@ class RankingEventAdmin(admin.ModelAdmin):
 
 
 @admin.register(EloRating)
-class EloRatingAdmin(admin.ModelAdmin):
+class EloRatingAdmin(ModelAdmin):
     list_display = ["player", "category", "current_rank", "rating", "matches_played"]
     list_filter = ["category"]
     search_fields = ["player__first_name", "player__last_name"]
 
 
 @admin.register(EloRatingEvent)
-class EloRatingEventAdmin(admin.ModelAdmin):
+class EloRatingEventAdmin(ModelAdmin):
     list_display = ["player", "category", "match", "won", "delta", "rating_after", "created_at"]
     list_filter = ["category", "won"]
     search_fields = ["player__first_name", "player__last_name"]

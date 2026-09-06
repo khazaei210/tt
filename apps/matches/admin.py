@@ -1,14 +1,16 @@
 from django.contrib import admin
 
+from apps.core.admin import ModelAdmin, TabularInline
+
 from .models import Match, MatchCorrection, MatchSet
 
 
-class MatchSetInline(admin.TabularInline):
+class MatchSetInline(TabularInline):
     model = MatchSet
     extra = 0
 
 
-class MatchCorrectionInline(admin.TabularInline):
+class MatchCorrectionInline(TabularInline):
     model = MatchCorrection
     extra = 0
     readonly_fields = ("action", "set_number", "previous_value", "new_value", "performed_by", "created_at")
@@ -16,7 +18,7 @@ class MatchCorrectionInline(admin.TabularInline):
 
 
 @admin.register(Match)
-class MatchAdmin(admin.ModelAdmin):
+class MatchAdmin(ModelAdmin):
     list_display = ("__str__", "competition", "group", "round_number", "status", "winner", "referee", "scorekeeper")
     list_filter = ("status", "competition")
     autocomplete_fields = ("referee", "scorekeeper")
@@ -25,7 +27,7 @@ class MatchAdmin(admin.ModelAdmin):
 
 
 @admin.register(MatchCorrection)
-class MatchCorrectionAdmin(admin.ModelAdmin):
+class MatchCorrectionAdmin(ModelAdmin):
     list_display = ("match", "action", "set_number", "previous_value", "new_value", "performed_by", "created_at")
     list_filter = ("action",)
     readonly_fields = ("match", "action", "set_number", "previous_value", "new_value", "performed_by", "created_at")
