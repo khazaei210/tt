@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.tournaments.models import ParticipantType, StageFormat
 
-from .models import PlayerRanking, RankingEvent
+from .models import PlayerRanking, RankingEvent, RankingCategory
 
 
 class PlacementsNotAvailableError(Exception):
@@ -23,6 +23,23 @@ class PlacementsNotAvailableError(Exception):
 
 class RankingCategoryNotConfiguredError(Exception):
     pass
+
+
+DEFAULT_RANKING_CATEGORY_NAME = "Overall"
+
+
+def get_default_ranking_category():
+    """The single global ranking category every competition is attached to
+    automatically (Competition.save()), so Elo ratings and ranking points
+    accumulate across every tournament with zero manager setup. A manager
+    can still repoint a specific competition at a different category (or
+    clear it) via the competition's edit form/admin if they want to keep it
+    out of the global board — this only supplies the default."""
+    category, _created = RankingCategory.objects.get_or_create(
+        name=DEFAULT_RANKING_CATEGORY_NAME,
+        defaults={"description": "Automatic global ranking across every competition."},
+    )
+    return category
 
 
 def _placements_from_knockout(stage):
