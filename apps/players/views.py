@@ -1,9 +1,18 @@
+from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
 from django.views.generic import CreateView, ListView, UpdateView
 
+from apps.accounts.services import (
+    PlayerAlreadyHasLoginError,
+    PlayerHasNoLoginError,
+    create_player_login,
+    reset_player_login_password,
+    suggest_username,
+)
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
 from .forms import DoublesPairForm, PlayerForm
@@ -45,6 +54,12 @@ class PlayerUpdateView(StaffRequiredMixin, UpdateView):
     template_name = "players/player_form.html"
     success_url = reverse_lazy("players:list")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.object.user_id is None:
+            context["suggested_username"] = suggest_username(self.object)
+        return context
+
 
 @staff_required
 def player_delete(request, pk):
@@ -53,6 +68,49 @@ def player_delete(request, pk):
     player = get_object_or_404(Player, pk=pk)
     player.delete()
     return HttpResponse("")
+
+
+@staff_required
+def player_create_login(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    player = get_object_or_404(Player, pk=pk)
+    username = request.POST.get("username", "").strip() or None
+    try:
+        user, raw_password = create_player_login(player, username=username)
+    except PlayerAlreadyHasLoginError:
+        messages.error(request, _("This player already has a login."))
+    else:
+        messages.success(
+            request,
+            _(
+                "Login created for %(player)s — username: %(username)s, password: %(password)s "
+                "(shown once now, save it before leaving this page)."
+            )
+            % {"player": player.full_name, "username": user.username, "password": raw_password},
+        )
+    return redirect("players:edit", pk=player.pk)
+
+
+@staff_required
+def player_reset_password(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    player = get_object_or_404(Player, pk=pk)
+    try:
+        raw_password = reset_player_login_password(player)
+    except PlayerHasNoLoginError:
+        messages.error(request, _("This player doesn't have a login yet."))
+    else:
+        messages.success(
+            request,
+            _(
+                "New password for %(player)s (username: %(username)s): %(password)s "
+                "(shown once now, save it before leaving this page)."
+            )
+            % {"player": player.full_name, "username": player.user.username, "password": raw_password},
+        )
+    return redirect("players:edit", pk=player.pk)
 
 
 class DoublesPairListView(ListView):
