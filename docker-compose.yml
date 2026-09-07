@@ -36,5 +36,19 @@ services:
     volumes:
       - .:/app
 
+  bale-poller:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      target: dev
+    env_file: .env
+    volumes:
+      - .:/app
+    command: python manage.py bale_poll_updates
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:

@@ -19,6 +19,7 @@ class PlayerForm(forms.ModelForm):
             "date_of_birth",
             "club",
             "country",
+            "mobile_number",
             "is_active",
         ]
         field_classes = {
@@ -31,6 +32,7 @@ class PlayerForm(forms.ModelForm):
             "date_of_birth": JalaliDateWidget(attrs={"class": INPUT_CLASS}),
             "club": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "country": forms.TextInput(attrs={"class": INPUT_CLASS}),
+            "mobile_number": forms.TextInput(attrs={"class": INPUT_CLASS, "dir": "ltr", "placeholder": "0912xxxxxxx"}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox"}),
         }
 

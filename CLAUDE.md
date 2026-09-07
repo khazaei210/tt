@@ -1026,3 +1026,29 @@ The domain model must allow the same tournament engine to operate across all sup
 Do not start by generating a large amount of code.
 
 First establish a sound architecture and domain model.
+
+
+# Project Instructions — Bale Integration
+
+## Bale Bot API
+
+This repository uses the official Bale Bot API where Bale messaging/bot functionality is required.
+
+Official documentation: https://docs.bale.ai/
+
+Before implementing or modifying Bale-related code:
+
+1. Read `.claude/skills/bale-bot-api/SKILL.md`.
+2. Read the relevant reference file(s) under `.claude/skills/bale-bot-api/reference/`.
+3. Read the relevant project rules under `.claude/skills/bale-bot-api/project/`.
+4. Never assume Telegram behavior is supported by Bale without verification.
+5. Never hard-code the Bale bot token.
+6. Keep API communication behind a dedicated client/service boundary.
+
+When documentation has changed, run:
+
+```bash
+python tools/bale/update_docs.py
+```
+
+Then inspect the generated `.claude/skills/bale-bot-api/reference/official.md` before implementing changes.

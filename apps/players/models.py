@@ -3,6 +3,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from .phone import normalize_mobile_number
+
 
 class Gender(models.TextChoices):
     MALE = "M", _("Male")
@@ -30,6 +32,20 @@ class Player(models.Model):
     date_of_birth = models.DateField(_("Date of birth"), null=True, blank=True)
     club = models.CharField(_("Club"), max_length=150, blank=True)
     country = models.CharField(_("Country"), max_length=100, blank=True)
+    mobile_number = models.CharField(
+        _("Mobile number"),
+        max_length=15,
+        blank=True,
+        help_text=_("Used to link this player's Bale chat for match notifications, e.g. 0912xxxxxxx."),
+    )
+    bale_chat_id = models.BigIntegerField(
+        _("Bale chat ID"),
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+        help_text=_("Set automatically once the player shares their phone number with the Bale bot."),
+    )
     is_active = models.BooleanField(_("Active"), default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -38,6 +54,13 @@ class Player(models.Model):
         ordering = ["last_name", "first_name"]
         indexes = [
             models.Index(fields=["last_name", "first_name"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["mobile_number"],
+                condition=~models.Q(mobile_number=""),
+                name="unique_player_mobile_number",
+            ),
         ]
 
     def __str__(self):
@@ -49,6 +72,10 @@ class Player(models.Model):
 
     def get_absolute_url(self):
         return reverse("players:edit", kwargs={"pk": self.pk})
+
+    def save(self, *args, **kwargs):
+        self.mobile_number = normalize_mobile_number(self.mobile_number)
+        super().save(*args, **kwargs)
 
 
 class DoublesPair(models.Model):
