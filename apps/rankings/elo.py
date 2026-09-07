@@ -40,9 +40,21 @@ Design decisions worth knowing before changing this file:
 from django.db import transaction
 
 from .models import EloRating, EloRatingEvent, RankingCategory
-from .services import players_for_participant
+from .services import get_default_ranking_category, players_for_participant
 
 DEFAULT_ELO_RATING = 1500.0
+
+
+def ensure_default_elo_rating(player):
+    """Give a newly-registered player a starting Elo rating immediately
+    (CLAUDE.md section 19: rankings should need zero setup), instead of
+    only getting one lazily via _rate_side()'s get_or_create the first
+    time they're rated in a match. Same DEFAULT_ELO_RATING either way —
+    this just means the leaderboard and "My ranking" have something to
+    show from day one instead of an empty state.
+    """
+    category = get_default_ranking_category()
+    EloRating.objects.get_or_create(player=player, category=category, defaults={"rating": DEFAULT_ELO_RATING})
 
 # Below this many rated matches a player's rating is "provisional" and moves
 # faster, so it converges toward a true skill level quickly instead of being

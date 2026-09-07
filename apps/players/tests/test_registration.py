@@ -3,6 +3,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.players.models import Player
+from apps.rankings.elo import DEFAULT_ELO_RATING
+from apps.rankings.models import EloRating
+from apps.rankings.services import get_default_ranking_category
 
 User = get_user_model()
 
@@ -62,3 +65,10 @@ class PlayerRegistrationTests(TestCase):
         response = self.client.post(reverse("players:add"), self._valid_data(), follow=True)
         messages = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("password" in m.lower() for m in messages))
+
+    def test_registration_creates_a_default_elo_rating(self):
+        self.client.post(reverse("players:add"), self._valid_data())
+        player = Player.objects.get(first_name="New", last_name="Player")
+        rating = EloRating.objects.get(player=player, category=get_default_ranking_category())
+        self.assertEqual(rating.rating, DEFAULT_ELO_RATING)
+        self.assertEqual(rating.matches_played, 0)

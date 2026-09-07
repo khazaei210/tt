@@ -17,6 +17,7 @@ from apps.accounts.services import (
 from apps.bale.models import BaleSettings
 from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
+from apps.rankings.elo import ensure_default_elo_rating
 
 from .dashboard import build_player_dashboard
 from .forms import DoublesPairForm, PlayerForm, PlayerRegistrationForm
@@ -55,6 +56,7 @@ class PlayerCreateView(StaffRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        ensure_default_elo_rating(self.object)
         user, raw_password = create_player_login(self.object, username=form.cleaned_data.get("username") or None)
         messages.success(
             self.request,

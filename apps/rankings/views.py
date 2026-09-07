@@ -9,7 +9,12 @@ from apps.tournaments.models import Competition
 from apps.tournaments.permissions import tournament_manager_required
 
 from .models import RankingCategory
-from .services import PlacementsNotAvailableError, RankingCategoryNotConfiguredError, award_ranking_points
+from .services import (
+    PlacementsNotAvailableError,
+    RankingCategoryNotConfiguredError,
+    award_ranking_points,
+    build_category_leaderboard,
+)
 
 
 def category_list(request):
@@ -19,8 +24,8 @@ def category_list(request):
 
 def category_detail(request, pk):
     category = get_object_or_404(RankingCategory, pk=pk)
-    rankings = category.player_rankings.select_related("player").order_by("current_rank", "-points")
-    return render(request, "rankings/category_detail.html", {"category": category, "rankings": rankings})
+    rows = build_category_leaderboard(category)
+    return render(request, "rankings/category_detail.html", {"category": category, "rows": rows})
 
 
 def elo_leaderboard(request, pk):
@@ -42,11 +47,28 @@ def elo_csv(request, pk):
 
 def category_csv(request, pk):
     category = get_object_or_404(RankingCategory, pk=pk)
-    rankings = category.player_rankings.select_related("player").order_by("current_rank", "-points")
-    header = [_("Rank"), _("Player"), _("Points"), _("Tournaments played")]
+    header = [
+        _("Rank"),
+        _("Player"),
+        _("Rating"),
+        _("Points"),
+        _("Wins"),
+        _("Losses"),
+        _("Matches"),
+        _("Tournaments played"),
+    ]
     rows = [
-        [ranking.current_rank, ranking.player.full_name, ranking.points, ranking.tournaments_played]
-        for ranking in rankings
+        [
+            row.elo_rank,
+            row.player.full_name,
+            round(row.rating) if row.rating is not None else "",
+            row.points,
+            row.wins,
+            row.losses,
+            row.matches_played,
+            row.tournaments_played,
+        ]
+        for row in build_category_leaderboard(category)
     ]
     return csv_response(f"ranking-{category.pk}.csv", header, rows)
 

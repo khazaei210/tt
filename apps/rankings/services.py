@@ -9,12 +9,16 @@ RankingCategory and independent of any single tournament (CLAUDE.md section
 so each can be tested and reasoned about on its own.
 """
 
+from dataclasses import dataclass
+
 from django.db import transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from apps.tournaments.models import ParticipantType, StageFormat
+from apps.matches.models import TERMINAL_MATCH_STATUSES, Match
+from apps.tournaments.models import Participant, ParticipantType, StageFormat
 
-from .models import PlayerRanking, RankingEvent, RankingCategory
+from .models import EloRating, PlayerRanking, RankingEvent, RankingCategory
 
 
 class PlacementsNotAvailableError(Exception):
@@ -217,3 +221,93 @@ def _recompute_ranks(category):
         ranking.previous_rank = ranking.current_rank
         ranking.current_rank = index
         ranking.save(update_fields=["previous_rank", "current_rank"])
+
+
+@dataclass
+class CategoryLeaderboardRow:
+    player: object
+    elo_rank: int = None
+    rating: float = None
+    rating_change: int = None
+    points: int = 0
+    points_change: int = None
+    tournaments_played: int = 0
+    wins: int = 0
+    losses: int = 0
+    matches_played: int = 0
+
+
+def build_category_leaderboard(category):
+    """One row per player with any ranking presence in this category —
+    an EloRating and/or PlayerRanking — merging the category's two
+    independently-tracked ranking systems (CLAUDE.md section 19: kept as
+    separate, independently evolvable models) into a single table for
+    display. Ordered primarily by live Elo rank, since that updates after
+    every match rather than only once a whole tournament finishes.
+
+    wins/losses/matches_played are computed here, scoped to *this
+    category's* competitions only — unlike
+    apps.reports.services.build_player_statistics, which is deliberately
+    global across every competition a player has ever played (a
+    per-category equivalent isn't reusable from here without apps.rankings
+    <-> apps.reports importing each other).
+    """
+    elo_by_player = {r.player_id: r for r in category.elo_ratings.select_related("player")}
+    points_by_player = {r.player_id: r for r in category.player_rankings.select_related("player")}
+    player_ids = set(elo_by_player) | set(points_by_player)
+    if not player_ids:
+        return []
+
+    players_by_id = {r.player_id: r.player for r in elo_by_player.values()}
+    for r in points_by_player.values():
+        players_by_id.setdefault(r.player_id, r.player)
+
+    participants = Participant.objects.filter(competition__ranking_category=category).filter(
+        Q(individual_player_id__in=player_ids)
+        | Q(doubles_pair__player_one_id__in=player_ids)
+        | Q(doubles_pair__player_two_id__in=player_ids)
+    )
+    participant_players = {participant.id: players_for_participant(participant) for participant in participants}
+
+    matches = Match.objects.filter(
+        Q(participant_a_id__in=participant_players) | Q(participant_b_id__in=participant_players),
+        status__in=TERMINAL_MATCH_STATUSES,
+        is_bye=False,
+    )
+
+    stats = {player_id: {"wins": 0, "losses": 0} for player_id in player_ids}
+    for match in matches:
+        if match.winner_id is None:
+            continue
+        for participant_id in (match.participant_a_id, match.participant_b_id):
+            for player in participant_players.get(participant_id, []):
+                if player.pk not in stats:
+                    continue
+                if match.winner_id == participant_id:
+                    stats[player.pk]["wins"] += 1
+                else:
+                    stats[player.pk]["losses"] += 1
+
+    rows = []
+    for player_id in player_ids:
+        elo = elo_by_player.get(player_id)
+        points = points_by_player.get(player_id)
+        wins = stats[player_id]["wins"]
+        losses = stats[player_id]["losses"]
+        rows.append(
+            CategoryLeaderboardRow(
+                player=players_by_id[player_id],
+                elo_rank=elo.current_rank if elo else None,
+                rating=elo.rating if elo else None,
+                rating_change=elo.rank_change if elo else None,
+                points=points.points if points else 0,
+                points_change=points.rank_change if points else None,
+                tournaments_played=points.tournaments_played if points else 0,
+                wins=wins,
+                losses=losses,
+                matches_played=wins + losses,
+            )
+        )
+
+    rows.sort(key=lambda row: (row.elo_rank is None, row.elo_rank or 0, -(row.rating or 0)))
+    return rows

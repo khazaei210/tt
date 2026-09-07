@@ -12,6 +12,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from apps.bale.services import notify_matches_created
 from apps.core.csv_utils import csv_response
+from apps.rankings.models import EloRating
 from apps.matches.services import (
     NoKnockoutStageError,
     NotEnoughParticipantsError,
@@ -260,10 +261,7 @@ class CompetitionDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["rule"] = getattr(self.object, "rule", None)
         context["stages"] = self.object.stages.all()
-        context["participants"] = self.object.participants.select_related(
-            "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
-        )
-        context["participant_form"] = ParticipantForm(competition=self.object)
+        context.update(_participant_panel_context(self.object))
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.tournament)
         context["can_award_ranking_points"] = self.object.ranking_category_id is not None
         return context
@@ -575,12 +573,60 @@ def group_schedule_clear(request, pk):
     return redirect("tournaments:group_detail", pk=group.pk)
 
 
+def _attach_elo_ratings(participants, category):
+    """Best-effort: annotate each participant with its player(s)' current
+    Elo rating/rank in the competition's own ranking category, so staff
+    can see global form at a glance while managing entrants — the
+    tournament view otherwise has no cross-reference to the global
+    ranking system at all. Left None if the competition has no
+    ranking_category, or for team participants (ranking isn't attributed
+    to individual players for teams — same scope limit as
+    apps.rankings.services.players_for_participant). Doubles show the
+    average of both players' ratings.
+    """
+    for participant in participants:
+        participant.elo_rating = None
+        participant.elo_rank = None
+    if category is None:
+        return
+
+    player_ids = set()
+    for participant in participants:
+        if participant.individual_player_id:
+            player_ids.add(participant.individual_player_id)
+        elif participant.doubles_pair_id:
+            player_ids.add(participant.doubles_pair.player_one_id)
+            player_ids.add(participant.doubles_pair.player_two_id)
+    if not player_ids:
+        return
+
+    ratings = {r.player_id: r for r in EloRating.objects.filter(category=category, player_id__in=player_ids)}
+    for participant in participants:
+        if participant.individual_player_id:
+            rating = ratings.get(participant.individual_player_id)
+            if rating:
+                participant.elo_rating = rating.rating
+                participant.elo_rank = rating.current_rank
+        elif participant.doubles_pair_id:
+            values = [
+                ratings[pid].rating
+                for pid in (participant.doubles_pair.player_one_id, participant.doubles_pair.player_two_id)
+                if pid in ratings
+            ]
+            if values:
+                participant.elo_rating = sum(values) / len(values)
+
+
 def _participant_panel_context(competition):
+    participants = list(
+        competition.participants.select_related(
+            "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
+        )
+    )
+    _attach_elo_ratings(participants, competition.ranking_category)
     return {
         "competition": competition,
-        "participants": competition.participants.select_related(
-            "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
-        ),
+        "participants": participants,
         "participant_form": ParticipantForm(competition=competition),
         # Same reasoning as _group_participant_panel_context above: the
         # HTMX views that render this standalone are already gated by

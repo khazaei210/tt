@@ -5,8 +5,9 @@ from django.test import TestCase
 from apps.matches.models import Match
 from apps.matches.services import record_set_score, record_walkover
 from apps.players.models import DoublesPair, Player
-from apps.rankings.elo import DEFAULT_ELO_RATING, expected_score, k_factor
+from apps.rankings.elo import DEFAULT_ELO_RATING, ensure_default_elo_rating, expected_score, k_factor
 from apps.rankings.models import EloRating, EloRatingEvent, RankingCategory
+from apps.rankings.services import get_default_ranking_category
 from apps.tournaments.models import (
     Competition,
     CompetitionRule,
@@ -40,6 +41,24 @@ class EloFormulaTests(TestCase):
 
     def test_k_factor_is_lower_for_high_rated_established_players(self):
         self.assertLess(k_factor(2450, matches_played=50), k_factor(1800, matches_played=50))
+
+
+class EnsureDefaultEloRatingTests(TestCase):
+    def test_creates_a_rating_in_the_default_category(self):
+        player = make_player("Newcomer")
+        ensure_default_elo_rating(player)
+        rating = EloRating.objects.get(player=player, category=get_default_ranking_category())
+        self.assertEqual(rating.rating, DEFAULT_ELO_RATING)
+        self.assertEqual(rating.matches_played, 0)
+
+    def test_is_idempotent(self):
+        player = make_player("Newcomer")
+        ensure_default_elo_rating(player)
+        EloRating.objects.filter(player=player).update(rating=1600.0, matches_played=3)
+        ensure_default_elo_rating(player)
+        rating = EloRating.objects.get(player=player, category=get_default_ranking_category())
+        self.assertEqual(rating.rating, 1600.0)
+        self.assertEqual(rating.matches_played, 3)
 
 
 class EloMatchIntegrationTestCase(TestCase):

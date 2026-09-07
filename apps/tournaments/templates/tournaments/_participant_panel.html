@@ -5,6 +5,7 @@
             <tr>
                 <th>{% translate "Seed" %}</th>
                 <th>{% translate "Participant" %}</th>
+                <th class="text-center">{% translate "Elo" %}</th>
                 {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
@@ -13,6 +14,14 @@
             <tr>
                 <td>{{ participant.seed|default:"—" }}</td>
                 <td>{{ participant.display_name }}</td>
+                <td class="text-center">
+                    {% if participant.elo_rating is not None %}
+                        {{ participant.elo_rating|floatformat:0 }}
+                        {% if participant.elo_rank %}<span class="text-base-content/60">(#{{ participant.elo_rank }})</span>{% endif %}
+                    {% else %}
+                        <span class="text-base-content/40">—</span>
+                    {% endif %}
+                </td>
                 {% if can_manage %}
                 <td class="text-right">
                     <button type="button"
@@ -28,7 +37,7 @@
             </tr>
             {% empty %}
             {% translate "No participants registered yet." as no_participants_msg %}
-            {% empty_row no_participants_msg colspan=3 %}
+            {% empty_row no_participants_msg colspan=4 %}
             {% endfor %}
         </tbody>
     {% endtable_card %}

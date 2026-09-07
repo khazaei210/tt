@@ -7,42 +7,47 @@
 {% block content %}
 {% pageheader category.name %}
 {% pageheader_actions %}
-    <a href="{% url 'rankings:elo_leaderboard' category.pk %}" class="btn btn-outline">{% translate "Elo leaderboard" %}</a>
-    {% if rankings %}
+    {% if rows %}
         <a href="{% url 'rankings:category_csv' category.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
     {% endif %}
     <a href="{% url 'rankings:category_list' %}" class="btn btn-ghost">{% translate "Back to rankings" %}</a>
 {% endpageheader %}
 
-{% if rankings %}
+{% if rows %}
 {% table_card table_class="table-zebra" %}
     <thead>
         <tr>
             <th>#</th>
             <th>{% translate "Player" %}</th>
-            <th class="text-center">{% translate "Points" %}</th>
+            <th class="text-center">{% translate "Rating" %}</th>
             <th class="text-center">{% translate "Change" %}</th>
+            <th class="text-center">{% translate "Points" %}</th>
+            <th class="text-center">{% translate "W" %}</th>
+            <th class="text-center">{% translate "L" %}</th>
+            <th class="text-center">{% translate "Matches" %}</th>
             <th class="text-center">{% translate "Tournaments" %}</th>
         </tr>
     </thead>
     <tbody>
-        {% for ranking in rankings %}
+        {% for row in rows %}
         <tr>
-            <td>{{ ranking.current_rank|default:"—" }}</td>
-            <td>{{ ranking.player.full_name }}</td>
-            <td class="text-center font-semibold">{{ ranking.points }}</td>
+            <td>{{ row.elo_rank|default:"—" }}</td>
+            <td>{{ row.player.full_name }}</td>
+            <td class="text-center font-semibold">{{ row.rating|floatformat:0|default:"—" }}</td>
             <td class="text-center">
-                {% with change=ranking.rank_change %}
-                    {% if change is None or change == 0 %}
-                        <span class="text-base-content/40">—</span>
-                    {% elif change > 0 %}
-                        <span class="text-success">▲ {{ change }}</span>
-                    {% else %}
-                        <span class="text-error">▼ {{ change|cut:"-" }}</span>
-                    {% endif %}
-                {% endwith %}
+                {% if row.rating_change is None or row.rating_change == 0 %}
+                    <span class="text-base-content/40">—</span>
+                {% elif row.rating_change > 0 %}
+                    <span class="text-success">▲ {{ row.rating_change }}</span>
+                {% else %}
+                    <span class="text-error">▼ {{ row.rating_change|cut:"-" }}</span>
+                {% endif %}
             </td>
-            <td class="text-center">{{ ranking.tournaments_played }}</td>
+            <td class="text-center">{{ row.points }}</td>
+            <td class="text-center text-success">{{ row.wins }}</td>
+            <td class="text-center text-error">{{ row.losses }}</td>
+            <td class="text-center">{{ row.matches_played }}</td>
+            <td class="text-center">{{ row.tournaments_played }}</td>
         </tr>
         {% endfor %}
     </tbody>
