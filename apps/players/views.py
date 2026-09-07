@@ -1,7 +1,8 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import CreateView, ListView, UpdateView
@@ -15,6 +16,7 @@ from apps.accounts.services import (
 )
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
+from .dashboard import build_player_dashboard
 from .forms import DoublesPairForm, PlayerForm
 from .models import DoublesPair, Player
 
@@ -111,6 +113,13 @@ def player_reset_password(request, pk):
             % {"player": player.full_name, "username": player.user.username, "password": raw_password},
         )
     return redirect("players:edit", pk=player.pk)
+
+
+@login_required
+def player_dashboard(request):
+    player = getattr(request.user, "player_profile", None)
+    dashboard = build_player_dashboard(player)
+    return render(request, "players/player_dashboard.html", {"dashboard": dashboard})
 
 
 class DoublesPairListView(ListView):

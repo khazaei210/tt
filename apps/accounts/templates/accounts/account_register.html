@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{% translate "Register account" %}{% endblock %}
+{% block page_title %}{% translate "Register account" %}{% endblock %}
+
+{% block content %}
+{% translate "Register account" as form_title %}
+{% form_card form_title %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="label" for="id_username">
+                <span class="label-text">{% translate "Username" %}</span>
+            </label>
+            <input type="text" name="username" id="id_username" value="{{ username|default:'' }}"
+                   class="input input-bordered w-full" dir="ltr" autofocus required>
+        </div>
+        {% if request.user.is_superuser %}
+        <label class="label cursor-pointer justify-start gap-2">
+            <input type="checkbox" name="is_staff" class="checkbox">
+            <span class="label-text">{% translate "Grant staff access (can manage tournaments, players, matches…)" %}</span>
+        </label>
+        {% endif %}
+        <p class="text-sm text-base-content/60">
+            {% translate "A password is generated automatically and shown once after registering." %}
+        </p>
+        <div class="flex gap-2 justify-end pt-2">
+            <a href="{% url 'accounts:list' %}" class="btn btn-ghost">{% translate "Cancel" %}</a>
+            <button type="submit" class="btn btn-primary">{% translate "Register" %}</button>
+        </div>
+    </form>
+{% endform_card %}
+{% endblock %}

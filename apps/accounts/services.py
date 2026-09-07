@@ -20,6 +20,10 @@ class PlayerHasNoLoginError(Exception):
     pass
 
 
+class UsernameTakenError(Exception):
+    pass
+
+
 def suggest_username(player):
     """A reasonable starting username for the "create login" form — not
     guaranteed unique on its own; generate_unique_username() below handles
@@ -65,6 +69,40 @@ def create_player_login(player, *, username=None):
     return user, raw_password
 
 
+def create_account(username, *, is_staff=False):
+    """Register a brand-new account not tied to any Player — a referee,
+    scorekeeper, or other staff login, from the Accounts management page.
+
+    Unlike create_player_login, this doesn't fall back to a generated
+    username or auto-dedupe with a numeric suffix: the caller chose this
+    username deliberately (to hand to a real person), so a collision
+    raises UsernameTakenError instead of silently picking a different one.
+
+    Returns (user, raw_password) — raw_password is shown to the caller
+    exactly once.
+    """
+    User = get_user_model()
+    clean_username = slugify(username, allow_unicode=True)
+    if not clean_username:
+        raise ValueError("username is required")
+    if User.objects.filter(username=clean_username).exists():
+        raise UsernameTakenError(clean_username)
+    raw_password = _generate_password()
+    user = User.objects.create_user(username=clean_username, password=raw_password, is_staff=is_staff)
+    return user, raw_password
+
+
+def reset_user_password(user):
+    """Issue a fresh random password for any account — staff, referee, or
+    a player's login alike. Returns raw_password, shown to the caller
+    exactly once.
+    """
+    raw_password = _generate_password()
+    user.set_password(raw_password)
+    user.save(update_fields=["password"])
+    return raw_password
+
+
 def reset_player_login_password(player):
     """Issue a fresh random password for a player's existing login.
     Raises PlayerHasNoLoginError if the player has no linked User yet.
@@ -73,8 +111,4 @@ def reset_player_login_password(player):
     """
     if player.user_id is None:
         raise PlayerHasNoLoginError(player)
-
-    raw_password = _generate_password()
-    player.user.set_password(raw_password)
-    player.user.save(update_fields=["password"])
-    return raw_password
+    return reset_user_password(player.user)

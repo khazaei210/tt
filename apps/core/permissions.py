@@ -46,3 +46,20 @@ def staff_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapper
+
+
+def superuser_required(view_func):
+    """For function-based views that change another account's staff/
+    superuser status — a plain staff account granting itself or a peer
+    that access would be a privilege escalation, so this is stricter than
+    staff_required."""
+
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+
+    return wrapper

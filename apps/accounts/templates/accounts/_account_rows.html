@@ -1,0 +1,71 @@
+{% load i18n ui_kit %}
+{% for account in accounts %}
+<tr id="account-row-{{ account.pk }}">
+    <td>{{ account.username }}</td>
+    <td>
+        {% if account.player_profile %}
+            <a href="{% url 'players:edit' account.player_profile.pk %}" class="link">{{ account.player_profile.full_name }}</a>
+        {% else %}
+            <span class="text-base-content/60">—</span>
+        {% endif %}
+    </td>
+    <td class="space-x-1 rtl:space-x-reverse">
+        {% if account.is_superuser %}
+            {% translate "Superuser" as superuser_label %}
+            {% status_badge superuser_label variant="warning" size="sm" %}
+        {% elif account.is_staff %}
+            {% translate "Staff" as staff_label %}
+            {% status_badge staff_label variant="info" size="sm" %}
+        {% else %}
+            <span class="text-base-content/60">—</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if account.is_active %}
+            {% translate "Active" as active_label %}
+            {% status_badge active_label variant="success" %}
+        {% else %}
+            {% translate "Inactive" as inactive_label %}
+            {% status_badge inactive_label variant="ghost" %}
+        {% endif %}
+    </td>
+    <td>{{ account.last_login|default:"—" }}</td>
+    <td class="text-right space-x-2 rtl:space-x-reverse whitespace-nowrap">
+        {% translate "Issue a new password for this account? The old one stops working immediately." as reset_confirm %}
+        <form method="post" action="{% url 'accounts:reset_password' account.pk %}" class="inline"
+              onsubmit="return confirm('{{ reset_confirm|escapejs }}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-xs btn-outline">{% translate "Reset password" %}</button>
+        </form>
+        {% if account.pk != request.user.pk %}
+            <form method="post" action="{% url 'accounts:toggle_active' account.pk %}" class="inline">
+                {% csrf_token %}
+                {% if account.is_active %}
+                    <button type="submit" class="btn btn-xs btn-outline btn-warning">{% translate "Deactivate" %}</button>
+                {% else %}
+                    <button type="submit" class="btn btn-xs btn-outline btn-success">{% translate "Activate" %}</button>
+                {% endif %}
+            </form>
+            {% if request.user.is_superuser %}
+                <form method="post" action="{% url 'accounts:toggle_staff' account.pk %}" class="inline">
+                    {% csrf_token %}
+                    {% if account.is_staff %}
+                        <button type="submit" class="btn btn-xs btn-outline">{% translate "Revoke staff" %}</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-xs btn-outline">{% translate "Grant staff" %}</button>
+                    {% endif %}
+                </form>
+            {% endif %}
+            {% translate "Delete this account? This can't be undone." as delete_confirm %}
+            <form method="post" action="{% url 'accounts:delete' account.pk %}" class="inline"
+                  onsubmit="return confirm('{{ delete_confirm|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-xs btn-error btn-outline">{% translate "Delete" %}</button>
+            </form>
+        {% endif %}
+    </td>
+</tr>
+{% empty %}
+{% translate "No accounts found." as no_accounts_msg %}
+{% empty_row no_accounts_msg colspan=6 %}
+{% endfor %}
