@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
 
+from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, staff_required, superuser_required
 
 from .services import UsernameTakenError, create_account, reset_user_password
@@ -108,6 +109,19 @@ def account_reset_password(request, pk):
         )
         % {"username": account.username, "password": raw_password},
     )
+    player = getattr(account, "player_profile", None)
+    if player is not None and request.POST.get("notify_via_bale") == "on":
+        status = send_password_reset_notification(player, account.username, raw_password)
+        if status == "sent":
+            messages.success(request, _("New password also sent to %(username)s via Bale.") % {"username": account.username})
+        elif status == "not_linked":
+            messages.warning(
+                request,
+                _("%(username)s hasn't linked their Bale account yet — the new password wasn't sent.")
+                % {"username": account.username},
+            )
+        else:
+            messages.warning(request, _("Sending the new password via Bale failed."))
     return redirect("accounts:list")
 
 

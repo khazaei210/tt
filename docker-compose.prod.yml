@@ -66,5 +66,19 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  bale-poller:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      target: prod
+    env_file: .env.prod
+    # Skip docker/web/entrypoint.sh (collectstatic + gunicorn) — this
+    # service only needs to run the poll loop, not serve HTTP.
+    entrypoint: ["python", "manage.py", "bale_poll_updates"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:

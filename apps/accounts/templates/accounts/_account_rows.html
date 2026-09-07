@@ -32,9 +32,14 @@
     <td>{{ account.last_login|default:"—" }}</td>
     <td class="text-right space-x-2 rtl:space-x-reverse whitespace-nowrap">
         {% translate "Issue a new password for this account? The old one stops working immediately." as reset_confirm %}
-        <form method="post" action="{% url 'accounts:reset_password' account.pk %}" class="inline"
+        <form method="post" action="{% url 'accounts:reset_password' account.pk %}" class="inline-flex items-center gap-1"
               onsubmit="return confirm('{{ reset_confirm|escapejs }}');">
             {% csrf_token %}
+            {% if account.player_profile.bale_chat_id %}
+            <label class="label cursor-pointer gap-1 p-0" title="{% translate 'Also send via Bale' %}">
+                <input type="checkbox" name="notify_via_bale" class="checkbox checkbox-xs" checked>
+            </label>
+            {% endif %}
             <button type="submit" class="btn btn-xs btn-outline">{% translate "Reset password" %}</button>
         </form>
         {% if account.pk != request.user.pk %}

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.matches",
     "apps.rankings",
     "apps.reports",
+    "apps.bale",
 ]
 
 MIDDLEWARE = [
@@ -120,6 +121,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:home"
 LOGOUT_REDIRECT_URL = "core:home"
+
+# --- Bale bot (apps.bale) ---
+# Never commit a real token — see .env.example. BALE_BOT_USERNAME is
+# display-only (shown to staff so they can tell a player which bot to
+# message); it isn't used to call the API.
+BALE_BOT_TOKEN = env("BALE_BOT_TOKEN", default="")
+BALE_BOT_USERNAME = env("BALE_BOT_USERNAME", default="")
+BALE_API_BASE_URL = env("BALE_API_BASE_URL", default="https://tapi.bale.ai")
+BALE_API_TIMEOUT = env.int("BALE_API_TIMEOUT", default=15)
 
 # --- Admin (django-unfold theme) ---
 UNFOLD = {

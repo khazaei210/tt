@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -8,6 +10,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from apps.bale.services import notify_matches_created
 from apps.core.csv_utils import csv_response
 from apps.matches.services import (
     NoKnockoutStageError,
@@ -51,6 +54,55 @@ from .permissions import (
     tournament_manager_required,
 )
 from .services.dashboard import build_manager_dashboard
+
+logger = logging.getLogger(__name__)
+
+
+_MATCH_NOTIFY_SELECT_RELATED = (
+    "competition",
+    "competition__tournament",
+    "participant_a__individual_player",
+    "participant_a__doubles_pair__player_one",
+    "participant_a__doubles_pair__player_two",
+    "participant_a__team",
+    "participant_b__individual_player",
+    "participant_b__doubles_pair__player_one",
+    "participant_b__doubles_pair__player_two",
+    "participant_b__team",
+)
+
+
+def _report_bale_notifications(request, matches_queryset):
+    """Best-effort, after a draw/schedule is generated: tell every
+    involved player their new match over Bale, and summarize the outcome
+    for the staff member who triggered generation.
+
+    notify_matches_created() already turns every expected Bale failure
+    (unlinked player, API/transport error) into a status entry rather
+    than an exception — the broad except below is only a last-resort net
+    against a latent bug in that notification path, so it can never turn
+    an already-successful draw/schedule generation into a 500 for staff.
+    """
+    try:
+        results = notify_matches_created(matches_queryset.select_related(*_MATCH_NOTIFY_SELECT_RELATED))
+    except Exception:
+        logger.exception("Unexpected error while notifying players via Bale")
+        return
+    if not results:
+        return
+    sent = sum(1 for _player, status in results if status == "sent")
+    unreachable = len(results) - sent
+    if unreachable:
+        messages.info(
+            request,
+            _(
+                "Notified %(sent)s player(s) of their new match via Bale "
+                "(%(unreachable)s not reachable — not linked yet, or delivery failed)."
+            )
+            % {"sent": sent, "unreachable": unreachable},
+        )
+    else:
+        messages.info(request, _("Notified %(sent)s player(s) of their new match via Bale.") % {"sent": sent})
 
 
 def _tournament_from_pk(request, pk, **kwargs):
@@ -293,6 +345,8 @@ def stage_bracket_generate(request, pk):
         generate_stage_bracket(stage, seeded=seeded, third_place=third_place)
     except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
         messages.error(request, str(exc))
+    else:
+        _report_bale_notifications(request, stage.matches.all())
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
@@ -313,6 +367,9 @@ def stage_advance(request, pk):
         messages.error(request, str(exc))
     else:
         messages.success(request, _("Qualifiers advanced to the next stage."))
+        next_stage = stage.competition.stages.filter(order=stage.order + 1, stage_format=StageFormat.KNOCKOUT).first()
+        if next_stage is not None:
+            _report_bale_notifications(request, next_stage.matches.all())
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
@@ -504,6 +561,8 @@ def group_schedule_generate(request, pk):
         generate_group_schedule(group, legs=legs)
     except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
         messages.error(request, str(exc))
+    else:
+        _report_bale_notifications(request, group.matches.all())
     return redirect("tournaments:group_detail", pk=group.pk)
 
 

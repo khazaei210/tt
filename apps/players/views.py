@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -14,6 +15,7 @@ from apps.accounts.services import (
     reset_player_login_password,
     suggest_username,
 )
+from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
 from .dashboard import build_player_dashboard
@@ -60,6 +62,7 @@ class PlayerUpdateView(StaffRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         if self.object.user_id is None:
             context["suggested_username"] = suggest_username(self.object)
+        context["bale_bot_username"] = settings.BALE_BOT_USERNAME
         return context
 
 
@@ -94,6 +97,20 @@ def player_create_login(request, pk):
     return redirect("players:edit", pk=player.pk)
 
 
+def _notify_password_reset(request, player, username, raw_password):
+    status = send_password_reset_notification(player, username, raw_password)
+    if status == "sent":
+        messages.success(request, _("New password also sent to %(player)s via Bale.") % {"player": player.full_name})
+    elif status == "not_linked":
+        messages.warning(
+            request,
+            _("%(player)s hasn't linked their Bale account yet — the new password wasn't sent.")
+            % {"player": player.full_name},
+        )
+    else:
+        messages.warning(request, _("Sending the new password via Bale failed."))
+
+
 @staff_required
 def player_reset_password(request, pk):
     if request.method != "POST":
@@ -103,15 +120,18 @@ def player_reset_password(request, pk):
         raw_password = reset_player_login_password(player)
     except PlayerHasNoLoginError:
         messages.error(request, _("This player doesn't have a login yet."))
-    else:
-        messages.success(
-            request,
-            _(
-                "New password for %(player)s (username: %(username)s): %(password)s "
-                "(shown once now, save it before leaving this page)."
-            )
-            % {"player": player.full_name, "username": player.user.username, "password": raw_password},
+        return redirect("players:edit", pk=player.pk)
+
+    messages.success(
+        request,
+        _(
+            "New password for %(player)s (username: %(username)s): %(password)s "
+            "(shown once now, save it before leaving this page)."
         )
+        % {"player": player.full_name, "username": player.user.username, "password": raw_password},
+    )
+    if request.POST.get("notify_via_bale") == "on":
+        _notify_password_reset(request, player, player.user.username, raw_password)
     return redirect("players:edit", pk=player.pk)
 
 

@@ -41,6 +41,12 @@
         <form method="post" action="{% url 'players:reset_password' object.pk %}"
               onsubmit="return confirm('{{ reset_password_confirm|escapejs }}');">
             {% csrf_token %}
+            {% if object.bale_chat_id %}
+            <label class="label cursor-pointer justify-start gap-2 mb-2">
+                <input type="checkbox" name="notify_via_bale" class="checkbox" checked>
+                <span class="label-text">{% translate "Also send the new password to this player via Bale" %}</span>
+            </label>
+            {% endif %}
             <button type="submit" class="btn btn-outline">{% translate "Reset password" %}</button>
         </form>
     {% else %}
@@ -54,6 +60,23 @@
             </div>
             <button type="submit" class="btn btn-primary">{% translate "Create login" %}</button>
         </form>
+    {% endif %}
+{% endform_card %}
+
+{% translate "Messaging (Bale)" as bale_form_title %}
+{% form_card bale_form_title %}
+    {% if object.bale_chat_id %}
+        <p class="text-success">{% translate "This player's Bale chat is linked — they'll receive match and password notifications there." %}</p>
+    {% elif object.mobile_number %}
+        <p class="text-base-content/60">
+            {% if bale_bot_username %}
+                {% blocktranslate with bot=bale_bot_username %}Not linked yet. Ask the player to open a chat with @{{ bot }} on Bale and share their phone number.{% endblocktranslate %}
+            {% else %}
+                {% translate "Not linked yet. Ask the player to open a chat with the tournament's Bale bot and share their phone number." %}
+            {% endif %}
+        </p>
+    {% else %}
+        <p class="text-base-content/60">{% translate "Add a mobile number above first — it's how the player's Bale chat gets matched to this profile." %}</p>
     {% endif %}
 {% endform_card %}
 {% endif %}
