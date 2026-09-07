@@ -197,6 +197,82 @@ class HandleUpdateTests(TestCase):
         mock_client_cls.return_value.call.assert_not_called()
 
 
+class NextGamesCommandTests(TestCase):
+    def _send(self, chat_id, text):
+        with patch("apps.bale.services.BaleClient") as mock_client_cls:
+            handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
+        return mock_client_cls.return_value.call
+
+    def test_unlinked_chat_is_told_to_link_first(self):
+        call = self._send(1, "next_games")
+        call.assert_called_once()
+        self.assertIn("start", call.call_args.kwargs["text"].lower())
+
+    def test_leading_slash_is_accepted(self):
+        Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=2, mobile_number="09000000070")
+        call = self._send(2, "/next_games")
+        call.assert_called_once()
+
+    def test_linked_with_no_upcoming_matches(self):
+        Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=3, mobile_number="09000000071")
+        call = self._send(3, "next_games")
+        call.assert_called_once()
+        self.assertIn("no upcoming", call.call_args.kwargs["text"].lower())
+
+    def test_linked_with_an_upcoming_match(self):
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=4, mobile_number="09000000072")
+        opponent = Player.objects.create(first_name="B", last_name="Rival", gender="M", mobile_number="09000000073")
+        tournament, competition, stage = _make_tournament_bits()
+        pa = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player
+        )
+        pb = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=opponent
+        )
+        Match.objects.create(
+            competition=competition, stage=stage, round_number=1, participant_a=pa, participant_b=pb,
+            status=MatchStatus.SCHEDULED,
+        )
+        call = self._send(4, "next_games")
+        call.assert_called_once()
+        text = call.call_args.kwargs["text"]
+        self.assertIn("Open Cup", text)
+        self.assertIn("Singles", text)
+
+
+class MyRankCommandTests(TestCase):
+    def _send(self, chat_id, text):
+        with patch("apps.bale.services.BaleClient") as mock_client_cls:
+            handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
+        return mock_client_cls.return_value.call
+
+    def test_unlinked_chat_is_told_to_link_first(self):
+        call = self._send(10, "my_rank")
+        call.assert_called_once()
+        self.assertIn("start", call.call_args.kwargs["text"].lower())
+
+    def test_linked_with_no_ranking_yet(self):
+        Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=11, mobile_number="09000000080")
+        call = self._send(11, "my_rank")
+        call.assert_called_once()
+        self.assertIn("no ranking", call.call_args.kwargs["text"].lower())
+
+    def test_linked_with_elo_and_points(self):
+        from apps.rankings.models import EloRating, PlayerRanking, RankingCategory
+
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=12, mobile_number="09000000081")
+        category = RankingCategory.objects.create(name="Men's Singles")
+        EloRating.objects.create(player=player, category=category, rating=1620.0, current_rank=2)
+        PlayerRanking.objects.create(player=player, category=category, points=80, current_rank=3)
+
+        call = self._send(12, "my_rank")
+        call.assert_called_once()
+        text = call.call_args.kwargs["text"]
+        self.assertIn("Men's Singles", text)
+        self.assertIn("1620", text)
+        self.assertIn("80", text)
+
+
 class PasswordResetMessageTests(TestCase):
     def test_contains_username_and_password(self):
         text = password_reset_message("alice", "s3cret")

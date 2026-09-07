@@ -8,6 +8,7 @@ import logging
 
 from django.utils.translation import gettext as _
 
+from apps.players.dashboard import build_player_dashboard
 from apps.players.models import Player
 from apps.players.phone import normalize_mobile_number
 
@@ -121,10 +122,11 @@ def notify_matches_created(matches):
 
 
 def handle_update(update):
-    """Dispatch one Bale Update (from getUpdates) — either links a
-    player's chat (a shared Contact) or replies to /start with the
-    "share your phone number" prompt. Unknown/irrelevant updates are
-    ignored: this bot has no other conversation surface yet."""
+    """Dispatch one Bale Update (from getUpdates): links a player's chat
+    (a shared Contact), replies to /start with the "share your phone
+    number" prompt, or answers a linked player's next_games/my_rank
+    command. Unknown/irrelevant updates are ignored: this bot has no
+    other conversation surface yet."""
     message = update.get("message")
     if not message or "chat" not in message:
         return
@@ -133,8 +135,14 @@ def handle_update(update):
     if contact:
         _handle_contact_shared(chat_id, contact)
         return
-    if message.get("text", "").strip() == "/start":
+
+    command = message.get("text", "").strip().lstrip("/").lower()
+    if command == "start":
         _send_link_prompt(chat_id)
+    elif command == "next_games":
+        _handle_next_games(chat_id)
+    elif command == "my_rank":
+        _handle_my_rank(chat_id)
 
 
 def _handle_contact_shared(chat_id, contact):
@@ -166,3 +174,84 @@ def _send_link_prompt(chat_id):
         text=_("Welcome! Share your phone number to link your player profile and receive match notifications."),
         reply_markup=build_contact_request_keyboard(),
     )
+
+
+_NOT_LINKED_MESSAGE = _("You haven't linked your player profile yet — send /start and share your phone number first.")
+
+
+def _player_for_chat(chat_id):
+    return Player.objects.filter(bale_chat_id=chat_id).select_related("user").first()
+
+
+def _handle_next_games(chat_id):
+    """Reply to a linked player's next_games command with their upcoming
+    matches — the same data/scope as players:dashboard on the site
+    (apps.players.dashboard.build_player_dashboard), just as a Bale
+    message instead of a web page."""
+    client = BaleClient()
+    player = _player_for_chat(chat_id)
+    if player is None:
+        client.call("sendMessage", chat_id=chat_id, text=_NOT_LINKED_MESSAGE)
+        return
+
+    dashboard = build_player_dashboard(player)
+    if not dashboard.upcoming_matches:
+        client.call("sendMessage", chat_id=chat_id, text=_("You have no upcoming matches."))
+        return
+
+    blocks = []
+    for match in dashboard.upcoming_matches:
+        when = match.start_time.strftime("%Y-%m-%d %H:%M") if match.start_time else _("Not scheduled yet")
+        blocks.append(
+            _("%(tournament)s — %(competition)s\nRound %(round)s: %(a)s vs %(b)s\n%(when)s")
+            % {
+                "tournament": match.competition.tournament.name,
+                "competition": match.competition.name,
+                "round": match.round_number,
+                "a": match.participant_a or _("BYE"),
+                "b": match.participant_b or _("BYE"),
+                "when": when,
+            }
+        )
+    client.call("sendMessage", chat_id=chat_id, text="\n\n".join(blocks))
+
+
+def _handle_my_rank(chat_id):
+    """Reply to a linked player's my_rank command with their current
+    standing in every RankingCategory they appear in — the same data as
+    rankings:my_rankings on the site, condensed into a chat message."""
+    client = BaleClient()
+    player = _player_for_chat(chat_id)
+    if player is None:
+        client.call("sendMessage", chat_id=chat_id, text=_NOT_LINKED_MESSAGE)
+        return
+
+    elo_ratings = list(player.elo_ratings.select_related("category").order_by("category__name"))
+    rankings = {r.category_id: r for r in player.rankings.select_related("category")}
+    if not elo_ratings and not rankings:
+        client.call("sendMessage", chat_id=chat_id, text=_("You have no ranking yet."))
+        return
+
+    blocks = []
+    seen_category_ids = set()
+    for elo in elo_ratings:
+        seen_category_ids.add(elo.category_id)
+        ranking = rankings.get(elo.category_id)
+        blocks.append(
+            _("%(category)s\nElo: %(rating)s (#%(elo_rank)s)\nPoints: %(points)s (#%(points_rank)s)")
+            % {
+                "category": elo.category.name,
+                "rating": round(elo.rating),
+                "elo_rank": elo.current_rank or "—",
+                "points": ranking.points if ranking else 0,
+                "points_rank": ranking.current_rank if ranking and ranking.current_rank else "—",
+            }
+        )
+    for category_id, ranking in rankings.items():
+        if category_id in seen_category_ids:
+            continue
+        blocks.append(
+            _("%(category)s\nPoints: %(points)s (#%(rank)s)")
+            % {"category": ranking.category.name, "points": ranking.points, "rank": ranking.current_rank or "—"}
+        )
+    client.call("sendMessage", chat_id=chat_id, text="\n\n".join(blocks))
