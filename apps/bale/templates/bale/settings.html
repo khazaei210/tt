@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{% translate "Bale settings" %}{% endblock %}
+{% block page_title %}{% translate "Bale settings" %}{% endblock %}
+
+{% block content %}
+{% translate "Bale settings" as form_title %}
+{% form_card form_title %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+            <label class="label" for="{{ field.id_for_label }}">
+                <span class="label-text">{{ field.label }}</span>
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+                <p class="text-sm text-base-content/60 mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+                <p class="text-sm text-error mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="flex gap-2 justify-end pt-2">
+            <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+        </div>
+    </form>
+{% endform_card %}
+{% endblock %}

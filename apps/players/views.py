@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -15,6 +14,7 @@ from apps.accounts.services import (
     reset_player_login_password,
     suggest_username,
 )
+from apps.bale.models import BaleSettings
 from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
@@ -62,10 +62,10 @@ class PlayerUpdateView(StaffRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         if self.object.user_id is None:
             context["suggested_username"] = suggest_username(self.object)
-        # BALE_BOT_USERNAME may be configured with or without a leading
-        # "@" — the template always adds one, so strip it here to avoid
-        # rendering "@@botname".
-        context["bale_bot_username"] = settings.BALE_BOT_USERNAME.lstrip("@")
+        # The configured username may include a leading "@" — the
+        # template always adds one, so strip it here to avoid rendering
+        # "@@botname".
+        context["bale_bot_username"] = BaleSettings.get_solo().effective_username.lstrip("@")
         return context
 
 
