@@ -216,22 +216,33 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                             </svg>
                         </label>
-                        <div tabindex="0" class="dropdown-content z-30 mb-2 grid max-h-72 w-64 grid-cols-2 gap-2 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
-                            {% for theme_name in AVAILABLE_THEMES %}
-                            <button type="button"
-                                    class="tt-theme-swatch flex flex-col items-center gap-1 rounded-lg border border-base-300 bg-base-100 p-2 hover:border-primary"
-                                    data-theme="{{ theme_name }}"
-                                    data-tt-theme-option="{{ theme_name }}"
-                                    onclick="ttSetTheme('{{ theme_name }}')">
-                                <span class="flex gap-1">
-                                    <span class="h-3 w-3 rounded-full bg-primary"></span>
-                                    <span class="h-3 w-3 rounded-full bg-secondary"></span>
-                                    <span class="h-3 w-3 rounded-full bg-accent"></span>
-                                    <span class="h-3 w-3 rounded-full bg-neutral"></span>
-                                </span>
-                                <span class="text-xs capitalize">{{ theme_name }}</span>
-                            </button>
-                            {% endfor %}
+                        <div tabindex="0" class="dropdown-content z-30 mb-2 max-h-72 w-64 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
+                            <!-- The grid layout lives on this inner wrapper, not on
+                                 .dropdown-content itself: a `display:*` utility class
+                                 (e.g. `grid`) directly on .dropdown-content permanently
+                                 wins over DaisyUI's own `display:none` closed-state rule
+                                 (Tailwind's utilities cascade layer always beats
+                                 DaisyUI's component layer, regardless of specificity),
+                                 leaving the panel invisible but still laid out and
+                                 clickable — silently intercepting clicks meant for
+                                 whatever sidebar content ends up positioned nearby. -->
+                            <div class="grid grid-cols-2 gap-2">
+                                {% for theme_name in AVAILABLE_THEMES %}
+                                <button type="button"
+                                        class="tt-theme-swatch flex flex-col items-center gap-1 rounded-lg border border-base-300 bg-base-100 p-2 hover:border-primary"
+                                        data-theme="{{ theme_name }}"
+                                        data-tt-theme-option="{{ theme_name }}"
+                                        onclick="ttSetTheme('{{ theme_name }}')">
+                                    <span class="flex gap-1">
+                                        <span class="h-3 w-3 rounded-full bg-primary"></span>
+                                        <span class="h-3 w-3 rounded-full bg-secondary"></span>
+                                        <span class="h-3 w-3 rounded-full bg-accent"></span>
+                                        <span class="h-3 w-3 rounded-full bg-neutral"></span>
+                                    </span>
+                                    <span class="text-xs capitalize">{{ theme_name }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
