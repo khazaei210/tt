@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
 
 from apps.bale.models import BaleSettings
 
@@ -53,11 +54,19 @@ class BaleSettingsViewTests(TestCase):
         self.assertEqual(obj.bot_token, "")
 
     def test_nav_link_visible_only_to_superuser(self):
+        # Pinned to English since "Bale settings" now has a real Persian
+        # translation — the request itself must stay inside the override
+        # too, since LocaleMiddleware activates "en" process-wide for the
+        # /en/-prefixed URL and doesn't revert it afterward (translation
+        # .override restores the prior language on exit regardless of
+        # what ran inside it).
         self.client.login(username="root", password="pw")
-        response = self.client.get(reverse("core:home"))
+        with translation.override("en"):
+            response = self.client.get(reverse("core:home"))
         self.assertContains(response, "Bale settings")
 
         self.client.logout()
         self.client.login(username="staffuser", password="pw")
-        response = self.client.get(reverse("core:home"))
+        with translation.override("en"):
+            response = self.client.get(reverse("core:home"))
         self.assertNotContains(response, "Bale settings")

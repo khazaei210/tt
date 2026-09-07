@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
 
 from apps.players.models import Player
 from apps.tournaments.models import (
@@ -43,7 +44,10 @@ class DrawGenerationNotifiesPlayersTests(TestCase):
         stage = Stage.objects.create(competition=self.competition, name="Round 1", stage_format=StageFormat.KNOCKOUT)
         with patch("apps.tournaments.views.notify_matches_created") as mock_notify:
             mock_notify.return_value = [(self.players[0], "sent"), (self.players[1], "sent")]
-            response = self.client.post(reverse("tournaments:stage_bracket_generate", kwargs={"pk": stage.pk}))
+            # Pinned to English (reverse() included): this message now has
+            # a real Persian translation.
+            with translation.override("en"):
+                response = self.client.post(reverse("tournaments:stage_bracket_generate", kwargs={"pk": stage.pk}))
         mock_notify.assert_called_once()
         messages = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertTrue(any("via bale" in m.lower() for m in messages))
@@ -55,7 +59,10 @@ class DrawGenerationNotifiesPlayersTests(TestCase):
             group.group_participants.create(participant=participant)
         with patch("apps.tournaments.views.notify_matches_created") as mock_notify:
             mock_notify.return_value = [(self.players[0], "sent")]
-            response = self.client.post(reverse("tournaments:group_schedule_generate", kwargs={"pk": group.pk}))
+            # Pinned to English (reverse() included): this message now has
+            # a real Persian translation.
+            with translation.override("en"):
+                response = self.client.post(reverse("tournaments:group_schedule_generate", kwargs={"pk": group.pk}))
         mock_notify.assert_called_once()
         messages = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertTrue(any("via bale" in m.lower() for m in messages))

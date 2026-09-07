@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
 
 from apps.matches.models import Match, MatchStatus
 from apps.players.dashboard import build_player_dashboard
@@ -27,7 +28,11 @@ class PlayerDashboardViewTests(TestCase):
     def test_authenticated_without_player_profile_shows_empty_state(self):
         User.objects.create_user(username="plainuser", password="pw")
         self.client.login(username="plainuser", password="pw")
-        response = self.client.get(reverse("players:dashboard"))
+        # Pinned to English (reverse() included — i18n_patterns' URL
+        # prefix decides the active language for the request): this
+        # message now has a real Persian translation.
+        with translation.override("en"):
+            response = self.client.get(reverse("players:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "isn't linked to a player profile")
 

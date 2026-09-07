@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
 
 from apps.players.models import Player
 from apps.rankings.elo import DEFAULT_ELO_RATING
@@ -62,7 +63,10 @@ class PlayerRegistrationTests(TestCase):
         self.assertEqual(player.user.username, "newplayer")
 
     def test_success_message_shows_generated_password(self):
-        response = self.client.post(reverse("players:add"), self._valid_data(), follow=True)
+        # Pinned to English (reverse() included): this message now has a
+        # real Persian translation.
+        with translation.override("en"):
+            response = self.client.post(reverse("players:add"), self._valid_data(), follow=True)
         messages = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("password" in m.lower() for m in messages))
 

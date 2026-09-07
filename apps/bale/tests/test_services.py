@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.test import TestCase
+from django.utils import translation
 
 from apps.bale.client import BaleAPIError
 from apps.bale.exceptions import BaleNotLinkedError
@@ -199,8 +200,14 @@ class HandleUpdateTests(TestCase):
 
 class NextGamesCommandTests(TestCase):
     def _send(self, chat_id, text):
-        with patch("apps.bale.services.BaleClient") as mock_client_cls:
-            handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
+        # Pinned to English: several of these replies now have real
+        # Persian translations, and handle_update() runs outside any
+        # request/URL-prefix cycle, so it just uses whatever language is
+        # currently process-wide active (settings.LANGUAGE_CODE "fa" by
+        # default) rather than anything tied to this call.
+        with translation.override("en"):
+            with patch("apps.bale.services.BaleClient") as mock_client_cls:
+                handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
         return mock_client_cls.return_value.call
 
     def test_unlinked_chat_is_told_to_link_first(self):
@@ -242,8 +249,14 @@ class NextGamesCommandTests(TestCase):
 
 class MyRankCommandTests(TestCase):
     def _send(self, chat_id, text):
-        with patch("apps.bale.services.BaleClient") as mock_client_cls:
-            handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
+        # Pinned to English: several of these replies now have real
+        # Persian translations, and handle_update() runs outside any
+        # request/URL-prefix cycle, so it just uses whatever language is
+        # currently process-wide active (settings.LANGUAGE_CODE "fa" by
+        # default) rather than anything tied to this call.
+        with translation.override("en"):
+            with patch("apps.bale.services.BaleClient") as mock_client_cls:
+                handle_update({"message": {"chat": {"id": chat_id}, "text": text}})
         return mock_client_cls.return_value.call
 
     def test_unlinked_chat_is_told_to_link_first(self):
