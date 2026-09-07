@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{% translate "My dashboard" %}{% endblock %}
+{% block page_title %}{% translate "My dashboard" %}{% endblock %}
+
+{% block content %}
+{% translate "My dashboard" as dashboard_label %}
+{% pageheader dashboard_label %}
+{% if dashboard.player %}{{ dashboard.player.full_name }}{% endif %}
+{% pageheader_actions %}
+    {% if dashboard.player %}
+        <a href="{% url 'reports:player_statistics' dashboard.player.pk %}" class="btn btn-outline">{% translate "My match history" %}</a>
+        <a href="{% url 'rankings:my_rankings' %}" class="btn btn-outline">{% translate "My ranking" %}</a>
+    {% endif %}
+{% endpageheader %}
+
+{% if not dashboard.player %}
+    {% translate "Your account isn't linked to a player profile. Ask a tournament manager to link one from your Players page." as no_player_msg %}
+    {% empty_panel no_player_msg %}
+{% else %}
+    {% translate "Upcoming matches" as upcoming_label %}
+    {% sectionheader title=upcoming_label %}{% endsectionheader %}
+    {% if dashboard.upcoming_matches %}
+    {% table_card table_class="table-zebra" extra_class="mb-6" %}
+        <thead>
+            <tr>
+                <th>{% translate "Tournament" %}</th>
+                <th>{% translate "Competition" %}</th>
+                <th>{% translate "Round" %}</th>
+                <th>{% translate "Opponent" %}</th>
+                <th>{% translate "Scheduled" %}</th>
+                <th>{% translate "Status" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for match in dashboard.upcoming_matches %}
+            <tr>
+                <td><a href="{% url 'tournaments:detail' match.competition.tournament.pk %}" class="link">{{ match.competition.tournament.name }}</a></td>
+                <td>{{ match.competition.name }}</td>
+                <td>{{ match.round_number }}</td>
+                <td><a href="{% url 'matches:detail' match.pk %}" class="link">{{ match.participant_a|default:"—" }} {% translate "vs" %} {{ match.participant_b|default:"—" }}</a></td>
+                <td>{{ match.start_time|default:"—" }}</td>
+                <td>
+                    {% if match.status == "live" %}
+                        {% translate "Live" as live_label %}
+                        {% status_badge live_label variant="error" %}
+                    {% else %}
+                        {% status_badge match.get_status_display %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
+    {% else %}
+    {% translate "No upcoming matches." as no_upcoming_msg %}
+    {% empty_panel no_upcoming_msg extra_class="mb-6" %}
+    {% endif %}
+
+    {% translate "My tournaments" as tournaments_label %}
+    {% sectionheader title=tournaments_label %}{% endsectionheader %}
+    {% if dashboard.tournaments %}
+    {% table_card table_class="table-zebra" %}
+        <thead>
+            <tr>
+                <th>{% translate "Tournament" %}</th>
+                <th>{% translate "Location" %}</th>
+                <th>{% translate "Dates" %}</th>
+                <th>{% translate "Status" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tournament in dashboard.tournaments %}
+            <tr>
+                <td><a href="{% url 'tournaments:detail' tournament.pk %}" class="link">{{ tournament.name }}</a></td>
+                <td>{{ tournament.location|default:"—" }}</td>
+                <td>{{ tournament.start_date|default:"—" }} – {{ tournament.end_date|default:"—" }}</td>
+                <td>{% status_badge tournament.get_status_display %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    {% endtable_card %}
+    {% else %}
+    {% translate "You're not registered in any tournament yet." as no_tournaments_msg %}
+    {% empty_panel no_tournaments_msg %}
+    {% endif %}
+{% endif %}
+{% endblock %}

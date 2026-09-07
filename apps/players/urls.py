@@ -5,6 +5,7 @@ from . import views
 app_name = "players"
 
 urlpatterns = [
+    path("dashboard/", views.player_dashboard, name="dashboard"),
     path("", views.PlayerListView.as_view(), name="list"),
     path("add/", views.PlayerCreateView.as_view(), name="add"),
     path("<int:pk>/edit/", views.PlayerUpdateView.as_view(), name="edit"),

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{% translate "Accounts" %}{% endblock %}
+{% block page_title %}{% translate "Accounts" %}{% endblock %}
+
+{% block content %}
+{% translate "Accounts" as accounts_label %}
+{% pageheader accounts_label %}
+{% pageheader_actions %}
+    <a href="{% url 'accounts:register' %}" class="btn btn-primary">{% translate "Register account" %}</a>
+{% endpageheader %}
+
+<div class="mb-4">
+    <input type="search"
+           name="q"
+           value="{{ request.GET.q }}"
+           placeholder="{% translate 'Search by username or player name…' %}"
+           class="input input-bordered w-full max-w-sm"
+           hx-get="{% url 'accounts:list' %}"
+           hx-target="#account-table-body"
+           hx-swap="innerHTML"
+           hx-trigger="keyup changed delay:300ms, search">
+</div>
+
+{% table_card %}
+    <thead>
+        <tr>
+            <th>{% translate "Username" %}</th>
+            <th>{% translate "Player" %}</th>
+            <th>{% translate "Access" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th>{% translate "Last login" %}</th>
+            <th class="text-right">{% translate "Actions" %}</th>
+        </tr>
+    </thead>
+    <tbody id="account-table-body">
+        {% include "accounts/_account_rows.html" %}
+    </tbody>
+{% endtable_card %}
+{% endblock %}
