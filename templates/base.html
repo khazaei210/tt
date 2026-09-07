@@ -58,6 +58,9 @@
                         <div class="dropdown dropdown-end">
                             <label tabindex="0" class="btn btn-ghost btn-sm">{{ user.username }}</label>
                             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-30 w-48 p-2">
+                                <li>
+                                    <a href="{% url 'accounts:password_change' %}">{% translate "Change password" %}</a>
+                                </li>
                                 {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'bale:settings' %}">{% translate "Bale settings" %}</a>

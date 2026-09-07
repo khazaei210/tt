@@ -1,16 +1,17 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
 
 from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, staff_required, superuser_required
 
+from .forms import StyledPasswordChangeForm
 from .services import UsernameTakenError, create_account, reset_user_password
 
 User = get_user_model()
@@ -27,6 +28,24 @@ class AccountLoginView(LoginView):
         if not user.is_staff and not user.is_superuser and getattr(user, "player_profile", None):
             return reverse("players:dashboard")
         return super().get_default_redirect_url()
+
+
+class AccountPasswordChangeView(PasswordChangeView):
+    """Any logged-in user (player or staff) changing their own password —
+    the one thing every non-superuser account is allowed to do on its own
+    account, everything else stays staff/superuser-gated elsewhere.
+    Django's own PasswordChangeForm already verifies the current password
+    and update_session_auth_hash() keeps the session valid afterward, so
+    changing your password doesn't log you out."""
+
+    form_class = StyledPasswordChangeForm
+    template_name = "accounts/password_change.html"
+    success_url = reverse_lazy("accounts:password_change")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, _("Password changed."))
+        return response
 
 
 class AccountListView(StaffRequiredMixin, ListView):
