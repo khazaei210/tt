@@ -37,7 +37,11 @@ class BalePollUpdatesCommandTests(TestCase):
                 with self.assertRaises(_StopLoop):
                     call_command("bale_poll_updates")
 
-        mock_client_cls.assert_called_once_with(timeout=POLL_HTTP_TIMEOUT_SECONDS)
+        # A fresh client is constructed each loop iteration (so a token
+        # rotated via the web UI takes effect without a restart) — called
+        # twice here since the side_effect list drives two iterations.
+        mock_client_cls.assert_called_with(timeout=POLL_HTTP_TIMEOUT_SECONDS)
+        self.assertEqual(mock_client_cls.call_count, 2)
         mock_handle.assert_called_once_with(update)
         # Second getUpdates call must acknowledge the first update via offset.
         self.assertEqual(

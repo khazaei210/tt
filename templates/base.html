@@ -57,7 +57,12 @@
                     {% if user.is_authenticated %}
                         <div class="dropdown dropdown-end">
                             <label tabindex="0" class="btn btn-ghost btn-sm">{{ user.username }}</label>
-                            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-30 w-40 p-2">
+                            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow z-30 w-48 p-2">
+                                {% if user.is_superuser %}
+                                <li>
+                                    <a href="{% url 'bale:settings' %}">{% translate "Bale settings" %}</a>
+                                </li>
+                                {% endif %}
                                 <li>
                                     <form action="{% url 'accounts:logout' %}" method="post">
                                         {% csrf_token %}

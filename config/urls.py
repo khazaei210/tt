@@ -10,6 +10,7 @@ urlpatterns = [
 urlpatterns += i18n_patterns(
     path("admin/", admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
+    path("bale/", include("apps.bale.urls")),
     path("players/", include("apps.players.urls")),
     path("teams/", include("apps.teams.urls")),
     path("tournaments/", include("apps.tournaments.urls")),

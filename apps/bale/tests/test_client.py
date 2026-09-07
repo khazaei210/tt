@@ -4,6 +4,7 @@ import requests
 from django.test import TestCase, override_settings
 
 from apps.bale.client import BaleAPIError, BaleClient
+from apps.bale.models import BaleSettings
 
 
 @override_settings(BALE_BOT_TOKEN="test-token", BALE_API_BASE_URL="https://tapi.bale.ai", BALE_API_TIMEOUT=5)
@@ -36,3 +37,13 @@ class BaleClientTests(TestCase):
         with patch("apps.bale.client.requests.post", return_value=response):
             with self.assertRaises(BaleAPIError):
                 BaleClient().call("sendMessage", chat_id=123, text="hi")
+
+    def test_db_configured_token_takes_precedence_over_env_var(self):
+        settings_obj = BaleSettings.get_solo()
+        settings_obj.bot_token = "db-token"
+        settings_obj.save()
+        response = Mock(json=Mock(return_value={"ok": True, "result": {}}))
+        with patch("apps.bale.client.requests.post", return_value=response) as mock_post:
+            BaleClient().call("sendMessage", chat_id=123, text="hi")
+        called_url = mock_post.call_args.args[0]
+        self.assertIn("botdb-token/sendMessage", called_url)

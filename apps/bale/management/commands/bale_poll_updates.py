@@ -12,10 +12,10 @@ works today without extra infrastructure.
 import logging
 import time
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from apps.bale.client import BaleAPIError, BaleClient
+from apps.bale.models import BaleSettings
 from apps.bale.services import handle_update
 
 logger = logging.getLogger(__name__)
@@ -29,26 +29,32 @@ POLL_TIMEOUT_SECONDS = 25
 # ever gets a chance to respond.
 POLL_HTTP_TIMEOUT_SECONDS = POLL_TIMEOUT_SECONDS + 10
 RETRY_DELAY_SECONDS = 5
-UNCONFIGURED_RECHECK_SECONDS = 3600
+UNCONFIGURED_RECHECK_SECONDS = 30
 
 
 class Command(BaseCommand):
     help = "Long-poll Bale getUpdates and dispatch updates until stopped (Ctrl+C)."
 
     def handle(self, *args, **options):
-        if not settings.BALE_BOT_TOKEN:
-            self.stdout.write(
-                self.style.WARNING("BALE_BOT_TOKEN is not set — Bale messaging is disabled, not polling.")
-            )
-            # Stay up rather than exit non-zero, so a "restart: unless-stopped"
-            # compose service doesn't loop-restart while this is unconfigured.
-            while True:
-                time.sleep(UNCONFIGURED_RECHECK_SECONDS)
-
-        client = BaleClient(timeout=POLL_HTTP_TIMEOUT_SECONDS)
         offset = 0
+        warned_unconfigured = False
         self.stdout.write("Polling Bale for updates…")
         while True:
+            if not BaleSettings.get_solo().effective_token:
+                if not warned_unconfigured:
+                    self.stdout.write(
+                        self.style.WARNING("Bale bot token is not configured — waiting (checking periodically).")
+                    )
+                    warned_unconfigured = True
+                time.sleep(UNCONFIGURED_RECHECK_SECONDS)
+                continue
+            warned_unconfigured = False
+
+            # Constructed fresh every iteration (cheap — no network call)
+            # rather than once outside the loop, so a token rotated from
+            # the web UI (bale:settings) takes effect on the very next
+            # poll without restarting this process.
+            client = BaleClient(timeout=POLL_HTTP_TIMEOUT_SECONDS)
             try:
                 updates = client.call("getUpdates", offset=offset, timeout=POLL_TIMEOUT_SECONDS, limit=100)
             except BaleAPIError as exc:

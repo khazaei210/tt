@@ -11,6 +11,8 @@ import logging
 import requests
 from django.conf import settings
 
+from .models import BaleSettings
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,11 @@ class BaleAPIError(RuntimeError):
 
 class BaleClient:
     def __init__(self, token=None, base_url=None, timeout=None):
-        self.token = token if token is not None else settings.BALE_BOT_TOKEN
+        # Re-reads BaleSettings on every construction (not cached) so a
+        # token/username saved from the web UI takes effect immediately —
+        # including in the already-running bale-poller process — without
+        # needing a restart.
+        self.token = token if token is not None else BaleSettings.get_solo().effective_token
         self.base_url = (base_url if base_url is not None else settings.BALE_API_BASE_URL).rstrip("/")
         self.timeout = timeout if timeout is not None else settings.BALE_API_TIMEOUT
         if not self.token:
