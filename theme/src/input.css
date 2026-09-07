@@ -13,3 +13,28 @@
    automatic-detection base directory. */
 @source "../../templates";
 @source "../../apps";
+
+/* Vazirmatn (OFL-1.1, see static/vendor/fonts/Vazirmatn-OFL.txt): a
+   Persian-first typeface with matching Latin glyphs/numerals, self-hosted
+   rather than pulled from Google Fonts so the app renders correctly
+   offline and on this VPS without an external font-CDN dependency. One
+   variable-weight file covers the whole 100–900 range. The url() below
+   is relative to the compiled output (static/css/dist/styles.css), not
+   to this source file — `npm run build`/`watch` doesn't rewrite it. */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("../../vendor/fonts/Vazirmatn-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Prepended ahead of Tailwind's default sans stack (CLAUDE.md section 23:
+   Persian-friendly typography) — applies everywhere `font-sans`/the
+   default body font is used, for both Persian and English text, since
+   Vazirmatn's Latin glyphs are designed to match. */
+@theme {
+  --font-sans: "Vazirmatn", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+}
