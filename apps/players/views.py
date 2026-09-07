@@ -62,7 +62,10 @@ class PlayerUpdateView(StaffRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         if self.object.user_id is None:
             context["suggested_username"] = suggest_username(self.object)
-        context["bale_bot_username"] = settings.BALE_BOT_USERNAME
+        # BALE_BOT_USERNAME may be configured with or without a leading
+        # "@" — the template always adds one, so strip it here to avoid
+        # rendering "@@botname".
+        context["bale_bot_username"] = settings.BALE_BOT_USERNAME.lstrip("@")
         return context
 
 

@@ -21,6 +21,13 @@ from apps.bale.services import handle_update
 logger = logging.getLogger(__name__)
 
 POLL_TIMEOUT_SECONDS = 25
+# The HTTP client's own read timeout must be longer than the long-poll
+# "timeout" parameter sent to Bale below — Bale holds the connection open
+# for up to POLL_TIMEOUT_SECONDS waiting for a new update, so a client
+# timeout equal to or shorter than that (e.g. the general-purpose
+# BALE_API_TIMEOUT default) would abort every single call before Bale
+# ever gets a chance to respond.
+POLL_HTTP_TIMEOUT_SECONDS = POLL_TIMEOUT_SECONDS + 10
 RETRY_DELAY_SECONDS = 5
 UNCONFIGURED_RECHECK_SECONDS = 3600
 
@@ -38,7 +45,7 @@ class Command(BaseCommand):
             while True:
                 time.sleep(UNCONFIGURED_RECHECK_SECONDS)
 
-        client = BaleClient()
+        client = BaleClient(timeout=POLL_HTTP_TIMEOUT_SECONDS)
         offset = 0
         self.stdout.write("Polling Bale for updates…")
         while True:
