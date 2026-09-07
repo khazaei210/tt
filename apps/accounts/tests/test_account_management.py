@@ -113,22 +113,20 @@ class AccountResetPasswordBaleNotificationTests(TestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(username="staffuser", password="pw", is_staff=True)
         self.player_user = User.objects.create_user(username="playeruser", password="pw")
-        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M", user=self.player_user)
+        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M", user=self.player_user, mobile_number="09000000068")
         self.client.login(username="staffuser", password="pw")
 
-    def test_notify_checkbox_ignored_without_player_profile(self):
+    def test_notify_skipped_without_player_profile(self):
         plain_user = User.objects.create_user(username="noplayeruser", password="pw")
         with patch("apps.accounts.views.send_password_reset_notification") as mock_notify:
-            self.client.post(reverse("accounts:reset_password", kwargs={"pk": plain_user.pk}), {"notify_via_bale": "on"})
+            self.client.post(reverse("accounts:reset_password", kwargs={"pk": plain_user.pk}))
         mock_notify.assert_not_called()
 
-    def test_notify_checkbox_on_with_linked_chat_sends_message(self):
+    def test_reset_always_attempts_notification_for_linked_player(self):
         self.player.bale_chat_id = 123
         self.player.save(update_fields=["bale_chat_id"])
         with patch("apps.accounts.views.send_password_reset_notification", return_value="sent") as mock_notify:
-            self.client.post(
-                reverse("accounts:reset_password", kwargs={"pk": self.player_user.pk}), {"notify_via_bale": "on"}
-            )
+            self.client.post(reverse("accounts:reset_password", kwargs={"pk": self.player_user.pk}))
         mock_notify.assert_called_once()
 
 
@@ -217,7 +215,7 @@ class AccountDeleteTests(TestCase):
         self.assertTrue(User.objects.filter(pk=self.staff_user.pk).exists())
 
     def test_deleting_account_unlinks_but_keeps_player(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M", user=self.plain_user)
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", user=self.plain_user, mobile_number="09000000067")
         self.client.login(username="staffuser", password="pw")
         self.client.post(reverse("accounts:delete", kwargs={"pk": self.plain_user.pk}))
         player.refresh_from_db()
@@ -227,7 +225,7 @@ class AccountDeleteTests(TestCase):
 class LoginRedirectTests(TestCase):
     def test_player_only_account_redirects_to_player_dashboard(self):
         user = User.objects.create_user(username="playeruser", password="pw")
-        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user)
+        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user, mobile_number="09000000066")
         response = self.client.post(reverse("accounts:login"), {"username": "playeruser", "password": "pw"})
         self.assertRedirects(response, reverse("players:dashboard"))
 
@@ -243,7 +241,7 @@ class LoginRedirectTests(TestCase):
 
     def test_explicit_next_param_takes_priority_over_player_redirect(self):
         user = User.objects.create_user(username="playeruser", password="pw")
-        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user)
+        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user, mobile_number="09000000065")
         login_url = f"{reverse('accounts:login')}?next={reverse('rankings:category_list')}"
         response = self.client.post(login_url, {"username": "playeruser", "password": "pw"})
         self.assertRedirects(response, reverse("rankings:category_list"))

@@ -28,7 +28,9 @@ class GroupStandingsServiceTests(TestCase):
 
         self.participants = {}
         for name in ["A", "B", "C"]:
-            player = Player.objects.create(first_name=name, last_name="Test", gender="M")
+            player = Player.objects.create(
+                first_name=name, last_name="Test", gender="M", mobile_number=f"090000{ord(name):03d}0"
+            )
             participant = Participant.objects.create(
                 competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player
             )

@@ -9,7 +9,7 @@ User = get_user_model()
 
 class PlayerPermissionTests(TestCase):
     def setUp(self):
-        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M")
+        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000039")
         self.staff_user = User.objects.create_user(username="staffuser", password="pw", is_staff=True)
         self.plain_user = User.objects.create_user(username="plainuser", password="pw")
 

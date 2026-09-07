@@ -29,8 +29,8 @@ class ScoreServiceTestCase(TestCase):
         )
         self.rule = CompetitionRule.objects.create(competition=self.competition, best_of_sets=5, points_per_set=11, win_by=2)
         self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
-        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M")
+        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000064")
+        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M", mobile_number="09000000063")
         self.participant_a = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_a
         )
@@ -150,7 +150,7 @@ class KnockoutPropagationTests(TestCase):
         self.stage = Stage.objects.create(competition=self.competition, name="KO", stage_format=StageFormat.KNOCKOUT)
         self.participants = []
         for i in range(4):
-            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M")
+            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900006{i:04d}")
             self.participants.append(
                 Participant.objects.create(
                     competition=self.competition,

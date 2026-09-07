@@ -9,17 +9,13 @@ class PlayerMobileNumberTests(TestCase):
         player = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="+98 912 345 6789")
         self.assertEqual(player.mobile_number, "09123456789")
 
-    def test_blank_mobile_number_stays_blank(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        self.assertEqual(player.mobile_number, "")
+    def test_blank_mobile_number_is_rejected(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="")
 
     def test_duplicate_mobile_number_is_rejected(self):
         Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09123456789")
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Player.objects.create(first_name="B", last_name="Other", gender="M", mobile_number="09123456789")
-
-    def test_multiple_blank_mobile_numbers_are_allowed(self):
-        Player.objects.create(first_name="A", last_name="Test", gender="M")
-        Player.objects.create(first_name="B", last_name="Other", gender="M")
-        self.assertEqual(Player.objects.filter(mobile_number="").count(), 2)

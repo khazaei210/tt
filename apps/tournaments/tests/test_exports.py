@@ -14,8 +14,8 @@ class GroupStandingsCsvTests(TestCase):
         )
         self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
         self.group = Group.objects.create(stage=self.stage, name="A")
-        self.player_a = Player.objects.create(first_name="Csv", last_name="A", gender="M")
-        self.player_b = Player.objects.create(first_name="Csv", last_name="B", gender="M")
+        self.player_a = Player.objects.create(first_name="Csv", last_name="A", gender="M", mobile_number="09000000047")
+        self.player_b = Player.objects.create(first_name="Csv", last_name="B", gender="M", mobile_number="09000000046")
         for player in (self.player_a, self.player_b):
             participant = Participant.objects.create(
                 competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player

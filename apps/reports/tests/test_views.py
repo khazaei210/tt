@@ -9,7 +9,7 @@ class ReportViewTests(TestCase):
     def setUp(self):
         self.tournament = Tournament.objects.create(name="Test Open")
         Competition.objects.create(tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL)
-        self.player = Player.objects.create(first_name="View", last_name="Test", gender="M")
+        self.player = Player.objects.create(first_name="View", last_name="Test", gender="M", mobile_number="09000000012")
 
     def test_tournament_report_is_public(self):
         response = self.client.get(reverse("reports:tournament_report", args=[self.tournament.pk]))

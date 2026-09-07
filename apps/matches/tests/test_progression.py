@@ -43,7 +43,12 @@ class AdvanceToNextStageTests(TestCase):
         self.participants = {}
         for group_name, group in (("A", self.group_a), ("B", self.group_b)):
             for i in range(4):
-                player = Player.objects.create(first_name=f"{group_name}{i}", last_name="Test", gender="M")
+                player = Player.objects.create(
+                    first_name=f"{group_name}{i}",
+                    last_name="Test",
+                    gender="M",
+                    mobile_number=f"090000{ord(group_name):03d}{i}",
+                )
                 participant = Participant.objects.create(
                     competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player
                 )

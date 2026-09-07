@@ -32,7 +32,7 @@ class GroupScheduleServiceTests(TestCase):
     def _add_participants(self, count):
         participants = []
         for i in range(count):
-            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M")
+            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900005{i:04d}")
             participant = Participant.objects.create(
                 competition=self.competition,
                 participant_type=ParticipantType.INDIVIDUAL,

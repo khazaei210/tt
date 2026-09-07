@@ -13,9 +13,9 @@ class PlayerStatisticsTests(TestCase):
             tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
         )
         self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
-        self.player = Player.objects.create(first_name="Star", last_name="Player", gender="M")
-        self.opponent1 = Player.objects.create(first_name="Opp", last_name="One", gender="M")
-        self.opponent2 = Player.objects.create(first_name="Opp", last_name="Two", gender="M")
+        self.player = Player.objects.create(first_name="Star", last_name="Player", gender="M", mobile_number="09000000038")
+        self.opponent1 = Player.objects.create(first_name="Opp", last_name="One", gender="M", mobile_number="09000000037")
+        self.opponent2 = Player.objects.create(first_name="Opp", last_name="Two", gender="M", mobile_number="09000000036")
         self.participant = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player
         )
@@ -73,7 +73,7 @@ class PlayerStatisticsTests(TestCase):
         doubles_stage = Stage.objects.create(
             competition=doubles_competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN
         )
-        partner = Player.objects.create(first_name="Partner", last_name="Player", gender="M")
+        partner = Player.objects.create(first_name="Partner", last_name="Player", gender="M", mobile_number="09000000035")
         pair = DoublesPair.objects.create(player_one=self.player, player_two=partner)
         pair_participant = Participant.objects.create(
             competition=doubles_competition, participant_type=ParticipantType.DOUBLES, doubles_pair=pair
@@ -120,7 +120,7 @@ class TournamentReportTests(TestCase):
         stage = Stage.objects.create(competition=competition, name="Knockout", stage_format=StageFormat.KNOCKOUT)
         participants = []
         for i in range(4):
-            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M")
+            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900034{i:04d}")
             participants.append(
                 Participant.objects.create(
                     competition=competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player, seed=i + 1
@@ -164,8 +164,8 @@ class MatchResultRowsTests(TestCase):
             tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
         )
         self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
-        self.player_a = Player.objects.create(first_name="Row", last_name="A", gender="M")
-        self.player_b = Player.objects.create(first_name="Row", last_name="B", gender="M")
+        self.player_a = Player.objects.create(first_name="Row", last_name="A", gender="M", mobile_number="09000000033")
+        self.player_b = Player.objects.create(first_name="Row", last_name="B", gender="M", mobile_number="09000000032")
         self.participant_a = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_a
         )

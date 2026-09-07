@@ -12,10 +12,17 @@ class Gender(models.TextChoices):
 
 
 class Player(models.Model):
-    """A player profile, distinct from a login (User) account.
+    """A player profile, distinct from a login (User) account — kept
+    separate rather than merged into a custom auth model because not
+    every account is a player (referees, scorekeepers, tournament
+    managers, admins) and a player-only field like mobile_number/gender
+    would make no sense forced onto those.
 
-    A Player can exist without ever logging in (e.g. entered by a
-    tournament manager), and later be linked to a User account.
+    Every player is registered with a login and a mobile number together
+    in one step (see players.forms.PlayerRegistrationForm /
+    views.PlayerCreateView) — a Player can still be linked to an existing
+    login separately afterward, or updated later by staff, but it always
+    starts with one.
     """
 
     user = models.OneToOneField(
@@ -35,7 +42,7 @@ class Player(models.Model):
     mobile_number = models.CharField(
         _("Mobile number"),
         max_length=15,
-        blank=True,
+        unique=True,
         help_text=_("Used to link this player's Bale chat for match notifications, e.g. 0912xxxxxxx."),
     )
     bale_chat_id = models.BigIntegerField(
@@ -56,10 +63,9 @@ class Player(models.Model):
             models.Index(fields=["last_name", "first_name"]),
         ]
         constraints = [
-            models.UniqueConstraint(
-                fields=["mobile_number"],
+            models.CheckConstraint(
                 condition=~models.Q(mobile_number=""),
-                name="unique_player_mobile_number",
+                name="player_mobile_number_required",
             ),
         ]
 

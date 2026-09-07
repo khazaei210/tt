@@ -172,8 +172,8 @@ class MatchScoringPermissionTests(TournamentPermissionTestCase):
             competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN
         )
         self.group = Group.objects.create(stage=self.stage, name="Group A")
-        p1 = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        p2 = Player.objects.create(first_name="B", last_name="Test", gender="M")
+        p1 = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000041")
+        p2 = Player.objects.create(first_name="B", last_name="Test", gender="M", mobile_number="09000000040")
         self.participant_a = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=p1
         )

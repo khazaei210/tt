@@ -110,7 +110,7 @@ def account_reset_password(request, pk):
         % {"username": account.username, "password": raw_password},
     )
     player = getattr(account, "player_profile", None)
-    if player is not None and request.POST.get("notify_via_bale") == "on":
+    if player is not None:
         status = send_password_reset_notification(player, account.username, raw_password)
         if status == "sent":
             messages.success(request, _("New password also sent to %(username)s via Bale.") % {"username": account.username})

@@ -28,9 +28,9 @@ class SpecialResultServiceTestCase(TestCase):
             tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
         )
         self.stage = Stage.objects.create(competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN)
-        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M")
-        self.player_c = Player.objects.create(first_name="C", last_name="Test", gender="M")
+        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000054")
+        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M", mobile_number="09000000053")
+        self.player_c = Player.objects.create(first_name="C", last_name="Test", gender="M", mobile_number="09000000052")
         self.participant_a = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_a
         )
@@ -113,7 +113,7 @@ class RecordWalkoverRetirementDefaultTests(SpecialResultServiceTestCase):
             self.participant_a.id, self.participant_b.id, self.participant_c.id,
             Participant.objects.create(
                 competition=self.competition, participant_type=ParticipantType.INDIVIDUAL,
-                individual_player=Player.objects.create(first_name="D", last_name="Test", gender="M"),
+                individual_player=Player.objects.create(first_name="D", last_name="Test", gender="M", mobile_number="09000000051"),
             ).id,
         ])
         from django.db.models import Q

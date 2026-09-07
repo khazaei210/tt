@@ -28,12 +28,12 @@ class MatchScoringViewTestCase(TestCase):
         self.participant_a = Participant.objects.create(
             competition=self.competition,
             participant_type=ParticipantType.INDIVIDUAL,
-            individual_player=Player.objects.create(first_name="A", last_name="Test", gender="M"),
+            individual_player=Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000061"),
         )
         self.participant_b = Participant.objects.create(
             competition=self.competition,
             participant_type=ParticipantType.INDIVIDUAL,
-            individual_player=Player.objects.create(first_name="B", last_name="Test", gender="M"),
+            individual_player=Player.objects.create(first_name="B", last_name="Test", gender="M", mobile_number="09000000060"),
         )
         self.match = Match.objects.create(
             competition=self.competition,

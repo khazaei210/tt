@@ -30,7 +30,7 @@ class RankingServiceTestCase(TestCase):
         )
         self.participants = []
         for i in range(8):
-            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M")
+            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900002{i:04d}")
             self.participants.append(
                 Participant.objects.create(
                     competition=self.competition,

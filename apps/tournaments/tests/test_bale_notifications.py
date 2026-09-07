@@ -28,7 +28,10 @@ class DrawGenerationNotifiesPlayersTests(TestCase):
         self.competition = Competition.objects.create(
             tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
         )
-        self.players = [Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M") for i in range(4)]
+        self.players = [
+            Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900045{i:04d}")
+            for i in range(4)
+        ]
         self.participants = [
             Participant.objects.create(
                 competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player

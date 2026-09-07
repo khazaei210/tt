@@ -28,12 +28,12 @@ def _make_tournament_bits():
 
 class NotifyPlayerTests(TestCase):
     def test_raises_when_not_linked(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M")
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000031")
         with self.assertRaises(BaleNotLinkedError):
             notify_player(player, "hello")
 
     def test_sends_to_linked_chat(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=555)
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=555, mobile_number="09000000030")
         with patch("apps.bale.services.BaleClient") as mock_client_cls:
             notify_player(player, "hello")
         mock_client_cls.return_value.call.assert_called_once_with("sendMessage", chat_id=555, text="hello")
@@ -44,8 +44,8 @@ class NotifyMatchesCreatedTests(TestCase):
         self.tournament, self.competition, self.stage = _make_tournament_bits()
 
     def test_individual_match_notifies_both_linked_players(self):
-        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1)
-        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2)
+        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1, mobile_number="09000000029")
+        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2, mobile_number="09000000028")
         pa = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player_a
         )
@@ -62,8 +62,8 @@ class NotifyMatchesCreatedTests(TestCase):
         self.assertEqual(mock_client_cls.return_value.call.call_count, 2)
 
     def test_unlinked_player_reported_not_linked(self):
-        player_a = Player.objects.create(first_name="A", last_name="One", gender="M")
-        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2)
+        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", mobile_number="09000000027")
+        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2, mobile_number="09000000026")
         pa = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player_a
         )
@@ -80,10 +80,10 @@ class NotifyMatchesCreatedTests(TestCase):
         self.assertEqual(statuses[player_b.pk], "sent")
 
     def test_doubles_match_notifies_both_pair_members(self):
-        p1 = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1)
-        p2 = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2)
-        p3 = Player.objects.create(first_name="C", last_name="Three", gender="M", bale_chat_id=3)
-        p4 = Player.objects.create(first_name="D", last_name="Four", gender="M", bale_chat_id=4)
+        p1 = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1, mobile_number="09000000025")
+        p2 = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2, mobile_number="09000000024")
+        p3 = Player.objects.create(first_name="C", last_name="Three", gender="M", bale_chat_id=3, mobile_number="09000000023")
+        p4 = Player.objects.create(first_name="D", last_name="Four", gender="M", bale_chat_id=4, mobile_number="09000000022")
         pair1 = DoublesPair.objects.create(player_one=p1, player_two=p2)
         pair2 = DoublesPair.objects.create(player_one=p3, player_two=p4)
         doubles_competition = Competition.objects.create(
@@ -103,8 +103,8 @@ class NotifyMatchesCreatedTests(TestCase):
         self.assertEqual(mock_client_cls.return_value.call.call_count, 4)
 
     def test_team_match_notifies_active_roster_only(self):
-        active = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1)
-        inactive = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2)
+        active = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1, mobile_number="09000000021")
+        inactive = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2, mobile_number="09000000020")
         team_a = Team.objects.create(name="Team A")
         team_b = Team.objects.create(name="Team B")
         TeamMembership.objects.create(team=team_a, player=active, is_active=True)
@@ -123,7 +123,7 @@ class NotifyMatchesCreatedTests(TestCase):
         self.assertNotIn(inactive.pk, notified_players)
 
     def test_bye_match_is_skipped(self):
-        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1)
+        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1, mobile_number="09000000019")
         pa = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player_a
         )
@@ -142,8 +142,8 @@ class NotifyMatchesCreatedTests(TestCase):
         mock_client_cls.return_value.call.assert_not_called()
 
     def test_api_failure_is_reported_not_raised(self):
-        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1)
-        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2)
+        player_a = Player.objects.create(first_name="A", last_name="One", gender="M", bale_chat_id=1, mobile_number="09000000018")
+        player_b = Player.objects.create(first_name="B", last_name="Two", gender="M", bale_chat_id=2, mobile_number="09000000017")
         pa = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player_a
         )
@@ -206,26 +206,26 @@ class PasswordResetMessageTests(TestCase):
 
 class SendPasswordResetNotificationTests(TestCase):
     def test_returns_sent_and_calls_bale_when_linked(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1)
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1, mobile_number="09000000016")
         with patch("apps.bale.services.BaleClient") as mock_client_cls:
             status = send_password_reset_notification(player, "alice", "s3cret")
         self.assertEqual(status, "sent")
         mock_client_cls.return_value.call.assert_called_once()
 
     def test_returns_not_linked_without_raising(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M")
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000015")
         status = send_password_reset_notification(player, "alice", "s3cret")
         self.assertEqual(status, "not_linked")
 
     def test_returns_failed_on_api_error_without_raising(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1)
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1, mobile_number="09000000014")
         with patch("apps.bale.services.BaleClient") as mock_client_cls:
             mock_client_cls.return_value.call.side_effect = BaleAPIError("boom")
             status = send_password_reset_notification(player, "alice", "s3cret")
         self.assertEqual(status, "failed")
 
     def test_returns_failed_on_unexpected_exception_without_raising(self):
-        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1)
+        player = Player.objects.create(first_name="A", last_name="Test", gender="M", bale_chat_id=1, mobile_number="09000000013")
         with patch("apps.bale.services.notify_player", side_effect=RuntimeError("latent bug")):
             status = send_password_reset_notification(player, "alice", "s3cret")
         self.assertEqual(status, "failed")

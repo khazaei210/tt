@@ -41,12 +41,6 @@
         <form method="post" action="{% url 'players:reset_password' object.pk %}"
               onsubmit="return confirm('{{ reset_password_confirm|escapejs }}');">
             {% csrf_token %}
-            {% if object.bale_chat_id %}
-            <label class="label cursor-pointer justify-start gap-2 mb-2">
-                <input type="checkbox" name="notify_via_bale" class="checkbox" checked>
-                <span class="label-text">{% translate "Also send the new password to this player via Bale" %}</span>
-            </label>
-            {% endif %}
             <button type="submit" class="btn btn-outline">{% translate "Reset password" %}</button>
         </form>
     {% else %}

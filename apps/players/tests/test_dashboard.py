@@ -33,7 +33,7 @@ class PlayerDashboardViewTests(TestCase):
 
     def test_authenticated_player_sees_dashboard(self):
         user = User.objects.create_user(username="playeruser", password="pw")
-        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user)
+        Player.objects.create(first_name="A", last_name="Test", gender="M", user=user, mobile_number="09000000009")
         self.client.login(username="playeruser", password="pw")
         response = self.client.get(reverse("players:dashboard"))
         self.assertEqual(response.status_code, 200)
@@ -41,8 +41,8 @@ class PlayerDashboardViewTests(TestCase):
 
 class BuildPlayerDashboardServiceTests(TestCase):
     def setUp(self):
-        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        self.opponent = Player.objects.create(first_name="B", last_name="Rival", gender="M")
+        self.player = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000008")
+        self.opponent = Player.objects.create(first_name="B", last_name="Rival", gender="M", mobile_number="09000000007")
         self.tournament = Tournament.objects.create(name="Open Cup", status=TournamentStatus.ONGOING)
         self.competition = Competition.objects.create(
             tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
@@ -63,7 +63,7 @@ class BuildPlayerDashboardServiceTests(TestCase):
         self.assertEqual(dashboard.tournaments, [])
 
     def test_player_with_no_participation_returns_empty_dashboard(self):
-        lone_player = Player.objects.create(first_name="C", last_name="Solo", gender="F")
+        lone_player = Player.objects.create(first_name="C", last_name="Solo", gender="F", mobile_number="09000000006")
         dashboard = build_player_dashboard(lone_player)
         self.assertEqual(dashboard.upcoming_matches, [])
         self.assertEqual(dashboard.tournaments, [])

@@ -19,7 +19,7 @@ from apps.bale.services import send_password_reset_notification
 from apps.core.permissions import StaffRequiredMixin, is_staff_user, staff_required
 
 from .dashboard import build_player_dashboard
-from .forms import DoublesPairForm, PlayerForm
+from .forms import DoublesPairForm, PlayerForm, PlayerRegistrationForm
 from .models import DoublesPair, Player
 
 
@@ -46,10 +46,28 @@ class PlayerListView(ListView):
 
 
 class PlayerCreateView(StaffRequiredMixin, CreateView):
+    """Registering a player always creates its login together, in one
+    step — see PlayerRegistrationForm and Player's class docstring."""
+
     model = Player
-    form_class = PlayerForm
+    form_class = PlayerRegistrationForm
     template_name = "players/player_form.html"
-    success_url = reverse_lazy("players:list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user, raw_password = create_player_login(self.object, username=form.cleaned_data.get("username") or None)
+        messages.success(
+            self.request,
+            _(
+                "Player registered — login username: %(username)s, password: %(password)s "
+                "(shown once now, save it before leaving this page)."
+            )
+            % {"username": user.username, "password": raw_password},
+        )
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy("players:edit", kwargs={"pk": self.object.pk})
 
 
 class PlayerUpdateView(StaffRequiredMixin, UpdateView):
@@ -133,8 +151,7 @@ def player_reset_password(request, pk):
         )
         % {"player": player.full_name, "username": player.user.username, "password": raw_password},
     )
-    if request.POST.get("notify_via_bale") == "on":
-        _notify_password_reset(request, player, player.user.username, raw_password)
+    _notify_password_reset(request, player, player.user.username, raw_password)
     return redirect("players:edit", pk=player.pk)
 
 

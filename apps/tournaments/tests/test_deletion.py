@@ -38,8 +38,8 @@ class TournamentDeletionTestCase(TestCase):
         self.stage = Stage.objects.create(
             competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN
         )
-        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M")
-        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M")
+        self.player_a = Player.objects.create(first_name="A", last_name="Test", gender="M", mobile_number="09000000043")
+        self.player_b = Player.objects.create(first_name="B", last_name="Test", gender="M", mobile_number="09000000042")
         self.participant_a = Participant.objects.create(
             competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=self.player_a
         )

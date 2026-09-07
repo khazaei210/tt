@@ -1,3 +1,5 @@
+import itertools
+
 from django.test import TestCase
 
 from apps.matches.models import Match
@@ -16,8 +18,13 @@ from apps.tournaments.models import (
 )
 
 
+_mobile_counter = itertools.count(1)
+
+
 def make_player(name):
-    return Player.objects.create(first_name=name, last_name="Test", gender="M")
+    return Player.objects.create(
+        first_name=name, last_name="Test", gender="M", mobile_number=f"0900001{next(_mobile_counter):04d}"
+    )
 
 
 class EloFormulaTests(TestCase):

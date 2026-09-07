@@ -42,7 +42,9 @@ class ManagerDashboardServiceTests(TestCase):
             Participant.objects.create(
                 competition=self.competition,
                 participant_type=ParticipantType.INDIVIDUAL,
-                individual_player=Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M"),
+                individual_player=Player.objects.create(
+                    first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900044{i:04d}"
+                ),
             )
             for i in range(4)
         ]

@@ -8,7 +8,7 @@ from apps.rankings.models import PlayerRanking, RankingCategory
 class RankingCategoryCsvTests(TestCase):
     def setUp(self):
         self.category = RankingCategory.objects.create(name="Men's Singles CSV")
-        player = Player.objects.create(first_name="Ranked", last_name="Player", gender="M")
+        player = Player.objects.create(first_name="Ranked", last_name="Player", gender="M", mobile_number="09000000010")
         PlayerRanking.objects.create(player=player, category=self.category, points=100, current_rank=1)
 
     def test_category_csv_is_public_and_contains_player_name(self):
