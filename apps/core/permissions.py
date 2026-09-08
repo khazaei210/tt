@@ -12,10 +12,25 @@ from functools import wraps
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
+from django.urls import reverse
 
 
 def is_staff_user(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def default_dashboard_url(user):
+    """Where an authenticated user lands on login and on "/" (CLAUDE.md
+    section 25/26): a player-only account (no staff access) always has its
+    own dashboard; every other authenticated account (staff, superuser —
+    covers Tournament Admin/Manager/Referee/Scorekeeper, whose specific
+    role is scoped per-tournament rather than a single global flag) lands
+    on the Tournament Manager dashboard, which is the closest thing this
+    app has to a general staff landing page.
+    """
+    if not user.is_staff and not user.is_superuser and getattr(user, "player_profile", None):
+        return reverse("players:dashboard")
+    return reverse("tournaments:manager_dashboard")
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):

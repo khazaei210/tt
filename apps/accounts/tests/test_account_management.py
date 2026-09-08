@@ -229,15 +229,15 @@ class LoginRedirectTests(TestCase):
         response = self.client.post(reverse("accounts:login"), {"username": "playeruser", "password": "pw"})
         self.assertRedirects(response, reverse("players:dashboard"))
 
-    def test_staff_account_redirects_to_home(self):
+    def test_staff_account_redirects_to_manager_dashboard(self):
         User.objects.create_user(username="staffuser", password="pw", is_staff=True)
         response = self.client.post(reverse("accounts:login"), {"username": "staffuser", "password": "pw"})
-        self.assertRedirects(response, reverse("core:home"))
+        self.assertRedirects(response, reverse("tournaments:manager_dashboard"))
 
-    def test_account_with_no_player_profile_redirects_to_home(self):
+    def test_account_with_no_player_profile_redirects_to_manager_dashboard(self):
         User.objects.create_user(username="plainuser", password="pw")
         response = self.client.post(reverse("accounts:login"), {"username": "plainuser", "password": "pw"})
-        self.assertRedirects(response, reverse("core:home"))
+        self.assertRedirects(response, reverse("tournaments:manager_dashboard"))
 
     def test_explicit_next_param_takes_priority_over_player_redirect(self):
         user = User.objects.create_user(username="playeruser", password="pw")

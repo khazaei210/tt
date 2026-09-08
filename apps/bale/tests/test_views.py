@@ -60,13 +60,17 @@ class BaleSettingsViewTests(TestCase):
         # /en/-prefixed URL and doesn't revert it afterward (translation
         # .override restores the prior language on exit regardless of
         # what ran inside it).
+        # core:home redirects any authenticated user to their dashboard,
+        # so it can't be used as the generic "some page with the nav"
+        # target here — manager_dashboard renders 200 for any staff/
+        # superuser account regardless of role.
         self.client.login(username="root", password="pw")
         with translation.override("en"):
-            response = self.client.get(reverse("core:home"))
+            response = self.client.get(reverse("tournaments:manager_dashboard"))
         self.assertContains(response, "Bale settings")
 
         self.client.logout()
         self.client.login(username="staffuser", password="pw")
         with translation.override("en"):
-            response = self.client.get(reverse("core:home"))
+            response = self.client.get(reverse("tournaments:manager_dashboard"))
         self.assertNotContains(response, "Bale settings")

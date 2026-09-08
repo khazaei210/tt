@@ -77,6 +77,10 @@ class PasswordChangeTests(TestCase):
         # afterward, which would otherwise leak into later tests in the
         # same run (translation.override restores the prior language on
         # exit regardless of what happened inside).
+        # core:home redirects any authenticated user to their dashboard,
+        # so it can't be used as the generic "some page with the nav"
+        # target here — password_change renders 200 for every
+        # authenticated user regardless of role, same as home used to.
         with translation.override("en"):
-            response = self.client.get(reverse("core:home"))
+            response = self.client.get(reverse("accounts:password_change"))
         self.assertContains(response, "Change password")

@@ -1,21 +1,22 @@
-from django.db import connection
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
-from apps.players.models import DoublesPair, Player
-from apps.teams.models import Team
-from apps.tournaments.models import Tournament
+from apps.rankings.services import build_category_leaderboard, get_default_ranking_category
+
+from .permissions import default_dashboard_url
 
 
 def home(request):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT version()")
-        (postgres_version,) = cursor.fetchone()
+    """The public landing page (CLAUDE.md section 25): an anonymous
+    visitor sees the single global ranking table (the "Overall"
+    RankingCategory every competition auto-attaches to, see
+    apps.rankings.services.get_default_ranking_category) with each player
+    linking to their overall stats; an authenticated user is sent straight
+    to their own dashboard instead — this page has nothing further to show
+    them.
+    """
+    if request.user.is_authenticated:
+        return redirect(default_dashboard_url(request.user))
 
-    context = {
-        "postgres_version": postgres_version,
-        "tournament_count": Tournament.objects.count(),
-        "player_count": Player.objects.count(),
-        "team_count": Team.objects.count(),
-        "pair_count": DoublesPair.objects.count(),
-    }
-    return render(request, "core/home.html", context)
+    category = get_default_ranking_category()
+    rows = build_category_leaderboard(category)
+    return render(request, "core/home.html", {"category": category, "rows": rows})

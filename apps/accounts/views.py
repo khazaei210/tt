@@ -4,12 +4,12 @@ from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
 
 from apps.bale.services import send_password_reset_notification
-from apps.core.permissions import StaffRequiredMixin, staff_required, superuser_required
+from apps.core.permissions import StaffRequiredMixin, default_dashboard_url, staff_required, superuser_required
 
 from .forms import StyledPasswordChangeForm
 from .services import UsernameTakenError, create_account, reset_user_password
@@ -21,13 +21,7 @@ class AccountLoginView(LoginView):
     template_name = "accounts/login.html"
 
     def get_default_redirect_url(self):
-        """A player-only account (no staff access) lands on their own
-        dashboard instead of the staff-oriented home page; everyone else
-        keeps the normal LOGIN_REDIRECT_URL behavior."""
-        user = self.request.user
-        if not user.is_staff and not user.is_superuser and getattr(user, "player_profile", None):
-            return reverse("players:dashboard")
-        return super().get_default_redirect_url()
+        return default_dashboard_url(self.request.user)
 
 
 class AccountPasswordChangeView(PasswordChangeView):
