@@ -46,7 +46,7 @@
     <form hx-post="{% url 'tournaments:participant_add' competition.pk %}"
           hx-target="#participant-panel"
           hx-swap="outerHTML"
-          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4">
+          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4 mb-4">
         {% csrf_token %}
         {% for field in participant_form %}
         <div class="flex-1 min-w-48">
@@ -59,5 +59,36 @@
         {% endfor %}
         <button type="submit" class="btn btn-primary">{% translate "Add participant" %}</button>
     </form>
+
+    {% if bulk_participant_form.fields.selected.queryset %}
+    <details class="collapse collapse-arrow bg-base-100 rounded-box shadow">
+        <summary class="collapse-title font-medium">{% translate "Add multiple participants at once" %}</summary>
+        <div class="collapse-content">
+            <form hx-post="{% url 'tournaments:participant_bulk_add' competition.pk %}"
+                  hx-target="#participant-panel"
+                  hx-swap="outerHTML">
+                {% csrf_token %}
+                {% for error in bulk_participant_form.selected.errors %}
+                    <p class="text-sm text-error mb-2">{{ error }}</p>
+                {% endfor %}
+                <label class="label cursor-pointer justify-start gap-2 mb-2">
+                    <input type="checkbox"
+                           class="checkbox checkbox-sm"
+                           onchange="this.closest('form').querySelectorAll('input[name=selected]').forEach(function(cb){cb.checked = this.checked}, this)">
+                    <span class="label-text">{% translate "Select all" %}</span>
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 max-h-64 overflow-y-auto mb-3">
+                    {% for choice in bulk_participant_form.selected %}
+                    <label class="label cursor-pointer justify-start gap-2">
+                        {{ choice.tag }}
+                        <span class="label-text">{{ choice.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">{% translate "Add selected" %}</button>
+            </form>
+        </div>
+    </details>
+    {% endif %}
     {% endif %}
 </div>

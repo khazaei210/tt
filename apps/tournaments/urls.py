@@ -41,6 +41,11 @@ urlpatterns = [
         name="participant_add",
     ),
     path(
+        "competitions/<int:competition_pk>/participants/bulk-add/",
+        views.participant_bulk_add,
+        name="participant_bulk_add",
+    ),
+    path(
         "competitions/<int:competition_pk>/participants/<int:pk>/delete/",
         views.participant_delete,
         name="participant_delete",

@@ -28,6 +28,7 @@ from apps.matches.services import (
 )
 
 from .forms import (
+    BulkParticipantForm,
     CompetitionForm,
     CompetitionRuleForm,
     GroupForm,
@@ -656,6 +657,7 @@ def _participant_panel_context(competition):
         "competition": competition,
         "participants": participants,
         "participant_form": ParticipantForm(competition=competition),
+        "bulk_participant_form": BulkParticipantForm(competition=competition),
         # Same reasoning as _group_participant_panel_context above: the
         # HTMX views that render this standalone are already gated by
         # @tournament_manager_required. CompetitionDetailView overrides
@@ -676,6 +678,21 @@ def participant_add(request, competition_pk):
     else:
         context = _participant_panel_context(competition)
         context["participant_form"] = form
+    return render(request, "tournaments/_participant_panel.html", context)
+
+
+@tournament_manager_required(_tournament_from_competition_pk_kwarg)
+def participant_bulk_add(request, competition_pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    competition = get_object_or_404(Competition, pk=competition_pk)
+    form = BulkParticipantForm(request.POST, competition=competition)
+    if form.is_valid():
+        form.save()
+        context = _participant_panel_context(competition)
+    else:
+        context = _participant_panel_context(competition)
+        context["bulk_participant_form"] = form
     return render(request, "tournaments/_participant_panel.html", context)
 
 

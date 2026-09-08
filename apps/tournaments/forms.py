@@ -151,6 +151,36 @@ class GroupParticipantForm(forms.ModelForm):
         return instance
 
 
+_PARTICIPANT_FIELD_BY_TYPE = {
+    ParticipantType.INDIVIDUAL: "individual_player",
+    ParticipantType.DOUBLES: "doubles_pair",
+    ParticipantType.TEAM: "team",
+}
+
+
+def _eligible_participants(competition, *, exclude_pk=None):
+    """(field_name, queryset) of the players/doubles pairs/teams — whichever
+    matches this competition's participant_type — that aren't already
+    entered in it. Shared by ParticipantForm (one at a time, with a seed)
+    and BulkParticipantForm (many at once, unseeded) so both always agree
+    on who's still eligible to be added.
+    """
+    existing = competition.participants.exclude(pk=exclude_pk).values_list(
+        "individual_player_id", "doubles_pair_id", "team_id"
+    )
+    used_players = {row[0] for row in existing if row[0]}
+    used_pairs = {row[1] for row in existing if row[1]}
+    used_teams = {row[2] for row in existing if row[2]}
+
+    field_name = _PARTICIPANT_FIELD_BY_TYPE[competition.participant_type]
+    queryset = {
+        "individual_player": Player.objects.exclude(pk__in=used_players),
+        "doubles_pair": DoublesPair.objects.exclude(pk__in=used_pairs),
+        "team": Team.objects.exclude(pk__in=used_teams),
+    }[field_name]
+    return field_name, queryset
+
+
 class ParticipantForm(forms.ModelForm):
     class Meta:
         model = Participant
@@ -168,28 +198,12 @@ class ParticipantForm(forms.ModelForm):
         if not competition:
             return
 
-        existing = competition.participants.exclude(pk=self.instance.pk).values_list(
-            "individual_player_id", "doubles_pair_id", "team_id"
-        )
-        used_players = {row[0] for row in existing if row[0]}
-        used_pairs = {row[1] for row in existing if row[1]}
-        used_teams = {row[2] for row in existing if row[2]}
-
-        if competition.participant_type == ParticipantType.INDIVIDUAL:
-            del self.fields["doubles_pair"]
-            del self.fields["team"]
-            self.fields["individual_player"].queryset = Player.objects.exclude(pk__in=used_players)
-            self.fields["individual_player"].required = True
-        elif competition.participant_type == ParticipantType.DOUBLES:
-            del self.fields["individual_player"]
-            del self.fields["team"]
-            self.fields["doubles_pair"].queryset = DoublesPair.objects.exclude(pk__in=used_pairs)
-            self.fields["doubles_pair"].required = True
-        elif competition.participant_type == ParticipantType.TEAM:
-            del self.fields["individual_player"]
-            del self.fields["doubles_pair"]
-            self.fields["team"].queryset = Team.objects.exclude(pk__in=used_teams)
-            self.fields["team"].required = True
+        field_name, queryset = _eligible_participants(competition, exclude_pk=self.instance.pk)
+        for name in ("individual_player", "doubles_pair", "team"):
+            if name != field_name:
+                del self.fields[name]
+        self.fields[field_name].queryset = queryset
+        self.fields[field_name].required = True
 
     def clean_seed(self):
         seed = self.cleaned_data.get("seed")
@@ -206,3 +220,37 @@ class ParticipantForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class BulkParticipantForm(forms.Form):
+    """Add several participants to a competition in one submit — a
+    checklist instead of ParticipantForm's one-at-a-time picker, for
+    registering a full field of players/pairs/teams without a separate
+    page load per entry. Deliberately doesn't take a seed (seeding a
+    whole field at once isn't a single value) — added participants stay
+    unseeded, same as ParticipantForm leaves it if the seed field is left
+    blank.
+    """
+
+    def __init__(self, *args, competition=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.competition = competition
+        self._field_name, queryset = _eligible_participants(competition)
+        self.fields["selected"] = forms.ModelMultipleChoiceField(
+            queryset=queryset,
+            required=True,
+            widget=forms.CheckboxSelectMultiple,
+            label="",
+        )
+
+    def save(self):
+        participants = []
+        for obj in self.cleaned_data["selected"]:
+            participant = Participant(
+                competition=self.competition,
+                participant_type=self.competition.participant_type,
+                **{self._field_name: obj},
+            )
+            participant.save()
+            participants.append(participant)
+        return participants
