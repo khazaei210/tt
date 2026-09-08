@@ -2,9 +2,9 @@
 {% for player in players %}
 <tr id="player-row-{{ player.pk }}">
     <td><a href="{% url 'reports:player_statistics' player.pk %}" class="link">{{ player.full_name }}</a></td>
-    <td>{{ player.get_gender_display }}</td>
-    <td>{{ player.club|default:"—" }}</td>
-    <td>{{ player.country|default:"—" }}</td>
+    <td class="hidden sm:table-cell">{{ player.get_gender_display }}</td>
+    <td class="hidden md:table-cell">{{ player.club|default:"—" }}</td>
+    <td class="hidden md:table-cell">{{ player.country|default:"—" }}</td>
     <td>
         {% if player.is_active %}
             {% translate "Active" as active_label %}
@@ -16,14 +16,17 @@
     </td>
     {% if can_manage %}
     <td class="text-right space-x-2 rtl:space-x-reverse">
-        <a href="{% url 'players:edit' player.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
+        <a href="{% url 'players:edit' player.pk %}" class="btn btn-xs btn-outline" aria-label="{% translate 'Edit' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit" %}</span>
+        </a>
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
+                aria-label="{% translate 'Delete' %}"
                 hx-delete="{% url 'players:delete' player.pk %}"
                 hx-target="#player-row-{{ player.pk }}"
                 hx-swap="outerHTML"
                 hx-confirm="{% translate 'Are you sure you want to delete this player?' %}">
-            {% translate "Delete" %}
+            {% icon "delete" %}<span class="hidden sm:inline">{% translate "Delete" %}</span>
         </button>
     </td>
     {% endif %}

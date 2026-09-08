@@ -9,7 +9,9 @@
     <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="link">{{ group.stage.name }}</a>
     · <a href="{% url 'tournaments:competition_detail' group.stage.competition.pk %}" class="link">{{ group.stage.competition.name }}</a>
 {% pageheader_actions %}
-    <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="btn btn-ghost">{% translate "Back to stage" %}</a>
+    <a href="{% url 'tournaments:stage_detail' group.stage.pk %}" class="btn btn-ghost" aria-label="{% translate 'Back to stage' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to stage" %}</span>
+    </a>
 {% endpageheader %}
 
 {% translate "Participants" as participants_label %}
@@ -20,7 +22,9 @@
 {% translate "Standings" as standings_label %}
 <div class="mt-6">
 {% sectionheader title=standings_label %}
-    <a href="{% url 'tournaments:group_standings_csv' group.pk %}" class="btn btn-sm btn-outline">{% translate "Export CSV" %}</a>
+    <a href="{% url 'tournaments:group_standings_csv' group.pk %}" class="btn btn-sm btn-outline" aria-label="{% translate 'Export CSV' %}">
+        {% icon "export" %}<span class="hidden sm:inline">{% translate "Export CSV" %}</span>
+    </a>
 {% endsectionheader %}
 </div>
 {% table_card table_class="table-zebra" %}

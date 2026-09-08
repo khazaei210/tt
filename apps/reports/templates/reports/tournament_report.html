@@ -9,9 +9,13 @@
     {% translate "Tournament report" %}
 {% pageheader_actions %}
     {% if report.competitions %}
-        <a href="{% url 'reports:tournament_report_csv' tournament.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
+        <a href="{% url 'reports:tournament_report_csv' tournament.pk %}" class="btn btn-outline" aria-label="{% translate 'Export CSV' %}">
+            {% icon "export" %}<span class="hidden sm:inline">{% translate "Export CSV" %}</span>
+        </a>
     {% endif %}
-    <a href="{% url 'tournaments:detail' tournament.pk %}" class="btn btn-ghost">{% translate "Back to tournament" %}</a>
+    <a href="{% url 'tournaments:detail' tournament.pk %}" class="btn btn-ghost" aria-label="{% translate 'Back to tournament' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to tournament" %}</span>
+    </a>
 {% endpageheader %}
 
 {% if report.competitions %}

@@ -8,7 +8,9 @@
 {% pageheader player.full_name %}
     {{ player.club|default:"—" }}{% if player.country %} · {{ player.country }}{% endif %}
 {% pageheader_actions %}
-    <a href="{% url 'players:list' %}" class="btn btn-ghost">{% translate "Back to players" %}</a>
+    <a href="{% url 'players:list' %}" class="btn btn-ghost" aria-label="{% translate 'Back to players' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to players" %}</span>
+    </a>
 {% endpageheader %}
 
 {% translate "Matches played" as matches_played_label %}

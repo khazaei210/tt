@@ -9,7 +9,9 @@
 {% pageheader pairs_label %}
 {% pageheader_actions %}
     {% if can_manage %}
-        <a href="{% url 'players:pair_add' %}" class="btn btn-primary">{% translate "Add pair" %}</a>
+        <a href="{% url 'players:pair_add' %}" class="btn btn-primary" aria-label="{% translate 'Add pair' %}">
+            {% icon "add" %}<span class="hidden sm:inline">{% translate "Add pair" %}</span>
+        </a>
     {% endif %}
 {% endpageheader %}
 

@@ -10,9 +10,13 @@
     · {{ stage.get_stage_format_display }}
 {% pageheader_actions %}
     {% if can_manage %}
-        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline">{% translate "Edit stage" %}</a>
+        <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline" aria-label="{% translate 'Edit stage' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit stage" %}</span>
+        </a>
     {% endif %}
-    <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost">{% translate "Back to competition" %}</a>
+    <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="btn btn-ghost" aria-label="{% translate 'Back to competition' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to competition" %}</span>
+    </a>
 {% endpageheader %}
 
 {% if stage.stage_format == "round_robin" %}
@@ -43,7 +47,9 @@
             </form>
         {% endif %}
         {% if can_manage %}
-            <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm">{% translate "Add group" %}</a>
+            <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm" aria-label="{% translate 'Add group' %}">
+                {% icon "add" %}<span class="hidden sm:inline">{% translate "Add group" %}</span>
+            </a>
         {% endif %}
     {% endsectionheader %}
     {% if can_manage and next_knockout_stage and not stage.qualifiers_per_group %}
@@ -55,7 +61,7 @@
         <thead>
             <tr>
                 <th>{% translate "Name" %}</th>
-                <th>{% translate "Order" %}</th>
+                <th class="hidden sm:table-cell">{% translate "Order" %}</th>
                 {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>

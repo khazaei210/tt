@@ -2,9 +2,9 @@
 {% for competition in competitions %}
 <tr id="competition-row-{{ competition.pk }}">
     <td><a href="{% url 'tournaments:competition_detail' competition.pk %}" class="link link-primary">{{ competition.name }}</a></td>
-    <td>{{ competition.get_participant_type_display }}</td>
-    <td>{{ competition.stages.count }}</td>
-    <td>{{ competition.participants.count }}</td>
+    <td class="hidden sm:table-cell">{{ competition.get_participant_type_display }}</td>
+    <td class="hidden md:table-cell">{{ competition.stages.count }}</td>
+    <td class="hidden md:table-cell">{{ competition.participants.count }}</td>
     <td>
         {% if competition.is_active %}
             {% translate "Active" as active_label %}
@@ -16,14 +16,17 @@
     </td>
     {% if can_manage %}
     <td class="text-right space-x-2 rtl:space-x-reverse">
-        <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
+        <a href="{% url 'tournaments:competition_edit' competition.pk %}" class="btn btn-xs btn-outline" aria-label="{% translate 'Edit' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit" %}</span>
+        </a>
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
+                aria-label="{% translate 'Delete' %}"
                 hx-delete="{% url 'tournaments:competition_delete' competition.pk %}"
                 hx-target="#competition-row-{{ competition.pk }}"
                 hx-swap="outerHTML"
                 hx-confirm="{% translate 'Are you sure you want to delete this competition?' %}">
-            {% translate "Delete" %}
+            {% icon "delete" %}<span class="hidden sm:inline">{% translate "Delete" %}</span>
         </button>
     </td>
     {% endif %}

@@ -9,7 +9,9 @@
 {% pageheader elo_title %}
 {% pageheader_actions %}
     {% if ratings %}
-        <a href="{% url 'rankings:elo_csv' category.pk %}" class="btn btn-outline">{% translate "Export CSV" %}</a>
+        <a href="{% url 'rankings:elo_csv' category.pk %}" class="btn btn-outline" aria-label="{% translate 'Export CSV' %}">
+            {% icon "export" %}<span class="hidden sm:inline">{% translate "Export CSV" %}</span>
+        </a>
     {% endif %}
     <a href="{% url 'rankings:category_detail' category.pk %}" class="btn btn-ghost">{% translate "Placement points" %}</a>
 {% endpageheader %}

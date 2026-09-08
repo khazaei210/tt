@@ -11,9 +11,13 @@
     {% endif %}
 {% pageheader_actions %}
     {% if can_manage %}
-        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline">{% translate "Edit team" %}</a>
+        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline" aria-label="{% translate 'Edit team' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit team" %}</span>
+        </a>
     {% endif %}
-    <a href="{% url 'teams:list' %}" class="btn btn-ghost">{% translate "Back to teams" %}</a>
+    <a href="{% url 'teams:list' %}" class="btn btn-ghost" aria-label="{% translate 'Back to teams' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to teams" %}</span>
+    </a>
 {% endpageheader %}
 
 {% translate "Roster" as roster_label %}

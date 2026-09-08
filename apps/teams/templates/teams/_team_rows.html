@@ -2,9 +2,9 @@
 {% for team in teams %}
 <tr id="team-row-{{ team.pk }}">
     <td><a href="{% url 'teams:detail' team.pk %}" class="link link-primary">{{ team.name }}</a></td>
-    <td>{{ team.short_name|default:"—" }}</td>
-    <td>{{ team.country|default:"—" }}</td>
-    <td>{{ team.member_count }}</td>
+    <td class="hidden sm:table-cell">{{ team.short_name|default:"—" }}</td>
+    <td class="hidden md:table-cell">{{ team.country|default:"—" }}</td>
+    <td class="hidden sm:table-cell">{{ team.member_count }}</td>
     <td>
         {% if team.is_active %}
             {% translate "Active" as active_label %}
@@ -16,14 +16,17 @@
     </td>
     {% if can_manage %}
     <td class="text-right space-x-2 rtl:space-x-reverse">
-        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
+        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-xs btn-outline" aria-label="{% translate 'Edit' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit" %}</span>
+        </a>
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
+                aria-label="{% translate 'Delete' %}"
                 hx-delete="{% url 'teams:delete' team.pk %}"
                 hx-target="#team-row-{{ team.pk }}"
                 hx-swap="outerHTML"
                 hx-confirm="{% translate 'Are you sure you want to delete this team?' %}">
-            {% translate "Delete" %}
+            {% icon "delete" %}<span class="hidden sm:inline">{% translate "Delete" %}</span>
         </button>
     </td>
     {% endif %}

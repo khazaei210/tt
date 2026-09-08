@@ -9,7 +9,9 @@
 {% pageheader players_label %}
 {% pageheader_actions %}
     {% if can_manage %}
-        <a href="{% url 'players:add' %}" class="btn btn-primary">{% translate "Add player" %}</a>
+        <a href="{% url 'players:add' %}" class="btn btn-primary" aria-label="{% translate 'Add player' %}">
+            {% icon "add" %}<span class="hidden sm:inline">{% translate "Add player" %}</span>
+        </a>
     {% endif %}
 {% endpageheader %}
 
@@ -29,9 +31,9 @@
     <thead>
         <tr>
             <th>{% translate "Name" %}</th>
-            <th>{% translate "Gender" %}</th>
-            <th>{% translate "Club" %}</th>
-            <th>{% translate "Country" %}</th>
+            <th class="hidden sm:table-cell">{% translate "Gender" %}</th>
+            <th class="hidden md:table-cell">{% translate "Club" %}</th>
+            <th class="hidden md:table-cell">{% translate "Country" %}</th>
             <th>{% translate "Status" %}</th>
             {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
         </tr>

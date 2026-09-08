@@ -38,11 +38,12 @@
                 <td class="text-right">
                     <button type="button"
                             class="btn btn-xs btn-error btn-outline"
+                            aria-label="{% translate 'Remove' %}"
                             hx-delete="{% url 'tournaments:participant_delete' competition.pk participant.pk %}"
                             hx-target="#participant-panel"
                             hx-swap="outerHTML"
                             hx-confirm="{% translate 'Remove this participant from the competition?' %}">
-                        {% translate "Remove" %}
+                        {% icon "delete" %}<span class="hidden sm:inline">{% translate "Remove" %}</span>
                     </button>
                 </td>
                 {% endif %}

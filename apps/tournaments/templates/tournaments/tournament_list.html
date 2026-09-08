@@ -9,7 +9,9 @@
 {% pageheader tournaments_label %}
 {% pageheader_actions %}
     {% if can_create_tournament %}
-        <a href="{% url 'tournaments:add' %}" class="btn btn-primary">{% translate "Add tournament" %}</a>
+        <a href="{% url 'tournaments:add' %}" class="btn btn-primary" aria-label="{% translate 'Add tournament' %}">
+            {% icon "add" %}<span class="hidden sm:inline">{% translate "Add tournament" %}</span>
+        </a>
     {% endif %}
 {% endpageheader %}
 
@@ -29,9 +31,9 @@
     <thead>
         <tr>
             <th>{% translate "Name" %}</th>
-            <th>{% translate "Location" %}</th>
-            <th>{% translate "Start date" %}</th>
-            <th>{% translate "End date" %}</th>
+            <th class="hidden sm:table-cell">{% translate "Location" %}</th>
+            <th class="hidden md:table-cell">{% translate "Start date" %}</th>
+            <th class="hidden md:table-cell">{% translate "End date" %}</th>
             <th>{% translate "Status" %}</th>
             <th class="text-right">{% translate "Actions" %}</th>
         </tr>

@@ -4,7 +4,7 @@
         <thead>
             <tr>
                 <th>{% translate "Player" %}</th>
-                <th>{% translate "Joined on" %}</th>
+                <th class="hidden sm:table-cell">{% translate "Joined on" %}</th>
                 {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
             </tr>
         </thead>
@@ -12,16 +12,17 @@
             {% for membership in memberships %}
             <tr>
                 <td>{{ membership.player.full_name }}</td>
-                <td>{{ membership.joined_on|default:"—" }}</td>
+                <td class="hidden sm:table-cell">{{ membership.joined_on|default:"—" }}</td>
                 {% if can_manage %}
                 <td class="text-right">
                     <button type="button"
                             class="btn btn-xs btn-error btn-outline"
+                            aria-label="{% translate 'Remove' %}"
                             hx-delete="{% url 'teams:member_remove' team.pk membership.pk %}"
                             hx-target="#roster-panel"
                             hx-swap="outerHTML"
                             hx-confirm="{% translate 'Remove this player from the team?' %}">
-                        {% translate "Remove" %}
+                        {% icon "delete" %}<span class="hidden sm:inline">{% translate "Remove" %}</span>
                     </button>
                 </td>
                 {% endif %}

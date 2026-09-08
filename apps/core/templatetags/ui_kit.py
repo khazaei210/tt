@@ -23,6 +23,44 @@ from django.utils.safestring import mark_safe
 register = template.Library()
 
 
+# Heroicons-outline-style paths (24x24 viewBox, stroke-based) — same hand-
+# inlined style already used in templates/base.html's nav, kept here so
+# every icon button in the app draws from one small shared set instead of
+# each template pasting its own SVG (CLAUDE.md section 24: one coherent
+# design system, no mixed icon sources/libraries).
+_ICON_PATHS = {
+    "edit": (
+        "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 "
+        "2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+    ),
+    "delete": (
+        "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 "
+        "4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    ),
+    "add": "M12 4v16m8-8H4",
+    "back": "M10 19l-7-7m0 0l7-7m-7 7h18",
+    "export": "M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3",
+}
+
+
+@register.simple_tag
+def icon(name, extra_class="h-4 w-4"):
+    """One inline `<svg>` icon by name (see `_ICON_PATHS`). Pair with
+    visually-hidden-below-a-breakpoint label text for an icon-only button
+    on mobile that still shows its label at wider screens — the icon
+    alone is not an accessible name, so callers must still put a real
+    label (an `aria-label` on the button/link, or visible text) on the
+    containing element."""
+    path = _ICON_PATHS.get(name, "")
+    return format_html(
+        '<svg xmlns="http://www.w3.org/2000/svg" class="{}" fill="none" viewBox="0 0 24 24" '
+        'stroke="currentColor" stroke-width="2" aria-hidden="true">'
+        '<path stroke-linecap="round" stroke-linejoin="round" d="{}" /></svg>',
+        extra_class,
+        path,
+    )
+
+
 class PageHeaderNode(template.Node):
     def __init__(self, title_var, nodelist_subtitle, nodelist_actions):
         self.title_var = title_var

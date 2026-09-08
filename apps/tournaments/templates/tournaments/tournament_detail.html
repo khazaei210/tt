@@ -12,9 +12,13 @@
 {% pageheader_actions %}
     <a href="{% url 'reports:tournament_report' tournament.pk %}" class="btn btn-outline">{% translate "Report" %}</a>
     {% if can_manage %}
-        <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline">{% translate "Edit tournament" %}</a>
+        <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-outline" aria-label="{% translate 'Edit tournament' %}">
+            {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit tournament" %}</span>
+        </a>
     {% endif %}
-    <a href="{% url 'tournaments:list' %}" class="btn btn-ghost">{% translate "Back to tournaments" %}</a>
+    <a href="{% url 'tournaments:list' %}" class="btn btn-ghost" aria-label="{% translate 'Back to tournaments' %}">
+        {% icon "back" %}<span class="hidden sm:inline">{% translate "Back to tournaments" %}</span>
+    </a>
 {% endpageheader %}
 
 {% if tournament.description %}
@@ -24,7 +28,9 @@
 {% translate "Competitions" as competitions_label %}
 {% sectionheader title=competitions_label %}
     {% if can_manage %}
-        <a href="{% url 'tournaments:competition_add' tournament.pk %}" class="btn btn-primary btn-sm">{% translate "Add competition" %}</a>
+        <a href="{% url 'tournaments:competition_add' tournament.pk %}" class="btn btn-primary btn-sm" aria-label="{% translate 'Add competition' %}">
+            {% icon "add" %}<span class="hidden sm:inline">{% translate "Add competition" %}</span>
+        </a>
     {% endif %}
 {% endsectionheader %}
 
@@ -32,9 +38,9 @@
     <thead>
         <tr>
             <th>{% translate "Name" %}</th>
-            <th>{% translate "Participant type" %}</th>
-            <th>{% translate "Stages" %}</th>
-            <th>{% translate "Participants" %}</th>
+            <th class="hidden sm:table-cell">{% translate "Participant type" %}</th>
+            <th class="hidden md:table-cell">{% translate "Stages" %}</th>
+            <th class="hidden md:table-cell">{% translate "Participants" %}</th>
             <th>{% translate "Status" %}</th>
             {% if can_manage %}<th class="text-right">{% translate "Actions" %}</th>{% endif %}
         </tr>
