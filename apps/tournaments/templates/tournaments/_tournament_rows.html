@@ -7,6 +7,7 @@
     <td>{{ tournament.end_date|default:"—" }}</td>
     <td>{% status_badge tournament.get_status_display %}</td>
     <td class="text-right space-x-2 rtl:space-x-reverse">
+        {% if tournament.pk in manageable_tournament_ids %}
         <a href="{% url 'tournaments:edit' tournament.pk %}" class="btn btn-xs btn-outline">{% translate "Edit" %}</a>
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
@@ -16,6 +17,9 @@
                 hx-confirm="{% translate 'Are you sure you want to delete this tournament? This will delete all of its competitions.' %}">
             {% translate "Delete" %}
         </button>
+        {% else %}
+        <span class="text-base-content/40">—</span>
+        {% endif %}
     </td>
 </tr>
 {% empty %}

@@ -8,7 +8,9 @@
 {% translate "Tournaments" as tournaments_label %}
 {% pageheader tournaments_label %}
 {% pageheader_actions %}
-    <a href="{% url 'tournaments:add' %}" class="btn btn-primary">{% translate "Add tournament" %}</a>
+    {% if can_create_tournament %}
+        <a href="{% url 'tournaments:add' %}" class="btn btn-primary">{% translate "Add tournament" %}</a>
+    {% endif %}
 {% endpageheader %}
 
 <div class="mb-4">

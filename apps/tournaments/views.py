@@ -49,6 +49,7 @@ from .models import (
     TournamentStaff,
 )
 from .permissions import (
+    MANAGEMENT_ROLES,
     TournamentManagerRequiredMixin,
     can_create_tournament,
     can_manage_tournament,
@@ -152,6 +153,33 @@ class TournamentListView(ListView):
         if self.request.htmx:
             return ["tournaments/_tournament_rows.html"]
         return ["tournaments/tournament_list.html"]
+
+    def get_context_data(self, **kwargs):
+        """Per-row Edit/Delete controls must only render for tournaments
+        this specific user can manage — management roles are granted per
+        Tournament (TournamentStaff), not globally, so a manager of one
+        tournament isn't automatically a manager of every other one listed
+        here (CLAUDE.md section 26: never rely only on frontend
+        visibility — the underlying views are already gated by
+        TournamentManagerRequiredMixin/tournament_manager_required, this
+        just keeps the buttons from being shown to someone who can't use
+        them)."""
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        tournaments = context["tournaments"]
+        if user.is_superuser:
+            manageable_ids = {t.pk for t in tournaments}
+        elif user.is_authenticated:
+            manageable_ids = set(
+                TournamentStaff.objects.filter(
+                    user=user, role__in=MANAGEMENT_ROLES, tournament__in=tournaments
+                ).values_list("tournament_id", flat=True)
+            )
+        else:
+            manageable_ids = set()
+        context["manageable_tournament_ids"] = manageable_ids
+        context["can_create_tournament"] = can_create_tournament(user)
+        return context
 
 
 class TournamentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):

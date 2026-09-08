@@ -115,6 +115,19 @@ class PublicReadAccessTests(TournamentPermissionTestCase):
         response = self.client.get(reverse("tournaments:detail", kwargs={"pk": self.tournament.pk}))
         self.assertEqual(response.status_code, 200)
 
+    def test_anonymous_does_not_see_edit_or_delete_controls_on_list(self):
+        response = self.client.get(reverse("tournaments:list"))
+        self.assertNotContains(response, reverse("tournaments:edit", kwargs={"pk": self.tournament.pk}))
+        self.assertNotContains(response, reverse("tournaments:delete", kwargs={"pk": self.tournament.pk}))
+        self.assertNotContains(response, reverse("tournaments:add"))
+
+    def test_manager_sees_controls_only_for_their_own_tournament(self):
+        other_tournament = Tournament.objects.create(name="Other Open")
+        self.client.login(username="manager", password="pw")
+        response = self.client.get(reverse("tournaments:list"))
+        self.assertContains(response, reverse("tournaments:edit", kwargs={"pk": self.tournament.pk}))
+        self.assertNotContains(response, reverse("tournaments:edit", kwargs={"pk": other_tournament.pk}))
+
 
 class NestedResourcePermissionTests(TournamentPermissionTestCase):
     def setUp(self):
