@@ -83,6 +83,12 @@
     {% endsectionheader %}
 
     {% if has_bracket %}
+        {% if bracket_rounds|length > 1 %}
+        <div class="flex items-center gap-1 text-xs text-base-content/50 mb-1 sm:hidden">
+            {% icon "swipe" extra_class="h-3.5 w-3.5" %}
+            {% translate "Swipe to see all rounds" %}
+        </div>
+        {% endif %}
         <div class="overflow-x-auto">
             <div class="flex gap-4 pb-2" style="min-width: max-content;">
                 {% for round in bracket_rounds %}

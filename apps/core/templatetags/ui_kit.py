@@ -40,6 +40,10 @@ _ICON_PATHS = {
     "add": "M12 4v16m8-8H4",
     "back": "M10 19l-7-7m0 0l7-7m-7 7h18",
     "export": "M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3",
+    # Symmetric (points both ways) so it reads correctly regardless of
+    # text direction — unlike a single left/right arrow, which would
+    # point the wrong way in the app's RTL layout.
+    "swipe": "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
 }
 
 

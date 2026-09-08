@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 21:11+0000\n"
+"POT-Creation-Date: 2026-09-08 21:53+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -350,8 +350,8 @@ msgstr ""
 #: apps/bale/services.py:89 apps/bale/services.py:211 apps/bale/services.py:212
 #: apps/matches/models.py:70 apps/tournaments/models.py:202
 #: apps/tournaments/models.py:248 apps/tournaments/models.py:252
-#: apps/tournaments/templates/tournaments/stage_detail.html:97
-#: apps/tournaments/templates/tournaments/stage_detail.html:102
+#: apps/tournaments/templates/tournaments/stage_detail.html:103
+#: apps/tournaments/templates/tournaments/stage_detail.html:108
 msgid "BYE"
 msgstr "استراحت"
 
@@ -861,7 +861,7 @@ msgstr "ست %(n)s"
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:61
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:99
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:124
-#: apps/tournaments/templates/tournaments/stage_detail.html:99
+#: apps/tournaments/templates/tournaments/stage_detail.html:105
 msgid "vs"
 msgstr "در برابر"
 
@@ -2288,27 +2288,31 @@ msgstr "جدول حذفی پاک شود؟ این کار همه بازی‌های
 msgid "Clear bracket"
 msgstr "پاک کردن جدول"
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:114
+#: apps/tournaments/templates/tournaments/stage_detail.html:89
+msgid "Swipe to see all rounds"
+msgstr "برای دیدن همه دورها بکشید"
+
+#: apps/tournaments/templates/tournaments/stage_detail.html:120
 msgid "No bracket generated yet."
 msgstr "هنوز جدولی تولید نشده است."
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:118
+#: apps/tournaments/templates/tournaments/stage_detail.html:124
 msgid "Draw"
 msgstr "قرعه‌کشی"
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:120
+#: apps/tournaments/templates/tournaments/stage_detail.html:126
 msgid "Seeded"
 msgstr "بر اساس سید"
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:121
+#: apps/tournaments/templates/tournaments/stage_detail.html:127
 msgid "Random"
 msgstr "تصادفی"
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:126
+#: apps/tournaments/templates/tournaments/stage_detail.html:132
 msgid "Include third-place match"
 msgstr "شامل دیدار رده‌بندی"
 
-#: apps/tournaments/templates/tournaments/stage_detail.html:128
+#: apps/tournaments/templates/tournaments/stage_detail.html:134
 msgid "Generate bracket"
 msgstr "تولید جدول حذفی"
 
