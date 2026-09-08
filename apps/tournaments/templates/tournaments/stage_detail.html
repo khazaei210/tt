@@ -18,6 +18,20 @@
 {% if stage.stage_format == "round_robin" %}
     {% translate "Groups" as groups_label %}
     {% sectionheader title=groups_label %}
+        {% if can_manage and groups %}
+            {% translate "Assign every unassigned participant to whichever group currently has the fewest members?" as auto_assign_confirm %}
+            <form method="post" action="{% url 'tournaments:stage_auto_assign_groups' stage.pk %}"
+                  onsubmit="return confirm('{{ auto_assign_confirm|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">{% translate "Auto-assign to groups" %}</button>
+            </form>
+            {% translate "Generate the schedule for every group in this stage that doesn't have one yet?" as generate_all_confirm %}
+            <form method="post" action="{% url 'tournaments:stage_generate_all_schedules' stage.pk %}"
+                  onsubmit="return confirm('{{ generate_all_confirm|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">{% translate "Generate all schedules" %}</button>
+            </form>
+        {% endif %}
         {% if can_manage and next_knockout_stage %}
             {% translate "Advance each group's top qualifiers to the next stage's bracket?" as advance_confirm %}
             <form method="post" action="{% url 'tournaments:stage_advance' stage.pk %}"

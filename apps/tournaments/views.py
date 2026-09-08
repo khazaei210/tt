@@ -12,7 +12,6 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from apps.bale.services import notify_matches_created
 from apps.core.csv_utils import csv_response
-from apps.rankings.models import EloRating
 from apps.matches.services import (
     NoKnockoutStageError,
     NotEnoughParticipantsError,
@@ -57,6 +56,13 @@ from .permissions import (
     tournament_manager_required,
 )
 from .services.dashboard import build_manager_dashboard
+from .services.setup import (
+    NoGroupsAvailableError,
+    NotRoundRobinStageError,
+    attach_elo_ratings,
+    auto_assign_participants_to_groups,
+    seed_participants_by_rating,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -401,6 +407,44 @@ def stage_advance(request, pk):
 
 
 @tournament_manager_required(_tournament_from_stage_pk)
+def stage_auto_assign_groups(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    try:
+        assigned = auto_assign_participants_to_groups(stage)
+    except (NotRoundRobinStageError, NoGroupsAvailableError) as exc:
+        messages.error(request, str(exc))
+    else:
+        if assigned:
+            messages.success(request, _("Assigned %(n)s participant(s) to groups.") % {"n": len(assigned)})
+        else:
+            messages.info(request, _("Every participant is already assigned to a group."))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
+def stage_generate_all_schedules(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    legs = 2 if request.POST.get("legs") == "2" else 1
+    generated = []
+    for group in stage.groups.order_by("order"):
+        try:
+            generate_group_schedule(group, legs=legs)
+        except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError):
+            continue
+        generated.append(group)
+    if generated:
+        _report_bale_notifications(request, stage.matches.filter(group__in=generated))
+        messages.success(request, _("Generated schedules for %(n)s group(s).") % {"n": len(generated)})
+    else:
+        messages.info(request, _("No groups were eligible for schedule generation (already scheduled, or not enough participants)."))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
 def stage_bracket_clear(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
@@ -602,57 +646,13 @@ def group_schedule_clear(request, pk):
     return redirect("tournaments:group_detail", pk=group.pk)
 
 
-def _attach_elo_ratings(participants, category):
-    """Best-effort: annotate each participant with its player(s)' current
-    Elo rating/rank in the competition's own ranking category, so staff
-    can see global form at a glance while managing entrants — the
-    tournament view otherwise has no cross-reference to the global
-    ranking system at all. Left None if the competition has no
-    ranking_category, or for team participants (ranking isn't attributed
-    to individual players for teams — same scope limit as
-    apps.rankings.services.players_for_participant). Doubles show the
-    average of both players' ratings.
-    """
-    for participant in participants:
-        participant.elo_rating = None
-        participant.elo_rank = None
-    if category is None:
-        return
-
-    player_ids = set()
-    for participant in participants:
-        if participant.individual_player_id:
-            player_ids.add(participant.individual_player_id)
-        elif participant.doubles_pair_id:
-            player_ids.add(participant.doubles_pair.player_one_id)
-            player_ids.add(participant.doubles_pair.player_two_id)
-    if not player_ids:
-        return
-
-    ratings = {r.player_id: r for r in EloRating.objects.filter(category=category, player_id__in=player_ids)}
-    for participant in participants:
-        if participant.individual_player_id:
-            rating = ratings.get(participant.individual_player_id)
-            if rating:
-                participant.elo_rating = rating.rating
-                participant.elo_rank = rating.current_rank
-        elif participant.doubles_pair_id:
-            values = [
-                ratings[pid].rating
-                for pid in (participant.doubles_pair.player_one_id, participant.doubles_pair.player_two_id)
-                if pid in ratings
-            ]
-            if values:
-                participant.elo_rating = sum(values) / len(values)
-
-
 def _participant_panel_context(competition):
     participants = list(
         competition.participants.select_related(
             "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
         )
     )
-    _attach_elo_ratings(participants, competition.ranking_category)
+    attach_elo_ratings(participants, competition.ranking_category)
     return {
         "competition": competition,
         "participants": participants,
@@ -694,6 +694,15 @@ def participant_bulk_add(request, competition_pk):
         context = _participant_panel_context(competition)
         context["bulk_participant_form"] = form
     return render(request, "tournaments/_participant_panel.html", context)
+
+
+@tournament_manager_required(_tournament_from_competition_pk_kwarg)
+def competition_seed_by_rating(request, competition_pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    competition = get_object_or_404(Competition, pk=competition_pk)
+    seed_participants_by_rating(competition)
+    return render(request, "tournaments/_participant_panel.html", _participant_panel_context(competition))
 
 
 @tournament_manager_required(_tournament_from_competition_pk_kwarg)

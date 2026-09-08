@@ -1,5 +1,17 @@
 {% load i18n ui_kit %}
 <div id="participant-panel">
+    {% if can_manage and participants|length > 1 %}
+    <div class="flex justify-end mb-2">
+        {% translate "Recompute every participant's seed from their current rating? This overwrites any seeds already set." as reseed_confirm %}
+        <form hx-post="{% url 'tournaments:competition_seed_by_rating' competition.pk %}"
+              hx-target="#participant-panel"
+              hx-swap="outerHTML"
+              hx-confirm="{{ reseed_confirm }}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline btn-sm">{% translate "Seed by rating" %}</button>
+        </form>
+    </div>
+    {% endif %}
     {% table_card extra_class="mb-4" %}
         <thead>
             <tr>
