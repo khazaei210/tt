@@ -89,7 +89,7 @@
                            onchange="this.closest('form').querySelectorAll('input[name=selected]').forEach(function(cb){cb.checked = this.checked}, this)">
                     <span class="label-text">{% translate "Select all" %}</span>
                 </label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 max-h-64 overflow-y-auto mb-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 max-h-64 overflow-y-auto mb-3">
                     {% for choice in bulk_participant_form.selected %}
                     <label class="label cursor-pointer justify-start gap-2">
                         {{ choice.tag }}

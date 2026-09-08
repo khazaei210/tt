@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 18:56+0000\n"
+"POT-Creation-Date: 2026-09-08 20:58+0000\n"
 "PO-Revision-Date: 2026-09-04 16:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: Persian\n"
@@ -451,7 +451,7 @@ msgstr "رتبه‌بندی کلی بازیکنان در همه تورنمنت�
 #: apps/rankings/templates/rankings/category_detail.html:11
 #: apps/rankings/templates/rankings/elo_leaderboard.html:12
 #: apps/reports/templates/reports/tournament_report.html:12
-#: apps/tournaments/templates/tournaments/group_detail.html:22
+#: apps/tournaments/templates/tournaments/group_detail.html:23
 msgid "Export CSV"
 msgstr "خروجی CSV"
 
@@ -477,7 +477,7 @@ msgstr "تغییر"
 #: apps/rankings/templates/rankings/my_rankings.html:122
 #: apps/rankings/views.py:54
 #: apps/reports/templates/reports/player_statistics.html:28
-#: apps/tournaments/templates/tournaments/group_detail.html:35
+#: apps/tournaments/templates/tournaments/group_detail.html:37
 msgid "Points"
 msgstr "امتیازها"
 
@@ -715,7 +715,9 @@ msgstr "برنده"
 
 #: apps/matches/services.py:257
 msgid "This match is already decided. Explicitly correct it to change a score."
-msgstr "این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌طور صریح اصلاح کنید."
+msgstr ""
+"این بازی قبلاً به پایان رسیده است. برای تغییر امتیاز باید آن را به‌طور صریح "
+"اصلاح کنید."
 
 #: apps/matches/services.py:262
 #, python-format
@@ -845,7 +847,7 @@ msgstr "ست %(n)s"
 #: apps/matches/templates/matches/scorer_dashboard.html:59
 #: apps/matches/templates/matches/scorer_dashboard.html:90
 #: apps/players/templates/players/player_dashboard.html:42
-#: apps/tournaments/templates/tournaments/group_detail.html:81
+#: apps/tournaments/templates/tournaments/group_detail.html:83
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:61
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:99
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:124
@@ -860,7 +862,7 @@ msgstr "بازی"
 #: apps/matches/templates/matches/match_detail.html:16
 #: apps/matches/templates/matches/scorer_dashboard.html:63
 #: apps/matches/templates/matches/scorer_dashboard.html:94
-#: apps/tournaments/templates/tournaments/group_detail.html:75
+#: apps/tournaments/templates/tournaments/group_detail.html:77
 #: apps/tournaments/templates/tournaments/manager_dashboard.html:103
 #: apps/tournaments/views.py:464
 #, python-format
@@ -1350,7 +1352,7 @@ msgstr "امتیاز الو"
 
 #: apps/rankings/models.py:152
 #: apps/reports/templates/reports/player_statistics.html:55
-#: apps/tournaments/templates/tournaments/group_detail.html:30
+#: apps/tournaments/templates/tournaments/group_detail.html:32
 #: apps/tournaments/views.py:587
 msgid "Won"
 msgstr "برد"
@@ -1571,7 +1573,7 @@ msgstr "%(w)s برد — %(l)s باخت"
 
 #: apps/reports/templates/reports/player_statistics.html:23
 #: apps/reports/views.py:41
-#: apps/tournaments/templates/tournaments/group_detail.html:33
+#: apps/tournaments/templates/tournaments/group_detail.html:35
 msgid "Sets"
 msgstr "ست‌ها"
 
@@ -1586,7 +1588,7 @@ msgid "Recent matches"
 msgstr "بازی‌های اخیر"
 
 #: apps/reports/templates/reports/player_statistics.html:58
-#: apps/tournaments/templates/tournaments/group_detail.html:31
+#: apps/tournaments/templates/tournaments/group_detail.html:33
 #: apps/tournaments/views.py:587
 msgid "Lost"
 msgstr "باخت"
@@ -1861,7 +1863,7 @@ msgstr "حذفی"
 
 #: apps/tournaments/models.py:146
 #: apps/tournaments/templates/tournaments/competition_detail.html:74
-#: apps/tournaments/templates/tournaments/group_detail.html:97
+#: apps/tournaments/templates/tournaments/group_detail.html:99
 msgid "Format"
 msgstr "فرمت"
 
@@ -1914,7 +1916,7 @@ msgstr "هنوز مسابقه‌ای ثبت نشده است."
 
 #: apps/tournaments/templates/tournaments/_group_participant_panel.html:6
 #: apps/tournaments/templates/tournaments/_participant_panel.html:19
-#: apps/tournaments/templates/tournaments/group_detail.html:28
+#: apps/tournaments/templates/tournaments/group_detail.html:30
 #: apps/tournaments/views.py:587
 msgid "Participant"
 msgstr "شرکت‌کننده"
@@ -1943,7 +1945,9 @@ msgstr "هنوز گروهی ثبت نشده است."
 msgid ""
 "Recompute every participant's seed from their current rating? This "
 "overwrites any seeds already set."
-msgstr "سید هر شرکت‌کننده بر اساس امتیاز فعلی او دوباره محاسبه شود؟ این کار سیدهای از پیش تعیین‌شده را بازنویسی می‌کند."
+msgstr ""
+"سید هر شرکت‌کننده بر اساس امتیاز فعلی او دوباره محاسبه شود؟ این کار سیدهای از "
+"پیش تعیین‌شده را بازنویسی می‌کند."
 
 #: apps/tournaments/templates/tournaments/_participant_panel.html:11
 msgid "Seed by rating"
@@ -2070,52 +2074,52 @@ msgstr "قوانین مسابقه"
 msgid "Back to stage"
 msgstr "بازگشت به مرحله"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:21
+#: apps/tournaments/templates/tournaments/group_detail.html:20
 msgid "Standings"
 msgstr "جدول رده‌بندی"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:29
+#: apps/tournaments/templates/tournaments/group_detail.html:31
 #: apps/tournaments/views.py:587
 msgid "Played"
 msgstr "بازی"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:32
+#: apps/tournaments/templates/tournaments/group_detail.html:34
 msgid "Pts"
 msgstr "امتیاز"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:34
+#: apps/tournaments/templates/tournaments/group_detail.html:36
 msgid "Set diff"
 msgstr "تفاضل ست"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:36
+#: apps/tournaments/templates/tournaments/group_detail.html:38
 msgid "Point diff"
 msgstr "تفاضل امتیاز"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:59
+#: apps/tournaments/templates/tournaments/group_detail.html:61
 msgid "Schedule"
 msgstr "برنامه مسابقات"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:61
+#: apps/tournaments/templates/tournaments/group_detail.html:63
 msgid "Clear the generated schedule? This deletes all matches for this group."
 msgstr "برنامه مسابقات پاک شود؟ این کار همه بازی‌های این گروه را حذف می‌کند."
 
-#: apps/tournaments/templates/tournaments/group_detail.html:65
+#: apps/tournaments/templates/tournaments/group_detail.html:67
 msgid "Clear schedule"
 msgstr "پاک کردن برنامه"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:93
+#: apps/tournaments/templates/tournaments/group_detail.html:95
 msgid "No schedule generated yet."
 msgstr "هنوز برنامه مسابقاتی تولید نشده است."
 
-#: apps/tournaments/templates/tournaments/group_detail.html:99
+#: apps/tournaments/templates/tournaments/group_detail.html:101
 msgid "Single round robin"
 msgstr "دوره‌ای تک‌مرحله‌ای"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:100
+#: apps/tournaments/templates/tournaments/group_detail.html:102
 msgid "Double round robin"
 msgstr "دوره‌ای دومرحله‌ای"
 
-#: apps/tournaments/templates/tournaments/group_detail.html:103
+#: apps/tournaments/templates/tournaments/group_detail.html:105
 msgid "Generate schedule"
 msgstr "تولید برنامه مسابقات"
 
@@ -2202,7 +2206,8 @@ msgstr "گروه‌ها"
 msgid ""
 "Assign every unassigned participant to whichever group currently has the "
 "fewest members?"
-msgstr "همه شرکت‌کنندگان تخصیص‌نیافته به گروهی که کمترین عضو را دارد اختصاص یابند؟"
+msgstr ""
+"همه شرکت‌کنندگان تخصیص‌نیافته به گروهی که کمترین عضو را دارد اختصاص یابند؟"
 
 #: apps/tournaments/templates/tournaments/stage_detail.html:26
 msgid "Auto-assign to groups"
@@ -2212,7 +2217,8 @@ msgstr "تخصیص خودکار به گروه‌ها"
 msgid ""
 "Generate the schedule for every group in this stage that doesn't have one "
 "yet?"
-msgstr "برای همه گروه‌های این مرحله که هنوز برنامه‌ای ندارند، برنامه مسابقات تولید شود؟"
+msgstr ""
+"برای همه گروه‌های این مرحله که هنوز برنامه‌ای ندارند، برنامه مسابقات تولید شود؟"
 
 #: apps/tournaments/templates/tournaments/stage_detail.html:32
 msgid "Generate all schedules"
@@ -2337,7 +2343,9 @@ msgstr "برنامه مسابقات برای %(n)s گروه تولید شد."
 msgid ""
 "No groups were eligible for schedule generation (already scheduled, or not "
 "enough participants)."
-msgstr "هیچ گروهی واجد شرایط تولید برنامه نبود (قبلاً برنامه‌ریزی شده یا شرکت‌کنندگان کافی نیست)."
+msgstr ""
+"هیچ گروهی واجد شرایط تولید برنامه نبود (قبلاً برنامه‌ریزی شده یا شرکت‌کنندگان "
+"کافی نیست)."
 
 #: apps/tournaments/views.py:459
 msgid "Final"

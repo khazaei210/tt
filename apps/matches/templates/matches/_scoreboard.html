@@ -91,7 +91,7 @@
         <form hx-post="{% url 'matches:set_save' match.pk %}" hx-target="#scoreboard" hx-swap="outerHTML">
             {% csrf_token %}
             <input type="hidden" name="set_number" value="{{ next_set_number }}">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="text-center">
                     <div class="font-medium mb-2 truncate">{{ match.participant_a.display_name|default:"A" }}</div>
                     <div class="flex items-center justify-center gap-2">

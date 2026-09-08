@@ -38,7 +38,9 @@ class PageHeaderNode(template.Node):
             format_html('<p class="text-base-content/60">{}</p>', mark_safe(subtitle_html)) if subtitle_html else ""
         )
         actions_block = (
-            format_html('<div class="flex gap-2">{}</div>', mark_safe(actions_html)) if actions_html else ""
+            format_html('<div class="flex gap-2 flex-wrap">{}</div>', mark_safe(actions_html))
+            if actions_html
+            else ""
         )
         return format_html(
             '<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">'
@@ -87,9 +89,10 @@ def sectionheader(content, title):
     button/group on the right — the same shape as `pageheader` one size
     down, for a subsection within a page rather than the page itself."""
     actions = content.strip() if content else ""
-    actions_block = format_html('<div class="flex gap-2">{}</div>', mark_safe(actions)) if actions else ""
+    actions_block = format_html('<div class="flex gap-2 flex-wrap">{}</div>', mark_safe(actions)) if actions else ""
     return format_html(
-        '<div class="flex items-center justify-between mb-2"><h2 class="text-lg font-semibold">{}</h2>{}</div>',
+        '<div class="flex items-center justify-between mb-2 gap-2 flex-wrap">'
+        '<h2 class="text-lg font-semibold">{}</h2>{}</div>',
         title,
         mark_safe(actions_block),
     )

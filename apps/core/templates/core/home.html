@@ -20,12 +20,12 @@
             <th>#</th>
             <th>{% translate "Player" %}</th>
             <th class="text-center">{% translate "Rating" %}</th>
-            <th class="text-center">{% translate "Change" %}</th>
+            <th class="text-center hidden sm:table-cell">{% translate "Change" %}</th>
             <th class="text-center">{% translate "Points" %}</th>
             <th class="text-center">{% translate "W" %}</th>
             <th class="text-center">{% translate "L" %}</th>
-            <th class="text-center">{% translate "Matches" %}</th>
-            <th class="text-center">{% translate "Tournaments" %}</th>
+            <th class="text-center hidden sm:table-cell">{% translate "Matches" %}</th>
+            <th class="text-center hidden sm:table-cell">{% translate "Tournaments" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -38,7 +38,7 @@
                 </a>
             </td>
             <td class="text-center font-semibold">{{ row.rating|floatformat:0|default:"—" }}</td>
-            <td class="text-center">
+            <td class="text-center hidden sm:table-cell">
                 {% if row.rating_change is None or row.rating_change == 0 %}
                     <span class="text-base-content/40">—</span>
                 {% elif row.rating_change > 0 %}
@@ -50,8 +50,8 @@
             <td class="text-center">{{ row.points }}</td>
             <td class="text-center text-success">{{ row.wins }}</td>
             <td class="text-center text-error">{{ row.losses }}</td>
-            <td class="text-center">{{ row.matches_played }}</td>
-            <td class="text-center">{{ row.tournaments_played }}</td>
+            <td class="text-center hidden sm:table-cell">{{ row.matches_played }}</td>
+            <td class="text-center hidden sm:table-cell">{{ row.tournaments_played }}</td>
         </tr>
         {% endfor %}
     </tbody>
