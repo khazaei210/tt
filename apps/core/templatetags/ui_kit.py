@@ -180,11 +180,36 @@ def empty_row(message, colspan=1):
     )
 
 
+# Tailwind/DaisyUI only generates CSS for class names it can find as
+# literal text in a scanned file (CLAUDE.md's "avoid magic numbers" spirit
+# applies here too) — f"badge-{variant}" never appears as one complete
+# string anywhere, so it silently compiles to nothing. These two lookups
+# spell every combination out literally (this .py file is itself inside
+# the @source "../../apps" scan path) so every variant/size actually
+# renders, instead of only the ones that happened to also appear as a
+# literal string somewhere else in the codebase.
+_BADGE_VARIANT_CLASSES = {
+    "outline": "badge-outline",
+    "success": "badge-success",
+    "error": "badge-error",
+    "ghost": "badge-ghost",
+    "warning": "badge-warning",
+    "info": "badge-info",
+}
+_BADGE_SIZE_CLASSES = {
+    "xs": "badge-xs",
+    "sm": "badge-sm",
+    "lg": "badge-lg",
+}
+
+
 @register.simple_tag
 def status_badge(label, variant="outline", size=""):
-    """A DaisyUI badge. variant: outline/success/error/ghost/warning/...;
+    """A DaisyUI badge. variant: outline/success/error/ghost/warning/info;
     size: "" (default) / xs / sm / lg."""
-    classes = f"badge badge-{variant}" + (f" badge-{size}" if size else "")
+    classes = "badge " + _BADGE_VARIANT_CLASSES.get(variant, _BADGE_VARIANT_CLASSES["outline"])
+    if size in _BADGE_SIZE_CLASSES:
+        classes += " " + _BADGE_SIZE_CLASSES[size]
     return format_html('<span class="{}">{}</span>', classes, label)
 
 
