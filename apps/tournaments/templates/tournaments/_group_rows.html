@@ -5,6 +5,7 @@
     <td class="hidden sm:table-cell">{{ group.order }}</td>
     {% if can_manage %}
     <td class="text-right">
+        {% if not group.stage.is_locked %}
         <button type="button"
                 class="btn btn-xs btn-error btn-outline"
                 aria-label="{% translate 'Delete' %}"
@@ -14,6 +15,7 @@
                 hx-confirm="{% translate 'Are you sure you want to delete this group?' %}">
             {% icon "delete" %}<span class="hidden sm:inline">{% translate "Delete" %}</span>
         </button>
+        {% endif %}
     </td>
     {% endif %}
 </tr>

@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 
 from django.db import transaction
-from django.db.models import F, Max
+from django.db.models import F, Max, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.tournaments.services.knockout import generate_knockout_bracket
 from apps.tournaments.services.round_robin import generate_round_robin
+from apps.tournaments.services.setup import ensure_stage_unlocked
 from apps.tournaments.services.standings import MatchRecord, compute_standings
 
 from .models import Match, MatchCorrection, MatchCorrectionAction, MatchSet, MatchStatus, TERMINAL_MATCH_STATUSES
@@ -46,6 +47,14 @@ class InvalidWinnerError(Exception):
 
 
 class InvalidOfficialRoleError(Exception):
+    pass
+
+
+class ParticipantNotInBracketError(Exception):
+    pass
+
+
+class MatchAlreadyStartedError(Exception):
     pass
 
 
@@ -109,6 +118,7 @@ def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed
     instead — used by advance_to_next_stage() to bracket only a preceding
     group stage's qualifiers, not the whole competition.
     """
+    ensure_stage_unlocked(stage)
     if stage.matches.exists():
         raise ScheduleAlreadyGeneratedError(_("This stage already has a generated bracket."))
 
@@ -156,7 +166,57 @@ def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed
 
 @transaction.atomic
 def clear_stage_bracket(stage):
+    ensure_stage_unlocked(stage)
     stage.matches.filter(group__isnull=True).delete()
+
+
+@transaction.atomic
+def swap_bracket_participants(stage, participant_a_id, participant_b_id, *, performed_by=None):
+    """Swap two participants' Round-1 bracket slots — the manual fix-up
+    for a bad automatic/seeded draw, before the stage is locked. Only
+    touches Round 1: later rounds still have their slots filled in only
+    as earlier matches are decided, so there's nothing to swap there.
+    """
+    from apps.tournaments.models import AuditAction, Participant, TournamentAuditLog
+
+    ensure_stage_unlocked(stage)
+    if participant_a_id == participant_b_id:
+        raise ParticipantNotInBracketError(_("Choose two different participants to swap."))
+
+    round_one = stage.matches.filter(round_number=1, is_third_place=False)
+    match_a = round_one.filter(Q(participant_a_id=participant_a_id) | Q(participant_b_id=participant_a_id)).first()
+    match_b = round_one.filter(Q(participant_a_id=participant_b_id) | Q(participant_b_id=participant_b_id)).first()
+    if match_a is None or match_b is None:
+        raise ParticipantNotInBracketError(_("Both participants must currently be placed in this stage's first round."))
+    if match_a.pk == match_b.pk:
+        raise ParticipantNotInBracketError(_("These two participants already play each other in the first round."))
+    for match in (match_a, match_b):
+        if match.is_bye or match.status != MatchStatus.SCHEDULED:
+            raise MatchAlreadyStartedError(_("Can't swap a match that has already started or involves a BYE."))
+
+    if match_a.participant_a_id == participant_a_id:
+        match_a.participant_a_id = participant_b_id
+    else:
+        match_a.participant_b_id = participant_b_id
+    if match_b.participant_a_id == participant_b_id:
+        match_b.participant_a_id = participant_a_id
+    else:
+        match_b.participant_b_id = participant_a_id
+    match_a.save(update_fields=["participant_a", "participant_b"])
+    match_b.save(update_fields=["participant_a", "participant_b"])
+
+    names = Participant.objects.in_bulk([participant_a_id, participant_b_id])
+    TournamentAuditLog.objects.log(
+        stage.competition.tournament,
+        performed_by,
+        AuditAction.BRACKET_SWAPPED,
+        _("Swapped bracket positions of %(a)s and %(b)s in %(stage)s.")
+        % {
+            "a": names[participant_a_id].display_name,
+            "b": names[participant_b_id].display_name,
+            "stage": stage.name,
+        },
+    )
 
 
 @transaction.atomic

@@ -22,11 +22,19 @@ urlpatterns = [
     path("stages/<int:pk>/delete/", views.stage_delete, name="stage_delete"),
     path("stages/<int:pk>/bracket/generate/", views.stage_bracket_generate, name="stage_bracket_generate"),
     path("stages/<int:pk>/bracket/clear/", views.stage_bracket_clear, name="stage_bracket_clear"),
+    path("stages/<int:pk>/bracket/swap/", views.stage_bracket_swap, name="stage_bracket_swap"),
     path("stages/<int:pk>/advance/", views.stage_advance, name="stage_advance"),
+    path("stages/<int:pk>/lock/", views.stage_lock, name="stage_lock"),
+    path("stages/<int:pk>/unlock/", views.stage_unlock, name="stage_unlock"),
     path(
         "stages/<int:pk>/groups/auto-assign/",
         views.stage_auto_assign_groups,
         name="stage_auto_assign_groups",
+    ),
+    path(
+        "stages/<int:pk>/groups/bulk-create/",
+        views.stage_groups_bulk_create,
+        name="stage_groups_bulk_create",
     ),
     path(
         "stages/<int:pk>/schedule/generate-all/",
@@ -42,6 +50,11 @@ urlpatterns = [
         "groups/<int:pk>/participants/<int:group_participant_id>/remove/",
         views.group_participant_remove,
         name="group_participant_remove",
+    ),
+    path(
+        "groups/<int:pk>/participants/<int:group_participant_id>/move/",
+        views.group_participant_move,
+        name="group_participant_move",
     ),
     path("groups/<int:pk>/schedule/generate/", views.group_schedule_generate, name="group_schedule_generate"),
     path("groups/<int:pk>/schedule/clear/", views.group_schedule_clear, name="group_schedule_clear"),
@@ -65,4 +78,6 @@ urlpatterns = [
         views.participant_delete,
         name="participant_delete",
     ),
+    path("competitions/<int:pk>/register/", views.competition_register, name="competition_register"),
+    path("competitions/<int:pk>/unregister/", views.competition_unregister, name="competition_unregister"),
 ]

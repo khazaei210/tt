@@ -2,13 +2,18 @@ from django.test import TestCase
 
 from apps.matches.models import Match
 from apps.matches.services import (
+    MatchAlreadyStartedError,
     NotEnoughParticipantsError,
+    ParticipantNotInBracketError,
     ScheduleAlreadyGeneratedError,
     clear_stage_bracket,
     generate_stage_bracket,
+    start_match,
+    swap_bracket_participants,
 )
 from apps.players.models import Player
 from apps.tournaments.models import Competition, Participant, ParticipantType, Stage, StageFormat, Tournament
+from apps.tournaments.services.setup import StageLockedError
 
 
 class StageBracketServiceTests(TestCase):
@@ -121,3 +126,69 @@ class StageBracketServiceTests(TestCase):
             )
         )
         self.assertEqual(first_pairs, second_pairs)
+
+
+class SwapBracketParticipantsTests(TestCase):
+    def setUp(self):
+        self.tournament = Tournament.objects.create(name="Test Open")
+        self.competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
+        )
+        self.stage = Stage.objects.create(competition=self.competition, name="Knockout", stage_format=StageFormat.KNOCKOUT)
+        self.participants = []
+        for i in range(4):
+            player = Player.objects.create(first_name=f"P{i}", last_name="Test", gender="M", mobile_number=f"0900010{i:04d}")
+            self.participants.append(
+                Participant.objects.create(
+                    competition=self.competition,
+                    participant_type=ParticipantType.INDIVIDUAL,
+                    individual_player=player,
+                    seed=i + 1,
+                )
+            )
+        generate_stage_bracket(self.stage, seeded=True)
+        self.round_one = list(self.stage.matches.filter(round_number=1).order_by("bracket_slot"))
+
+    def test_swaps_the_two_participants_slots(self):
+        match_a, match_b = self.round_one
+        a_id, b_id = match_a.participant_a_id, match_b.participant_a_id
+        swap_bracket_participants(self.stage, a_id, b_id)
+        match_a.refresh_from_db()
+        match_b.refresh_from_db()
+        self.assertEqual(match_a.participant_a_id, b_id)
+        self.assertEqual(match_b.participant_a_id, a_id)
+
+    def test_rejects_the_same_participant_twice(self):
+        a_id = self.round_one[0].participant_a_id
+        with self.assertRaises(ParticipantNotInBracketError):
+            swap_bracket_participants(self.stage, a_id, a_id)
+
+    def test_rejects_two_participants_already_in_the_same_match(self):
+        match = self.round_one[0]
+        with self.assertRaises(ParticipantNotInBracketError):
+            swap_bracket_participants(self.stage, match.participant_a_id, match.participant_b_id)
+
+    def test_rejects_a_participant_not_in_the_bracket(self):
+        outsider = Participant.objects.create(
+            competition=self.competition,
+            participant_type=ParticipantType.INDIVIDUAL,
+            individual_player=Player.objects.create(
+                first_name="Out", last_name="Sider", gender="M", mobile_number="09000109999"
+            ),
+        )
+        a_id = self.round_one[0].participant_a_id
+        with self.assertRaises(ParticipantNotInBracketError):
+            swap_bracket_participants(self.stage, a_id, outsider.id)
+
+    def test_rejects_once_a_match_has_started(self):
+        match_a, match_b = self.round_one
+        start_match(match_a)
+        with self.assertRaises(MatchAlreadyStartedError):
+            swap_bracket_participants(self.stage, match_a.participant_a_id, match_b.participant_a_id)
+
+    def test_rejects_when_stage_is_locked(self):
+        match_a, match_b = self.round_one
+        self.stage.is_locked = True
+        self.stage.save(update_fields=["is_locked"])
+        with self.assertRaises(StageLockedError):
+            swap_bracket_participants(self.stage, match_a.participant_a_id, match_b.participant_a_id)

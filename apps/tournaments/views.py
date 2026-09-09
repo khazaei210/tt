@@ -13,8 +13,10 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 from apps.bale.services import notify_matches_created
 from apps.core.csv_utils import csv_response
 from apps.matches.services import (
+    MatchAlreadyStartedError,
     NoKnockoutStageError,
     NotEnoughParticipantsError,
+    ParticipantNotInBracketError,
     QualifiersNotConfiguredError,
     ScheduleAlreadyGeneratedError,
     StageNotCompleteError,
@@ -24,20 +26,25 @@ from apps.matches.services import (
     compute_group_standings,
     generate_group_schedule,
     generate_stage_bracket,
+    swap_bracket_participants,
 )
 from apps.matches.team_tie import summarize_tie
 
 from .forms import (
+    BracketSwapForm,
     BulkParticipantForm,
     CompetitionForm,
     CompetitionRuleForm,
+    GroupBulkCreateForm,
     GroupForm,
     GroupParticipantForm,
+    GroupParticipantMoveForm,
     ParticipantForm,
     StageForm,
     TournamentForm,
 )
 from .models import (
+    AuditAction,
     Competition,
     CompetitionRule,
     Group,
@@ -48,6 +55,7 @@ from .models import (
     StageFormat,
     StaffRole,
     Tournament,
+    TournamentAuditLog,
     TournamentStaff,
 )
 from .permissions import (
@@ -58,12 +66,33 @@ from .permissions import (
     tournament_manager_required,
 )
 from .services.dashboard import build_manager_dashboard
+from .services.registration import (
+    AlreadyRegisteredError,
+    CannotWithdrawError,
+    CompetitionFullError,
+    NoPlayerProfileError,
+    NotRegisteredError,
+    RegistrationClosedError,
+    UnsupportedParticipantTypeError,
+    is_competition_full,
+    register_self,
+    unregister_self,
+)
 from .services.setup import (
+    DuplicateGroupAssignmentError,
+    InvalidGroupMoveError,
     NoGroupsAvailableError,
     NotRoundRobinStageError,
+    StageLockedError,
     attach_elo_ratings,
     auto_assign_participants_to_groups,
+    create_groups,
+    ensure_stage_unlocked,
+    lock_stage,
+    move_participant_to_group,
     seed_participants_by_rating,
+    suggested_group_count,
+    unlock_stage,
 )
 
 logger = logging.getLogger(__name__)
@@ -235,7 +264,10 @@ class TournamentDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["competitions"] = self.object.competitions.all()
-        context["can_manage"] = can_manage_tournament(self.request.user, self.object)
+        can_manage = can_manage_tournament(self.request.user, self.object)
+        context["can_manage"] = can_manage
+        if can_manage:
+            context["recent_activity"] = self.object.audit_log.select_related("actor")[:20]
         return context
 
 
@@ -290,6 +322,34 @@ def competition_delete(request, pk):
     return HttpResponse("")
 
 
+def _registration_panel_context(competition, user):
+    entrant_count = competition.participants.entrants().count()
+    my_participant = None
+    player = getattr(user, "player_profile", None)
+    if player is not None:
+        my_participant = competition.participants.filter(individual_player=player).first()
+    can_register = (
+        user.is_authenticated
+        and competition.registration_open
+        and competition.participant_type == ParticipantType.INDIVIDUAL
+        and player is not None
+        and my_participant is None
+        and not is_competition_full(competition)
+    )
+    can_unregister = (
+        my_participant is not None
+        and not my_participant.matches_as_participant_a.exists()
+        and not my_participant.matches_as_participant_b.exists()
+    )
+    return {
+        "competition": competition,
+        "entrant_count": entrant_count,
+        "my_participant": my_participant,
+        "can_register": can_register,
+        "can_unregister": can_unregister,
+    }
+
+
 class CompetitionDetailView(DetailView):
     model = Competition
     template_name = "tournaments/competition_detail.html"
@@ -299,6 +359,7 @@ class CompetitionDetailView(DetailView):
         context["rule"] = getattr(self.object, "rule", None)
         context["stages"] = self.object.stages.all()
         context.update(_participant_panel_context(self.object))
+        context.update(_registration_panel_context(self.object, self.request.user))
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.tournament)
         context["can_award_ranking_points"] = self.object.ranking_category_id is not None
         return context
@@ -378,7 +439,7 @@ def stage_bracket_generate(request, pk):
     third_place = request.POST.get("third_place") == "on"
     try:
         generate_stage_bracket(stage, seeded=seeded, third_place=third_place)
-    except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
+    except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError, StageLockedError) as exc:
         messages.error(request, str(exc))
     else:
         _report_bale_notifications(request, stage.matches.ties())
@@ -415,7 +476,7 @@ def stage_auto_assign_groups(request, pk):
     stage = get_object_or_404(Stage, pk=pk)
     try:
         assigned = auto_assign_participants_to_groups(stage)
-    except (NotRoundRobinStageError, NoGroupsAvailableError) as exc:
+    except (NotRoundRobinStageError, NoGroupsAvailableError, StageLockedError) as exc:
         messages.error(request, str(exc))
     else:
         if assigned:
@@ -451,7 +512,73 @@ def stage_bracket_clear(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     stage = get_object_or_404(Stage, pk=pk)
-    clear_stage_bracket(stage)
+    try:
+        clear_stage_bracket(stage)
+    except StageLockedError as exc:
+        messages.error(request, str(exc))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
+def stage_bracket_swap(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    form = BracketSwapForm(request.POST, stage=stage)
+    if form.is_valid():
+        try:
+            swap_bracket_participants(
+                stage,
+                form.cleaned_data["participant_a"].pk,
+                form.cleaned_data["participant_b"].pk,
+                performed_by=request.user,
+            )
+        except (ParticipantNotInBracketError, MatchAlreadyStartedError, StageLockedError) as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, _("Swapped the two participants' bracket positions."))
+    else:
+        for error in form.non_field_errors():
+            messages.error(request, error)
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
+def stage_lock(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    lock_stage(stage, performed_by=request.user)
+    messages.success(request, _("Stage locked. Its groups and bracket can no longer be changed until unlocked."))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
+def stage_unlock(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    unlock_stage(stage, performed_by=request.user)
+    messages.success(request, _("Stage unlocked."))
+    return redirect("tournaments:stage_detail", pk=stage.pk)
+
+
+@tournament_manager_required(_tournament_from_stage_pk)
+def stage_groups_bulk_create(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    stage = get_object_or_404(Stage, pk=pk)
+    form = GroupBulkCreateForm(request.POST)
+    if form.is_valid():
+        try:
+            created = create_groups(stage, form.cleaned_data["count"], performed_by=request.user)
+        except (NotRoundRobinStageError, StageLockedError) as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, _("Created %(n)s group(s).") % {"n": len(created)})
+    else:
+        for error in form.errors.get("count", []):
+            messages.error(request, error)
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
@@ -482,6 +609,10 @@ class StageDetailView(DetailView):
                 bool(self.object.qualifiers_per_group)
                 and next_stage is not None
                 and not next_stage.matches.ties().exists()
+            )
+            participant_count = self.object.competition.participants.entrants().count()
+            context["group_bulk_create_form"] = GroupBulkCreateForm(
+                initial={"count": suggested_group_count(participant_count)}
             )
         is_team = self.object.competition.participant_type == ParticipantType.TEAM
         context["is_team_competition"] = is_team
@@ -517,6 +648,8 @@ class StageDetailView(DetailView):
 
             context["bracket_rounds"] = rounds
             context["has_bracket"] = bool(bracket_matches)
+            if bracket_matches:
+                context["bracket_swap_form"] = BracketSwapForm(stage=self.object)
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.competition.tournament)
         return context
 
@@ -528,6 +661,9 @@ class GroupCreateView(TournamentManagerRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.stage = get_object_or_404(Stage, pk=kwargs["stage_pk"])
+        if self.stage.is_locked and request.method == "POST":
+            messages.error(request, _("This stage's draw is locked. An administrator must unlock it before making changes."))
+            return redirect("tournaments:stage_detail", pk=self.stage.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_tournament(self):
@@ -551,7 +687,10 @@ class GroupCreateView(TournamentManagerRequiredMixin, CreateView):
 def group_delete(request, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
-    get_object_or_404(Group, pk=pk).delete()
+    group = get_object_or_404(Group, pk=pk)
+    if group.stage.is_locked:
+        return HttpResponse(status=409)
+    group.delete()
     return HttpResponse("")
 
 
@@ -565,6 +704,8 @@ def _group_participant_panel_context(group):
             "participant__team",
         ),
         "group_participant_form": GroupParticipantForm(group=group),
+        "other_groups": Group.objects.filter(stage_id=group.stage_id).exclude(pk=group.pk),
+        "stage_locked": group.stage.is_locked,
         # The two HTMX views below re-render this partial standalone and are
         # already gated by @tournament_manager_required, so reaching them
         # implies can_manage. GroupDetailView overrides this with the real
@@ -619,6 +760,12 @@ def group_participant_add(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
     group = get_object_or_404(Group, pk=pk)
+    try:
+        ensure_stage_unlocked(group.stage)
+    except StageLockedError as exc:
+        context = _group_participant_panel_context(group)
+        context["action_error"] = str(exc)
+        return render(request, "tournaments/_group_participant_panel.html", context)
     form = GroupParticipantForm(request.POST, group=group)
     if form.is_valid():
         form.save()
@@ -634,8 +781,34 @@ def group_participant_remove(request, pk, group_participant_id):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     group = get_object_or_404(Group, pk=pk)
+    try:
+        ensure_stage_unlocked(group.stage)
+    except StageLockedError as exc:
+        context = _group_participant_panel_context(group)
+        context["action_error"] = str(exc)
+        return render(request, "tournaments/_group_participant_panel.html", context)
     get_object_or_404(GroupParticipant, pk=group_participant_id, group=group).delete()
     return render(request, "tournaments/_group_participant_panel.html", _group_participant_panel_context(group))
+
+
+@tournament_manager_required(_tournament_from_group_pk)
+def group_participant_move(request, pk, group_participant_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    group = get_object_or_404(Group, pk=pk)
+    group_participant = get_object_or_404(GroupParticipant, pk=group_participant_id, group=group)
+    form = GroupParticipantMoveForm(request.POST, group_participant=group_participant)
+    context = _group_participant_panel_context(group)
+    if form.is_valid():
+        try:
+            move_participant_to_group(group_participant, form.cleaned_data["target_group"], performed_by=request.user)
+        except (InvalidGroupMoveError, DuplicateGroupAssignmentError, StageLockedError) as exc:
+            context["action_error"] = str(exc)
+        else:
+            context = _group_participant_panel_context(group)
+    else:
+        context["action_error"] = "; ".join(e for errs in form.errors.values() for e in errs)
+    return render(request, "tournaments/_group_participant_panel.html", context)
 
 
 @tournament_manager_required(_tournament_from_group_pk)
@@ -693,7 +866,14 @@ def participant_add(request, competition_pk):
     competition = get_object_or_404(Competition, pk=competition_pk)
     form = ParticipantForm(request.POST, competition=competition)
     if form.is_valid():
-        form.save()
+        participant = form.save()
+        TournamentAuditLog.objects.log(
+            competition.tournament,
+            request.user,
+            AuditAction.PARTICIPANT_ADDED_BY_STAFF,
+            _("%(participant)s added to %(competition)s by staff.")
+            % {"participant": participant.display_name, "competition": competition.name},
+        )
         context = _participant_panel_context(competition)
     else:
         context = _participant_panel_context(competition)
@@ -708,7 +888,14 @@ def participant_bulk_add(request, competition_pk):
     competition = get_object_or_404(Competition, pk=competition_pk)
     form = BulkParticipantForm(request.POST, competition=competition)
     if form.is_valid():
-        form.save()
+        participants = form.save()
+        TournamentAuditLog.objects.log(
+            competition.tournament,
+            request.user,
+            AuditAction.PARTICIPANT_ADDED_BY_STAFF,
+            _("%(n)s participant(s) added to %(competition)s by staff.")
+            % {"n": len(participants), "competition": competition.name},
+        )
         context = _participant_panel_context(competition)
     else:
         context = _participant_panel_context(competition)
@@ -730,5 +917,48 @@ def participant_delete(request, competition_pk, pk):
     if request.method not in ("DELETE", "POST"):
         return HttpResponseNotAllowed(["DELETE", "POST"])
     competition = get_object_or_404(Competition, pk=competition_pk)
-    get_object_or_404(Participant, pk=pk, competition=competition).delete()
+    participant = get_object_or_404(Participant, pk=pk, competition=competition)
+    display_name = participant.display_name
+    participant.delete()
+    TournamentAuditLog.objects.log(
+        competition.tournament,
+        request.user,
+        AuditAction.PARTICIPANT_REMOVED_BY_STAFF,
+        _("%(participant)s removed from %(competition)s by staff.")
+        % {"participant": display_name, "competition": competition.name},
+    )
     return render(request, "tournaments/_participant_panel.html", _participant_panel_context(competition))
+
+
+@login_required
+def competition_register(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    competition = get_object_or_404(Competition, pk=pk)
+    try:
+        register_self(competition, request.user)
+    except (
+        RegistrationClosedError,
+        CompetitionFullError,
+        UnsupportedParticipantTypeError,
+        NoPlayerProfileError,
+        AlreadyRegisteredError,
+    ) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, _("You're registered for %(competition)s.") % {"competition": competition.name})
+    return redirect("tournaments:competition_detail", pk=competition.pk)
+
+
+@login_required
+def competition_unregister(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    competition = get_object_or_404(Competition, pk=pk)
+    try:
+        unregister_self(competition, request.user)
+    except (NotRegisteredError, CannotWithdrawError) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, _("Your registration has been withdrawn."))
+    return redirect("tournaments:competition_detail", pk=competition.pk)

@@ -5,12 +5,15 @@ current Elo rating, and auto-distributing a round-robin stage's
 participants across its already-created groups.
 """
 
-from django.db.models import F
+import math
+import string
+
+from django.db.models import F, Max
 from django.utils.translation import gettext_lazy as _
 
 from apps.rankings.models import EloRating
 
-from ..models import GroupParticipant, StageFormat
+from ..models import AuditAction, Group, GroupParticipant, StageFormat, TournamentAuditLog
 
 
 class NotRoundRobinStageError(Exception):
@@ -19,6 +22,41 @@ class NotRoundRobinStageError(Exception):
 
 class NoGroupsAvailableError(Exception):
     pass
+
+
+class StageLockedError(Exception):
+    pass
+
+
+class DuplicateGroupAssignmentError(Exception):
+    pass
+
+
+class InvalidGroupMoveError(Exception):
+    pass
+
+
+def ensure_stage_unlocked(stage):
+    if stage.is_locked:
+        raise StageLockedError(_("This stage's draw is locked. An administrator must unlock it before making changes."))
+
+
+def lock_stage(stage, *, performed_by=None):
+    stage.is_locked = True
+    stage.save(update_fields=["is_locked"])
+    TournamentAuditLog.objects.log(
+        stage.competition.tournament, performed_by, AuditAction.STAGE_LOCKED, _("Locked %(stage)s.") % {"stage": stage.name}
+    )
+    return stage
+
+
+def unlock_stage(stage, *, performed_by=None):
+    stage.is_locked = False
+    stage.save(update_fields=["is_locked"])
+    TournamentAuditLog.objects.log(
+        stage.competition.tournament, performed_by, AuditAction.STAGE_UNLOCKED, _("Unlocked %(stage)s.") % {"stage": stage.name}
+    )
+    return stage
 
 
 def attach_elo_ratings(participants, category):
@@ -103,6 +141,7 @@ def auto_assign_participants_to_groups(stage):
     at least one group first (this only assigns participants to groups
     that already exist, it doesn't create groups).
     """
+    ensure_stage_unlocked(stage)
     if stage.stage_format != StageFormat.ROUND_ROBIN:
         raise NotRoundRobinStageError(_("Only a round-robin stage's groups can be auto-assigned."))
     groups = list(stage.groups.order_by("order"))
@@ -128,3 +167,83 @@ def auto_assign_participants_to_groups(stage):
         counts[target.id] += 1
     GroupParticipant.objects.bulk_create(created)
     return created
+
+
+def suggested_group_count(participant_count, target_group_size=4):
+    """A sizing hint for the "how many groups?" field — not enforced, the
+    administrator still makes the actual call (per the requirement that
+    the admin "determine[s] the number of groups")."""
+    if participant_count < 1:
+        return 1
+    return max(1, math.ceil(participant_count / target_group_size))
+
+
+def _group_name_candidates():
+    for letter in string.ascii_uppercase:
+        yield f"{_('Group')} {letter}"
+    n = len(string.ascii_uppercase) + 1
+    while True:
+        yield f"{_('Group')} {n}"
+        n += 1
+
+
+def create_groups(stage, count, *, performed_by=None):
+    """Create `count` new Group rows for a round-robin stage in one call,
+    named "Group A", "Group B", ... continuing after any groups that
+    already exist (skipping any name already taken). Doesn't assign
+    participants — pair with auto_assign_participants_to_groups for that.
+    """
+    ensure_stage_unlocked(stage)
+    if stage.stage_format != StageFormat.ROUND_ROBIN:
+        raise NotRoundRobinStageError(_("Only a round-robin stage can have groups."))
+    if count < 1:
+        raise ValueError("count must be at least 1")
+
+    existing_names = set(stage.groups.values_list("name", flat=True))
+    next_order = (stage.groups.aggregate(Max("order"))["order__max"] or 0) + 1
+
+    created = []
+    for name in _group_name_candidates():
+        if len(created) >= count:
+            break
+        if name in existing_names:
+            continue
+        created.append(Group(stage=stage, name=name, order=next_order + len(created)))
+    Group.objects.bulk_create(created)
+    TournamentAuditLog.objects.log(
+        stage.competition.tournament,
+        performed_by,
+        AuditAction.GROUPS_CREATED,
+        _("Created %(n)s group(s) for %(stage)s.") % {"n": len(created), "stage": stage.name},
+    )
+    return created
+
+
+def move_participant_to_group(group_participant, target_group, *, performed_by=None):
+    """Move an already-placed participant to a different group within the
+    same stage — the manual fix-up step after an automatic (or another
+    manual) group draw. Unlike remove-then-add, this is a single
+    validated operation so a partial failure can't leave the participant
+    in neither group.
+    """
+    current_group = group_participant.group
+    stage = current_group.stage
+    ensure_stage_unlocked(stage)
+    if target_group.stage_id != stage.id:
+        raise InvalidGroupMoveError(_("The target group must belong to the same stage."))
+    if target_group.id == current_group.id:
+        raise InvalidGroupMoveError(_("The participant is already in that group."))
+    if GroupParticipant.objects.filter(group=target_group, participant_id=group_participant.participant_id).exists():
+        raise DuplicateGroupAssignmentError(_("This participant is already assigned to the target group."))
+
+    participant_name = group_participant.participant.display_name
+    group_participant.group = target_group
+    group_participant.save(update_fields=["group"])
+    TournamentAuditLog.objects.log(
+        stage.competition.tournament,
+        performed_by,
+        AuditAction.PARTICIPANT_MOVED,
+        _("Moved %(participant)s from %(from)s to %(to)s.")
+        % {"participant": participant_name, "from": current_group.name, "to": target_group.name},
+    )
+    return group_participant
