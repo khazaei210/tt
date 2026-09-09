@@ -81,7 +81,30 @@ class Player(models.Model):
 
     def save(self, *args, **kwargs):
         self.mobile_number = normalize_mobile_number(self.mobile_number)
+        is_new = self._state.adding
         super().save(*args, **kwargs)
+        if not is_new:
+            self._sync_participant_display_names()
+
+    def _sync_participant_display_names(self):
+        """Tournament Participant rows cache this player's name in
+        display_name (apps.tournaments.models.Participant.refresh_display_name)
+        for query/ordering performance, rather than joining to Player on
+        every match/standings render — so a rename here has to be pushed
+        out explicitly, both to this player's own Individual participants
+        and to any Doubles pair they're part of (DoublesPair.__str__
+        includes both players' names)."""
+        from apps.tournaments.models import Participant, ParticipantType
+
+        Participant.objects.filter(
+            participant_type=ParticipantType.INDIVIDUAL, individual_player=self, is_bye=False
+        ).update(display_name=self.full_name)
+
+        pairs = DoublesPair.objects.filter(models.Q(player_one=self) | models.Q(player_two=self))
+        for pair in pairs:
+            Participant.objects.filter(participant_type=ParticipantType.DOUBLES, doubles_pair=pair).update(
+                display_name=str(pair)
+            )
 
 
 class DoublesPair(models.Model):
@@ -113,4 +136,11 @@ class DoublesPair(models.Model):
     def save(self, *args, **kwargs):
         if self.player_one_id and self.player_two_id and self.player_one_id > self.player_two_id:
             self.player_one_id, self.player_two_id = self.player_two_id, self.player_one_id
+        is_new = self._state.adding
         super().save(*args, **kwargs)
+        if not is_new:
+            from apps.tournaments.models import Participant, ParticipantType
+
+            Participant.objects.filter(
+                participant_type=ParticipantType.DOUBLES, doubles_pair=self, is_bye=False
+            ).update(display_name=str(self))
