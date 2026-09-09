@@ -24,6 +24,21 @@ class Team(models.Model):
     def get_absolute_url(self):
         return reverse("teams:detail", kwargs={"pk": self.pk})
 
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if not is_new:
+            # Tournament Participant rows cache this team's name in
+            # display_name (apps.tournaments.models.Participant) for
+            # query/ordering performance rather than joining to Team on
+            # every match/standings render, so a rename has to be pushed
+            # out explicitly.
+            from apps.tournaments.models import Participant, ParticipantType
+
+            Participant.objects.filter(participant_type=ParticipantType.TEAM, team=self, is_bye=False).update(
+                display_name=self.name
+            )
+
 
 class TeamMembership(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="memberships")

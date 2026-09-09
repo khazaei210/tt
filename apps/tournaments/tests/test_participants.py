@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.players.models import Player
+from apps.players.models import DoublesPair, Player
+from apps.teams.models import Team
 from apps.tournaments.models import (
     Competition,
     Participant,
@@ -89,3 +90,78 @@ class BulkParticipantAddTests(TestCase):
             reverse("tournaments:participant_bulk_add", kwargs={"competition_pk": self.competition.pk})
         )
         self.assertEqual(response.status_code, 405)
+
+
+class DisplayNameStaysInSyncTests(TestCase):
+    """Participant.display_name is a denormalized cache of the underlying
+    Player/DoublesPair/Team's name (kept for query/ordering performance —
+    see Participant.refresh_display_name) — renaming the source must push
+    the new name out to every Participant row derived from it, not just
+    apply at the moment a Participant is first created."""
+
+    def setUp(self):
+        self.tournament = Tournament.objects.create(name="Open")
+
+    def test_renaming_a_player_updates_their_individual_participant(self):
+        competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
+        )
+        player = Player.objects.create(first_name="Old", last_name="Name", gender="M", mobile_number="09000001111")
+        participant = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=player
+        )
+        self.assertEqual(participant.display_name, "Old Name")
+
+        player.first_name = "New"
+        player.save()
+
+        participant.refresh_from_db()
+        self.assertEqual(participant.display_name, "New Name")
+
+    def test_renaming_a_player_updates_their_doubles_participant(self):
+        competition = Competition.objects.create(
+            tournament=self.tournament, name="Doubles", participant_type=ParticipantType.DOUBLES
+        )
+        player_one = Player.objects.create(first_name="A", last_name="One", gender="M", mobile_number="09000002222")
+        player_two = Player.objects.create(first_name="B", last_name="Two", gender="M", mobile_number="09000003333")
+        pair = DoublesPair.objects.create(player_one=player_one, player_two=player_two)
+        participant = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.DOUBLES, doubles_pair=pair
+        )
+        self.assertEqual(participant.display_name, "A One / B Two")
+
+        player_one.first_name = "Renamed"
+        player_one.save()
+
+        participant.refresh_from_db()
+        self.assertEqual(participant.display_name, "Renamed One / B Two")
+
+    def test_renaming_a_team_updates_their_team_participant(self):
+        competition = Competition.objects.create(
+            tournament=self.tournament, name="Team Event", participant_type=ParticipantType.TEAM
+        )
+        team = Team.objects.create(name="Old Team Name")
+        participant = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.TEAM, team=team
+        )
+        self.assertEqual(participant.display_name, "Old Team Name")
+
+        team.name = "New Team Name"
+        team.save()
+
+        participant.refresh_from_db()
+        self.assertEqual(participant.display_name, "New Team Name")
+
+    def test_bye_participants_are_never_touched_by_a_rename(self):
+        competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles 2", participant_type=ParticipantType.INDIVIDUAL
+        )
+        player = Player.objects.create(first_name="Old", last_name="Name", gender="M", mobile_number="09000004444")
+        bye = Participant.objects.create(
+            competition=competition, participant_type=ParticipantType.INDIVIDUAL, is_bye=True
+        )
+        original_display_name = bye.display_name
+        player.first_name = "New"
+        player.save()
+        bye.refresh_from_db()
+        self.assertEqual(bye.display_name, original_display_name)

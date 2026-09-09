@@ -273,16 +273,24 @@ class Participant(models.Model):
     def __str__(self):
         return self.display_name or str(_("BYE"))
 
-    def save(self, *args, **kwargs):
+    def refresh_display_name(self):
+        """Recompute display_name from this participant's current
+        individual_player/doubles_pair/team — not just once at creation.
+        Kept in sync going forward by Player/DoublesPair/Team.save()
+        (see their _sync_participant_display_names), so a later rename
+        shows up everywhere this participant is displayed (matches,
+        standings, brackets, exports) without a stale cached name."""
         if self.is_bye:
             self.display_name = self.display_name or str(_("BYE"))
-        elif not self.display_name:
-            if self.participant_type == ParticipantType.INDIVIDUAL and self.individual_player_id:
-                self.display_name = self.individual_player.full_name
-            elif self.participant_type == ParticipantType.DOUBLES and self.doubles_pair_id:
-                self.display_name = str(self.doubles_pair)
-            elif self.participant_type == ParticipantType.TEAM and self.team_id:
-                self.display_name = self.team.name
+        elif self.participant_type == ParticipantType.INDIVIDUAL and self.individual_player_id:
+            self.display_name = self.individual_player.full_name
+        elif self.participant_type == ParticipantType.DOUBLES and self.doubles_pair_id:
+            self.display_name = str(self.doubles_pair)
+        elif self.participant_type == ParticipantType.TEAM and self.team_id:
+            self.display_name = self.team.name
+
+    def save(self, *args, **kwargs):
+        self.refresh_display_name()
         super().save(*args, **kwargs)
 
 
