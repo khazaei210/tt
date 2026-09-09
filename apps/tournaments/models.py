@@ -180,11 +180,24 @@ class Group(models.Model):
         return f"{self.name} — {self.stage}"
 
 
+class ParticipantQuerySet(models.QuerySet):
+    def entrants(self):
+        """Real competition entrants only — excludes BYE placeholders and
+        tie-slot participants (Participant.is_tie_slot): on-demand
+        Individual participants standing in for one named player inside a
+        Team competition's tie, never part of that competition's own
+        draw/seeding. A no-op filter beyond the existing is_bye exclusion
+        for every competition that isn't Team-typed."""
+        return self.filter(is_bye=False, is_tie_slot=False)
+
+
 class Participant(models.Model):
     """A generic entrant in a Competition: an individual player, a doubles
     pair, or a team, depending on the competition's participant_type — plus
     a BYE placeholder used by draw generation (added in a later phase).
     """
+
+    objects = ParticipantQuerySet.as_manager()
 
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="participants")
     participant_type = models.CharField(_("Type"), max_length=20, choices=ParticipantType.choices)
@@ -200,6 +213,14 @@ class Participant(models.Model):
     display_name = models.CharField(_("Display name"), max_length=200, blank=True)
     seed = models.PositiveIntegerField(_("Seed"), null=True, blank=True)
     is_bye = models.BooleanField(_("BYE"), default=False)
+    is_tie_slot = models.BooleanField(
+        _("Tie slot"),
+        default=False,
+        help_text=_(
+            "On-demand Individual participant standing in for one named player inside a Team "
+            "competition's tie — not a real draw entrant of this competition."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -241,6 +262,11 @@ class Participant(models.Model):
                 fields=["competition", "seed"],
                 condition=models.Q(seed__isnull=False),
                 name="unique_seed_per_competition",
+            ),
+            models.UniqueConstraint(
+                fields=["competition", "individual_player"],
+                condition=models.Q(is_tie_slot=True),
+                name="unique_tie_slot_participant_per_player",
             ),
         ]
 

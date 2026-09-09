@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n ui_kit %}
+
+{% block title %}{{ team_a.name }} {% translate "vs" %} {{ team_b.name }}{% endblock %}
+{% block page_title %}{% translate "Team tie" %}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <p class="text-base-content/60">
+        <a href="{% url 'tournaments:competition_detail' match.competition.pk %}" class="link">{{ match.competition.name }}</a>
+        {% if match.group %}
+            · <a href="{% url 'tournaments:group_detail' match.group.pk %}" class="link">{{ match.group.name }}</a>
+        {% else %}
+            · <a href="{% url 'tournaments:stage_detail' match.stage.pk %}" class="link">{{ match.stage.name }}</a>
+        {% endif %}
+        · {% blocktranslate with n=match.round_number %}Round {{ n }}{% endblocktranslate %}
+    </p>
+    <div class="flex items-center gap-3 mt-2 flex-wrap">
+        <h1 class="text-2xl font-bold">
+            <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ team_a.name }}</span>
+            {% if tie_summary %}
+            <span class="text-base-content/40 mx-2 font-mono">{{ tie_summary.wins_a }}–{{ tie_summary.wins_b }}</span>
+            {% else %}
+            <span class="text-base-content/40 mx-2">{% translate "vs" %}</span>
+            {% endif %}
+            <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ team_b.name }}</span>
+        </h1>
+        {% status_badge match.get_status_display size="lg" %}
+    </div>
+</div>
+
+{% if sub_matches %}
+    {% translate "Order of play" as order_label %}
+    {% sectionheader title=order_label %}{% endsectionheader %}
+    {% card %}
+        <ul class="divide-y divide-base-200">
+            {% for sub in sub_matches %}
+            <li class="py-2">
+                <a href="{% url 'matches:detail' sub.pk %}" class="flex items-center justify-between gap-2 hover:bg-base-200 -mx-2 px-2 py-1 rounded-btn">
+                    <span class="text-base-content/40 text-xs w-4">{{ sub.tie_order }}</span>
+                    <span class="flex-1 {% if sub.winner_id == sub.participant_a_id %}font-semibold{% endif %}">{{ sub.participant_a.display_name }}</span>
+                    <span class="text-base-content/40 text-xs">{% translate "vs" %}</span>
+                    <span class="flex-1 text-right {% if sub.winner_id == sub.participant_b_id %}font-semibold{% endif %}">{{ sub.participant_b.display_name }}</span>
+                    {% status_badge sub.get_status_display size="sm" %}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% endcard %}
+{% elif can_manage %}
+    {% translate "Set both lineups" as lineup_label %}
+    {% sectionheader title=lineup_label %}{% endsectionheader %}
+    <div class="grid gap-4 sm:grid-cols-2">
+        {% for team, lineup, form, side in tie_sides %}
+        {% card %}
+            <h3 class="font-semibold mb-2">{{ team.name }}</h3>
+            {% if lineup %}
+                <ul class="text-sm space-y-1">
+                    <li>{% translate "A" %} — {{ lineup.player_a.full_name }}</li>
+                    <li>{% translate "B" %} — {{ lineup.player_b.full_name }}</li>
+                    <li>{% translate "C" %} — {{ lineup.player_c.full_name }}</li>
+                </ul>
+            {% elif form %}
+                <form method="post" action="{% url 'matches:tie_lineup_save' match.pk side %}" class="space-y-2">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div>
+                        <label class="label"><span class="label-text">{{ field.label }}</span></label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-error text-xs mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-sm btn-primary w-full">{% translate "Save lineup" %}</button>
+                </form>
+            {% endif %}
+        {% endcard %}
+        {% endfor %}
+    </div>
+    {% if lineup_a and lineup_b %}
+    <form method="post" action="{% url 'matches:tie_matches_generate' match.pk %}" class="mt-4">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">{% translate "Generate matches" %}</button>
+    </form>
+    {% endif %}
+{% else %}
+    {% translate "Lineups have not been set for this tie yet." as no_lineup_msg %}
+    {% empty_panel message=no_lineup_msg %}
+{% endif %}
+{% endblock %}

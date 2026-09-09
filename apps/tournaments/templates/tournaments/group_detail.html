@@ -36,6 +36,9 @@
             <th class="text-center">{% translate "Won" %}</th>
             <th class="text-center">{% translate "Lost" %}</th>
             <th class="text-center">{% translate "Pts" %}</th>
+            {% if is_team_competition %}
+            <th class="text-center hidden md:table-cell">{% translate "Matches" %}</th>
+            {% endif %}
             <th class="text-center hidden md:table-cell">{% translate "Sets" %}</th>
             <th class="text-center hidden md:table-cell">{% translate "Set diff" %}</th>
             <th class="text-center hidden md:table-cell">{% translate "Points" %}</th>
@@ -51,6 +54,9 @@
             <td class="text-center">{{ row.wins }}</td>
             <td class="text-center">{{ row.losses }}</td>
             <td class="text-center font-semibold">{{ row.match_points }}</td>
+            {% if is_team_competition %}
+            <td class="text-center hidden md:table-cell">{{ row.individual_matches_won }}-{{ row.individual_matches_lost }}</td>
+            {% endif %}
             <td class="text-center hidden md:table-cell">{{ row.sets_won }}-{{ row.sets_lost }}</td>
             <td class="text-center hidden md:table-cell">{{ row.set_difference }}</td>
             <td class="text-center hidden md:table-cell">{{ row.points_scored }}-{{ row.points_conceded }}</td>
@@ -84,7 +90,11 @@
                 <li class="flex items-center justify-between border-b border-base-200 py-1 last:border-0">
                     <a href="{% url 'matches:detail' match.pk %}" class="link link-hover">
                         <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ match.participant_a.display_name }}</span>
+                        {% if is_team_competition and match.tie_summary %}
+                        <span class="text-base-content/40 font-mono">{{ match.tie_summary.wins_a }}–{{ match.tie_summary.wins_b }}</span>
+                        {% else %}
                         <span class="text-base-content/40">{% translate "vs" %}</span>
+                        {% endif %}
                         <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name }}</span>
                     </a>
                     {% status_badge match.get_status_display size="sm" %}

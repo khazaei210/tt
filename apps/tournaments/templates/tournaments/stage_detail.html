@@ -102,7 +102,9 @@
                                 <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ match.participant_a.display_name|default:"—" }}</span>
                                 {% if match.participant_a.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}
                             </div>
-                            <div class="text-center text-base-content/40 text-xs">{% translate "vs" %}</div>
+                            <div class="text-center text-base-content/40 text-xs">
+                                {% if is_team_competition and match.tie_summary %}{{ match.tie_summary.wins_a }}–{{ match.tie_summary.wins_b }}{% else %}{% translate "vs" %}{% endif %}
+                            </div>
                             <div class="flex items-center justify-between">
                                 <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name|default:"—" }}</span>
                                 {% if match.participant_b.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}

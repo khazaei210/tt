@@ -5,10 +5,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView
 
+from apps.tournaments.models import ParticipantType
 from apps.tournaments.permissions import can_score_matches, match_scorer_required
 
 from .dashboard import build_scorer_dashboard
-from .forms import SetScoreForm
+from .forms import SetScoreForm, TieLineupForm
 from .models import TERMINAL_MATCH_STATUSES, Match
 from .scoring import ScoreValidationError
 from .services import (
@@ -25,10 +26,26 @@ from .services import (
     record_walkover,
     start_match,
 )
+from .team_tie import (
+    InvalidLineupError,
+    LineupMissingError,
+    NotATieError,
+    TieAlreadyGeneratedError,
+    generate_tie_matches,
+    set_lineup,
+    summarize_tie,
+)
 
 
 def _tournament_from_match_pk(request, pk, **kwargs):
     return get_object_or_404(Match, pk=pk).competition.tournament
+
+
+def _is_tie(match):
+    """A Team competition's own Match — not one of its individual-player
+    sub-matches (see Match.parent_tie) — is a "tie" in ITTF terms and
+    gets the tie-overview page instead of the normal scoreboard."""
+    return match.parent_tie_id is None and match.competition.participant_type == ParticipantType.TEAM
 
 
 SPECIAL_RESULTS = [
@@ -54,13 +71,49 @@ def _scoreboard_context(request, match):
     }
 
 
+def _tie_context(request, tie):
+    team_a = tie.participant_a.team
+    team_b = tie.participant_b.team
+    lineups = {lineup.team_id: lineup for lineup in tie.lineups.select_related("player_a", "player_b", "player_c")}
+    sub_matches = list(
+        tie.tie_sub_matches.select_related(
+            "participant_a__individual_player", "participant_b__individual_player", "winner"
+        ).order_by("tie_order")
+    )
+    can_manage = can_score_matches(request.user, tie.competition.tournament)
+    context = {
+        "match": tie,
+        "team_a": team_a,
+        "team_b": team_b,
+        "lineup_a": lineups.get(team_a.id),
+        "lineup_b": lineups.get(team_b.id),
+        "sub_matches": sub_matches,
+        "tie_summary": summarize_tie(tie) if sub_matches else None,
+        "can_manage": can_manage,
+        "is_decided": tie.status in TERMINAL_MATCH_STATUSES,
+    }
+    if can_manage and not sub_matches:
+        context["lineup_form_a"] = TieLineupForm(team=team_a, prefix="a") if context["lineup_a"] is None else None
+        context["lineup_form_b"] = TieLineupForm(team=team_b, prefix="b") if context["lineup_b"] is None else None
+        context["tie_sides"] = [
+            (team_a, context["lineup_a"], context["lineup_form_a"], "a"),
+            (team_b, context["lineup_b"], context["lineup_form_b"], "b"),
+        ]
+    return context
+
+
 class MatchDetailView(DetailView):
     model = Match
-    template_name = "matches/match_detail.html"
+
+    def get_template_names(self):
+        return ["matches/tie_detail.html"] if _is_tie(self.object) else ["matches/match_detail.html"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_scoreboard_context(self.request, self.object))
+        if _is_tie(self.object):
+            context.update(_tie_context(self.request, self.object))
+        else:
+            context.update(_scoreboard_context(self.request, self.object))
         return context
 
 
@@ -196,6 +249,49 @@ def match_claim(request, pk):
     if request.htmx:
         return render(request, "matches/_scoreboard.html", _scoreboard_context(request, match))
     return redirect("matches:detail", pk=match.pk)
+
+
+@match_scorer_required(_tournament_from_match_pk)
+def tie_lineup_save(request, pk, side):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    tie = get_object_or_404(Match, pk=pk)
+    if not _is_tie(tie):
+        messages.error(request, _("This match isn't a team tie."))
+        return redirect("matches:detail", pk=tie.pk)
+    if tie.participant_a_id is None or tie.participant_b_id is None:
+        messages.error(request, _("Both sides of this tie must be determined before setting a lineup."))
+        return redirect("matches:detail", pk=tie.pk)
+
+    team = tie.participant_a.team if side == "a" else tie.participant_b.team
+    form = TieLineupForm(request.POST, team=team, prefix=side)
+    if form.is_valid():
+        try:
+            set_lineup(tie, team, form.players())
+        except InvalidLineupError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, _("Lineup saved."))
+    else:
+        messages.error(request, _("Please choose 3 different players from the team's roster."))
+    return redirect("matches:detail", pk=tie.pk)
+
+
+@match_scorer_required(_tournament_from_match_pk)
+def tie_matches_generate(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    tie = get_object_or_404(Match, pk=pk)
+    if not _is_tie(tie):
+        messages.error(request, _("This match isn't a team tie."))
+    else:
+        try:
+            generate_tie_matches(tie)
+        except (LineupMissingError, TieAlreadyGeneratedError, NotATieError) as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, _("Generated this tie's individual matches."))
+    return redirect("matches:detail", pk=tie.pk)
 
 
 @login_required

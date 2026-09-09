@@ -14,4 +14,6 @@ urlpatterns = [
     path("<int:pk>/retire/", views.match_retire, name="retire"),
     path("<int:pk>/default/", views.match_default, name="default"),
     path("<int:pk>/claim/", views.match_claim, name="claim"),
+    path("<int:pk>/tie/lineup/<str:side>/", views.tie_lineup_save, name="tie_lineup_save"),
+    path("<int:pk>/tie/generate/", views.tie_matches_generate, name="tie_matches_generate"),
 ]
