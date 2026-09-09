@@ -23,6 +23,16 @@ class MatchStatus(models.TextChoices):
 TERMINAL_MATCH_STATUSES = (MatchStatus.COMPLETED, MatchStatus.WALKOVER, MatchStatus.RETIRED, MatchStatus.DEFAULT)
 
 
+class MatchQuerySet(models.QuerySet):
+    def ties(self):
+        """Real fixtures only — excludes a team tie's individual sub-matches
+        (see Match.parent_tie), which must never be counted as their own
+        entry in a stage/group's schedule, standings, or bracket rendering.
+        A no-op filter for every non-team competition, since parent_tie is
+        never set there."""
+        return self.filter(parent_tie__isnull=True)
+
+
 class Match(models.Model):
     """A single match between two Participants.
 
@@ -32,7 +42,15 @@ class Match(models.Model):
     Participant row (Participant.is_bye=True) substituted at bracket
     generation time, keeping "this match's two participants" a uniform
     concept everywhere except truly-not-yet-known future rounds.
+
+    For a Team competition, a Match between two Team participants is a
+    "tie" in ITTF terms: its own status/winner reflect the tie as a whole,
+    decided not by its own MatchSets (it has none) but by majority result
+    across its individual-player sub-matches — ordinary Match rows that
+    point back via parent_tie (see apps.matches.services.team_tie).
     """
+
+    objects = MatchQuerySet.as_manager()
 
     competition = models.ForeignKey("tournaments.Competition", on_delete=models.CASCADE, related_name="matches")
     stage = models.ForeignKey("tournaments.Stage", on_delete=models.CASCADE, related_name="matches")
@@ -69,6 +87,21 @@ class Match(models.Model):
     )
     is_bye = models.BooleanField(_("BYE"), default=False)
     is_third_place = models.BooleanField(_("Third place match"), default=False)
+    parent_tie = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="tie_sub_matches",
+        verbose_name=_("Tie"),
+        help_text=_("Set only on one of a team tie's individual-player sub-matches."),
+    )
+    tie_order = models.PositiveSmallIntegerField(
+        _("Order within tie"),
+        null=True,
+        blank=True,
+        help_text=_("Position in the tie's order of play (e.g. 1st of A vs X, B vs Y, C vs Z, A vs Y, B vs X)."),
+    )
     status = models.CharField(_("Status"), max_length=20, choices=MatchStatus.choices, default=MatchStatus.SCHEDULED)
     winner = models.ForeignKey(
         "tournaments.Participant",
@@ -180,3 +213,36 @@ class MatchCorrection(models.Model):
 
     def __str__(self):
         return f"{self.match} — {self.get_action_display()}: {self.previous_value} → {self.new_value}"
+
+
+class TieLineup(models.Model):
+    """One side's nominated order of play (ITTF "A, B, C") for one team
+    tie — a Match between two Team participants. Generating the tie's
+    sub-matches (apps.matches.services.team_tie.generate_tie_matches)
+    requires both sides' lineup to exist first.
+    """
+
+    tie = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="lineups")
+    team = models.ForeignKey("teams.Team", on_delete=models.CASCADE, related_name="tie_lineups")
+    player_a = models.ForeignKey(
+        "players.Player", on_delete=models.PROTECT, related_name="+", verbose_name=_("Player A")
+    )
+    player_b = models.ForeignKey(
+        "players.Player", on_delete=models.PROTECT, related_name="+", verbose_name=_("Player B")
+    )
+    player_c = models.ForeignKey(
+        "players.Player", on_delete=models.PROTECT, related_name="+", verbose_name=_("Player C")
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Tie lineup")
+        constraints = [
+            models.UniqueConstraint(fields=["tie", "team"], name="unique_lineup_per_team_per_tie"),
+        ]
+
+    def __str__(self):
+        return f"{self.team} lineup for {self.tie}"
+
+    def players(self):
+        return [self.player_a, self.player_b, self.player_c]

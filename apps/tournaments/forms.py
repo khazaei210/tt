@@ -139,9 +139,12 @@ class GroupParticipantForm(forms.ModelForm):
         already_grouped_ids = GroupParticipant.objects.filter(group__stage=group.stage).values_list(
             "participant_id", flat=True
         )
-        self.fields["participant"].queryset = group.stage.competition.participants.exclude(
-            pk__in=already_grouped_ids
-        )
+        # is_tie_slot=False, not .entrants(): this form already didn't
+        # filter out BYE participants (existing behavior, unrelated to
+        # the tie-slot leak this closes), so only exclude tie-slot ones.
+        self.fields["participant"].queryset = group.stage.competition.participants.filter(
+            is_tie_slot=False
+        ).exclude(pk__in=already_grouped_ids)
 
     def save(self, commit=True):
         instance = super().save(commit=False)

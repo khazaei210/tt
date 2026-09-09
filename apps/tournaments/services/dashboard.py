@@ -91,13 +91,25 @@ def build_manager_dashboard(user) -> ManagerDashboard:
         competition_count=Count("competitions", distinct=True),
         participant_count=Count(
             "competitions__participants",
-            filter=Q(competitions__participants__is_bye=False),
+            filter=Q(competitions__participants__is_bye=False, competitions__participants__is_tie_slot=False),
             distinct=True,
         ),
-        total_match_count=Count("competitions__matches", distinct=True),
+        # parent_tie__isnull=True: a team tie's individual-player
+        # sub-matches aren't their own fixture (see Match.parent_tie) —
+        # counting them here would inflate a team competition's progress
+        # bar by 6x (5 sub-matches + the tie itself) for what is really
+        # one fixture.
+        total_match_count=Count(
+            "competitions__matches",
+            filter=Q(competitions__matches__parent_tie__isnull=True),
+            distinct=True,
+        ),
         completed_match_count=Count(
             "competitions__matches",
-            filter=Q(competitions__matches__status=MatchStatus.COMPLETED),
+            filter=Q(
+                competitions__matches__status=MatchStatus.COMPLETED,
+                competitions__matches__parent_tie__isnull=True,
+            ),
             distinct=True,
         ),
     ).order_by(

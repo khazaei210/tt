@@ -113,7 +113,7 @@ def generate_stage_bracket(stage, *, seeded=True, third_place=False, random_seed
         raise ScheduleAlreadyGeneratedError(_("This stage already has a generated bracket."))
 
     if participant_ids is None:
-        participants_qs = stage.competition.participants.filter(is_bye=False).order_by(
+        participants_qs = stage.competition.participants.entrants().order_by(
             F("seed").asc(nulls_last=True), "pk"
         )
         participant_ids = list(participants_qs.values_list("id", flat=True))
@@ -185,7 +185,10 @@ def advance_to_next_stage(source_stage):
     groups = list(source_stage.groups.order_by("order"))
     if not groups:
         raise NotEnoughParticipantsError(_("This stage has no groups to qualify participants from."))
-    if source_stage.matches.exclude(status=MatchStatus.COMPLETED).exists():
+    # .ties(): a team tie can be decided (and thus advanceable) while a
+    # dead-rubber sub-match is still unplayed — only the tie itself, not
+    # its individual-player sub-matches, has to be COMPLETED here.
+    if source_stage.matches.ties().exclude(status=MatchStatus.COMPLETED).exists():
         raise StageNotCompleteError(_("Every match in this stage must be completed before advancing qualifiers."))
 
     next_stage = source_stage.competition.stages.filter(
@@ -364,6 +367,11 @@ def _refresh_match_result(match, rule):
 
     sync_elo_ratings(match)
 
+    if match.parent_tie_id:
+        from .team_tie import refresh_tie_result
+
+        refresh_tie_result(match.parent_tie)
+
 
 def _next_bracket_match(match):
     if match.group_id is not None or match.bracket_slot is None:
@@ -455,6 +463,11 @@ def _finalize_match(match, *, winner_id, status, allow_correction=False, perform
 
     sync_elo_ratings(match)
 
+    if match.parent_tie_id:
+        from .team_tie import refresh_tie_result
+
+        refresh_tie_result(match.parent_tie)
+
     if was_terminal:
         MatchCorrection.objects.create(
             match=match,
@@ -540,26 +553,41 @@ def summarize_live_score(match):
     )
 
 
-def compute_group_standings(group):
-    """Standings for a round-robin Group, computed from its completed
-    matches only (in-progress or unplayed matches don't count yet).
+def _team_match_records(group):
+    """One MatchRecord per completed tie in a Team competition's group,
+    built from each tie's individual sub-matches rather than the tie's
+    own (nonexistent) MatchSet rows — ITTF §3.7.5.2's individual-match/
+    games/points tie-break levels, via summarize_tie's fixed
+    participant_a/b orientation."""
+    from .team_tie import summarize_tie
 
-    Returns a list of dicts (rank, participant, played, wins, losses,
-    match_points, sets_won, sets_lost, set_difference, points_scored,
-    points_conceded, point_difference) ordered best-first, using the
-    default tie-break sequence (head-to-head, set difference, point
-    difference, points scored) — see
-    apps.tournaments.services.standings for the tie-break logic itself.
-    """
-    from apps.tournaments.models import Participant
+    ties = Match.objects.ties().filter(group=group, status=MatchStatus.COMPLETED)
+    records = []
+    for tie in ties:
+        summary = summarize_tie(tie)
+        records.append(
+            MatchRecord(
+                participant_a=tie.participant_a_id,
+                participant_b=tie.participant_b_id,
+                individual_matches_won_a=summary.wins_a,
+                individual_matches_won_b=summary.wins_b,
+                sets_won_a=summary.games_won_a,
+                sets_won_b=summary.games_won_b,
+                points_scored_a=summary.points_scored_a,
+                points_scored_b=summary.points_scored_b,
+            )
+        )
+    return records
 
-    participant_ids = list(group.group_participants.values_list("participant_id", flat=True))
-    completed_matches = Match.objects.filter(group=group, status=MatchStatus.COMPLETED).prefetch_related("sets")
 
-    match_records = []
+def _individual_match_records(group):
+    completed_matches = Match.objects.ties().filter(group=group, status=MatchStatus.COMPLETED).prefetch_related(
+        "sets"
+    )
+    records = []
     for m in completed_matches:
         sets = list(m.sets.all())
-        match_records.append(
+        records.append(
             MatchRecord(
                 participant_a=m.participant_a_id,
                 participant_b=m.participant_b_id,
@@ -569,8 +597,38 @@ def compute_group_standings(group):
                 points_scored_b=sum(s.participant_b_score for s in sets),
             )
         )
+    return records
 
-    rows = compute_standings(participant_ids, match_records)
+
+def compute_group_standings(group):
+    """Standings for a round-robin Group, computed from its completed
+    matches only (in-progress or unplayed matches don't count yet).
+
+    Returns a list of dicts (rank, participant, played, wins, losses,
+    match_points, individual_matches_won, individual_matches_lost,
+    sets_won, sets_lost, set_difference, points_scored, points_conceded,
+    point_difference) ordered best-first.
+
+    For a Team competition's group, "matches" above means completed ties
+    (see Match.parent_tie), and the tie-break sequence goes one level
+    deeper — match points, head-to-head, individual-match win ratio, then
+    games/points (standings.TEAM_TIE_BREAK_RULES) — per ITTF §3.7.5.2.
+    Every other competition keeps today's sequence (standings.
+    DEFAULT_TIE_BREAK_RULES: head-to-head, set difference, point
+    difference, points scored) unchanged — see
+    apps.tournaments.services.standings for the tie-break logic itself.
+    """
+    from apps.tournaments.models import Participant, ParticipantType
+    from apps.tournaments.services.standings import TEAM_TIE_BREAK_RULES
+
+    is_team = group.stage.competition.participant_type == ParticipantType.TEAM
+
+    participant_ids = list(group.group_participants.values_list("participant_id", flat=True))
+    match_records = _team_match_records(group) if is_team else _individual_match_records(group)
+
+    rows = compute_standings(
+        participant_ids, match_records, tie_break_rules=TEAM_TIE_BREAK_RULES if is_team else None
+    )
     participants_by_id = {p.id: p for p in Participant.objects.filter(id__in=participant_ids)}
 
     return [
@@ -581,6 +639,8 @@ def compute_group_standings(group):
             "wins": row.wins,
             "losses": row.losses,
             "match_points": row.match_points,
+            "individual_matches_won": row.individual_matches_won,
+            "individual_matches_lost": row.individual_matches_lost,
             "sets_won": row.sets_won,
             "sets_lost": row.sets_lost,
             "set_difference": row.set_difference,

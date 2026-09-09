@@ -25,6 +25,7 @@ from apps.matches.services import (
     generate_group_schedule,
     generate_stage_bracket,
 )
+from apps.matches.team_tie import summarize_tie
 
 from .forms import (
     BulkParticipantForm,
@@ -42,6 +43,7 @@ from .models import (
     Group,
     GroupParticipant,
     Participant,
+    ParticipantType,
     Stage,
     StageFormat,
     StaffRole,
@@ -379,7 +381,7 @@ def stage_bracket_generate(request, pk):
     except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
         messages.error(request, str(exc))
     else:
-        _report_bale_notifications(request, stage.matches.all())
+        _report_bale_notifications(request, stage.matches.ties())
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
@@ -402,7 +404,7 @@ def stage_advance(request, pk):
         messages.success(request, _("Qualifiers advanced to the next stage."))
         next_stage = stage.competition.stages.filter(order=stage.order + 1, stage_format=StageFormat.KNOCKOUT).first()
         if next_stage is not None:
-            _report_bale_notifications(request, next_stage.matches.all())
+            _report_bale_notifications(request, next_stage.matches.ties())
     return redirect("tournaments:stage_detail", pk=stage.pk)
 
 
@@ -437,7 +439,7 @@ def stage_generate_all_schedules(request, pk):
             continue
         generated.append(group)
     if generated:
-        _report_bale_notifications(request, stage.matches.filter(group__in=generated))
+        _report_bale_notifications(request, stage.matches.ties().filter(group__in=generated))
         messages.success(request, _("Generated schedules for %(n)s group(s).") % {"n": len(generated)})
     else:
         messages.info(request, _("No groups were eligible for schedule generation (already scheduled, or not enough participants)."))
@@ -479,14 +481,19 @@ class StageDetailView(DetailView):
             context["can_advance_qualifiers"] = (
                 bool(self.object.qualifiers_per_group)
                 and next_stage is not None
-                and not next_stage.matches.exists()
+                and not next_stage.matches.ties().exists()
             )
+        is_team = self.object.competition.participant_type == ParticipantType.TEAM
+        context["is_team_competition"] = is_team
         if self.object.stage_format == StageFormat.KNOCKOUT:
             bracket_matches = list(
-                self.object.matches.filter(group__isnull=True)
+                self.object.matches.ties().filter(group__isnull=True)
                 .select_related("participant_a", "participant_b")
                 .order_by("round_number", "bracket_slot")
             )
+            if is_team:
+                for match in bracket_matches:
+                    match.tie_summary = summarize_tie(match)
             non_third_place_rounds = [m.round_number for m in bracket_matches if not m.is_third_place]
             total_rounds = max(non_third_place_rounds, default=0)
 
@@ -573,9 +580,14 @@ class GroupDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(_group_participant_panel_context(self.object))
-        context["schedule_matches"] = self.object.matches.select_related(
+        is_team = self.object.stage.competition.participant_type == ParticipantType.TEAM
+        context["schedule_matches"] = self.object.matches.ties().select_related(
             "participant_a", "participant_b"
         ).order_by("round_number", "pk")
+        if is_team:
+            for match in context["schedule_matches"]:
+                match.tie_summary = summarize_tie(match)
+        context["is_team_competition"] = is_team
         context["standings"] = compute_group_standings(self.object)
         context["can_manage"] = can_manage_tournament(self.request.user, self.object.stage.competition.tournament)
         return context
@@ -583,18 +595,22 @@ class GroupDetailView(DetailView):
 
 def group_standings_csv(request, pk):
     group = get_object_or_404(Group, pk=pk)
-    header = [
-        _("Rank"), _("Participant"), _("Played"), _("Won"), _("Lost"), _("Match points"),
-        _("Sets won"), _("Sets lost"), _("Set difference"), _("Points scored"), _("Points conceded"), _("Point difference"),
-    ]
-    rows = [
-        [
-            row["rank"], row["participant"].display_name, row["played"], row["wins"], row["losses"], row["match_points"],
+    is_team = group.stage.competition.participant_type == ParticipantType.TEAM
+    header = [_("Rank"), _("Participant"), _("Played"), _("Won"), _("Lost"), _("Match points")]
+    if is_team:
+        header += [_("Individual matches won"), _("Individual matches lost")]
+    header += [_("Sets won"), _("Sets lost"), _("Set difference"), _("Points scored"), _("Points conceded"), _("Point difference")]
+
+    rows = []
+    for row in compute_group_standings(group):
+        values = [row["rank"], row["participant"].display_name, row["played"], row["wins"], row["losses"], row["match_points"]]
+        if is_team:
+            values += [row["individual_matches_won"], row["individual_matches_lost"]]
+        values += [
             row["sets_won"], row["sets_lost"], row["set_difference"], row["points_scored"], row["points_conceded"],
             row["point_difference"],
         ]
-        for row in compute_group_standings(group)
-    ]
+        rows.append(values)
     return csv_response(f"standings-{group.pk}.csv", header, rows)
 
 
@@ -633,7 +649,7 @@ def group_schedule_generate(request, pk):
     except (ScheduleAlreadyGeneratedError, NotEnoughParticipantsError) as exc:
         messages.error(request, str(exc))
     else:
-        _report_bale_notifications(request, group.matches.all())
+        _report_bale_notifications(request, group.matches.ties())
     return redirect("tournaments:group_detail", pk=group.pk)
 
 
@@ -647,8 +663,12 @@ def group_schedule_clear(request, pk):
 
 
 def _participant_panel_context(competition):
+    # is_tie_slot=False: this panel manages the competition's own draw
+    # entrants; a Team competition's on-demand tie-slot participants
+    # (one per nominated player, see Participant.is_tie_slot) aren't
+    # entrants of this competition and would otherwise clutter this list.
     participants = list(
-        competition.participants.select_related(
+        competition.participants.filter(is_tie_slot=False).select_related(
             "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
         )
     )

@@ -85,7 +85,7 @@
     {% if has_bracket %}
         {% if bracket_rounds|length > 1 %}
         <div class="flex items-center gap-1 text-xs text-base-content/50 mb-1 sm:hidden">
-            {% icon "swipe" extra_class="h-3.5 w-3.5" %}
+            {% icon "swipe" extra_class="h-3.5 w-3.5 rtl:-scale-x-100" %}
             {% translate "Swipe to see all rounds" %}
         </div>
         {% endif %}
@@ -102,7 +102,9 @@
                                 <span class="{% if match.winner_id == match.participant_a_id %}font-semibold{% endif %}">{{ match.participant_a.display_name|default:"—" }}</span>
                                 {% if match.participant_a.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}
                             </div>
-                            <div class="text-center text-base-content/40 text-xs">{% translate "vs" %}</div>
+                            <div class="text-center text-base-content/40 text-xs">
+                                {% if is_team_competition and match.tie_summary %}{{ match.tie_summary.wins_a }}–{{ match.tie_summary.wins_b }}{% else %}{% translate "vs" %}{% endif %}
+                            </div>
                             <div class="flex items-center justify-between">
                                 <span class="{% if match.winner_id == match.participant_b_id %}font-semibold{% endif %}">{{ match.participant_b.display_name|default:"—" }}</span>
                                 {% if match.participant_b.is_bye %}{% translate "BYE" as bye_label %}{% status_badge bye_label variant="ghost" size="xs" %}{% endif %}

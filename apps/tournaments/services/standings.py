@@ -30,11 +30,20 @@ POINTS_PER_WIN = 2
 POINTS_PER_LOSS = 0
 
 HEAD_TO_HEAD = "head_to_head"
+INDIVIDUAL_MATCH_DIFFERENCE = "individual_match_difference"
 SET_DIFFERENCE = "set_difference"
 POINT_DIFFERENCE = "point_difference"
 POINTS_SCORED = "points_scored"
 
 DEFAULT_TIE_BREAK_RULES = (HEAD_TO_HEAD, SET_DIFFERENCE, POINT_DIFFERENCE, POINTS_SCORED)
+
+# ITTF §3.7.5.2: for a team event, tied teams are ranked by match points,
+# then head-to-head, then individual-match win ratio, THEN games (sets)
+# and points — one level deeper than an individual/doubles competition's
+# DEFAULT_TIE_BREAK_RULES. individual_matches_won/lost on MatchRecord are
+# always 0 for a non-team MatchRecord, so this rule is a no-op there;
+# only a team competition's compute_group_standings call passes this.
+TEAM_TIE_BREAK_RULES = (HEAD_TO_HEAD, INDIVIDUAL_MATCH_DIFFERENCE, SET_DIFFERENCE, POINT_DIFFERENCE, POINTS_SCORED)
 
 
 @dataclass(frozen=True)
@@ -45,6 +54,12 @@ class MatchRecord:
     sets_won_b: int
     points_scored_a: int
     points_scored_b: int
+    # Team events only (ITTF §3.7.5.2's "individual matches" tie-break
+    # level) — the count of a team tie's 5 individual sub-matches each
+    # side won. 0 for every individual/doubles MatchRecord, which makes
+    # INDIVIDUAL_MATCH_DIFFERENCE a complete no-op there.
+    individual_matches_won_a: int = 0
+    individual_matches_won_b: int = 0
 
 
 @dataclass
@@ -53,10 +68,16 @@ class _Stats:
     wins: int = 0
     losses: int = 0
     match_points: int = 0
+    individual_matches_won: int = 0
+    individual_matches_lost: int = 0
     sets_won: int = 0
     sets_lost: int = 0
     points_scored: int = 0
     points_conceded: int = 0
+
+    @property
+    def individual_match_difference(self) -> int:
+        return self.individual_matches_won - self.individual_matches_lost
 
     @property
     def set_difference(self) -> int:
@@ -75,6 +96,9 @@ class StandingsRow:
     wins: int
     losses: int
     match_points: int
+    individual_matches_won: int
+    individual_matches_lost: int
+    individual_match_difference: int
     sets_won: int
     sets_lost: int
     set_difference: int
@@ -85,6 +109,7 @@ class StandingsRow:
 
 _METRIC_EXTRACTORS = {
     HEAD_TO_HEAD: lambda s: s.match_points,
+    INDIVIDUAL_MATCH_DIFFERENCE: lambda s: s.individual_match_difference,
     SET_DIFFERENCE: lambda s: s.set_difference,
     POINT_DIFFERENCE: lambda s: s.point_difference,
     POINTS_SCORED: lambda s: s.points_scored,
@@ -97,6 +122,10 @@ def _apply_match(stats: dict, m: MatchRecord) -> None:
 
     sa.played += 1
     sb.played += 1
+    sa.individual_matches_won += m.individual_matches_won_a
+    sa.individual_matches_lost += m.individual_matches_won_b
+    sb.individual_matches_won += m.individual_matches_won_b
+    sb.individual_matches_lost += m.individual_matches_won_a
     sa.sets_won += m.sets_won_a
     sa.sets_lost += m.sets_won_b
     sb.sets_won += m.sets_won_b
@@ -106,7 +135,17 @@ def _apply_match(stats: dict, m: MatchRecord) -> None:
     sb.points_scored += m.points_scored_b
     sb.points_conceded += m.points_scored_a
 
-    if m.sets_won_a > m.sets_won_b:
+    # Who won this MatchRecord: individual-match wins decide it for a team
+    # tie (individual_matches_won_a/b differ whenever the record came from
+    # a decided tie — see _team_match_records), falling back to sets_won
+    # exactly as before for every non-team MatchRecord, where
+    # individual_matches_won_a/b are always 0 == 0.
+    if m.individual_matches_won_a != m.individual_matches_won_b:
+        a_won = m.individual_matches_won_a > m.individual_matches_won_b
+    else:
+        a_won = m.sets_won_a > m.sets_won_b
+
+    if a_won:
         sa.wins += 1
         sa.match_points += POINTS_PER_WIN
         sb.losses += 1
@@ -199,6 +238,9 @@ def compute_standings(
                 wins=s.wins,
                 losses=s.losses,
                 match_points=s.match_points,
+                individual_matches_won=s.individual_matches_won,
+                individual_matches_lost=s.individual_matches_lost,
+                individual_match_difference=s.individual_match_difference,
                 sets_won=s.sets_won,
                 sets_lost=s.sets_lost,
                 set_difference=s.set_difference,

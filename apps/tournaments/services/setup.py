@@ -73,7 +73,7 @@ def seed_participants_by_rating(competition):
     full reseed, not a fill-in-the-gaps operation.
     """
     participants = list(
-        competition.participants.filter(is_bye=False).select_related(
+        competition.participants.entrants().select_related(
             "individual_player", "doubles_pair__player_one", "doubles_pair__player_two", "team"
         )
     )
@@ -113,7 +113,7 @@ def auto_assign_participants_to_groups(stage):
         GroupParticipant.objects.filter(group__stage=stage).values_list("participant_id", flat=True)
     )
     unassigned = list(
-        stage.competition.participants.filter(is_bye=False)
+        stage.competition.participants.entrants()
         .exclude(pk__in=already_grouped_ids)
         .order_by(F("seed").asc(nulls_last=True), "id")
     )

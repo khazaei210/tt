@@ -60,7 +60,7 @@ def _placements_from_knockout(stage):
     """
     from apps.matches.models import MatchStatus
 
-    matches = list(stage.matches.filter(group__isnull=True).select_related("participant_a", "participant_b"))
+    matches = list(stage.matches.ties().filter(group__isnull=True).select_related("participant_a", "participant_b"))
     if not matches:
         raise PlacementsNotAvailableError(_("This stage has no generated bracket yet."))
 

@@ -41,8 +41,8 @@ class TournamentReport:
 def build_tournament_report(tournament) -> TournamentReport:
     rows = []
     for competition in tournament.competitions.all().order_by("name"):
-        participant_count = competition.participants.filter(is_bye=False).count()
-        matches_qs = competition.matches.all()
+        participant_count = competition.participants.entrants().count()
+        matches_qs = competition.matches.ties()
         matches_total = matches_qs.count()
         matches_decided = matches_qs.filter(status__in=TERMINAL_MATCH_STATUSES).count()
 
@@ -114,12 +114,19 @@ RECENT_MATCH_LIMIT = 10
 def build_player_statistics(player) -> PlayerStatistics:
     """A player's career record across every individual/doubles match they
     have played, decided matches only (in-progress matches don't count
-    yet — same convention as tournament standings).
+    yet — same convention as tournament standings). This naturally
+    includes a player's individual sub-matches from any team tie they
+    played in (see Match.parent_tie) — those are genuine 1v1 games
+    between two named players, tracked as ordinary Individual-type
+    Participants (Participant.is_tie_slot).
 
-    Team matches are deliberately excluded: attributing a team result to
-    one individual player's personal record isn't a rule CLAUDE.md
-    specifies (same reasoning as apps.rankings.services skipping team
-    ranking points).
+    A team tie's own aggregate result (e.g. "Team Alpha won 3-1") is
+    deliberately excluded from any one player's personal record:
+    attributing a team-level result to one individual isn't a rule
+    CLAUDE.md specifies (same reasoning as apps.rankings.services skipping
+    team ranking points) — and it's excluded for free here, since a tie's
+    own participant_a/b are Team-type Participants, never one of this
+    player's own Individual/Doubles participant_ids below.
     """
     participant_ids = list(
         Participant.objects.filter(
