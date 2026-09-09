@@ -88,6 +88,20 @@ class Competition(models.Model):
             "specific competition (e.g. a casual friendly) out of the global ranking."
         ),
     )
+    registration_open = models.BooleanField(
+        _("Registration open"),
+        default=False,
+        help_text=_("While on, any logged-in user with a player profile can register themselves for this competition."),
+    )
+    registration_capacity = models.PositiveIntegerField(
+        _("Registration capacity"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Maximum number of participants. Enforced for self-registration and for participants added by "
+            "staff alike. Leave blank for no limit."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -152,6 +166,15 @@ class Stage(models.Model):
         help_text=_(
             "For a round-robin stage only: how many top finishers from each group advance to the "
             "competition's next (knockout) stage."
+        ),
+    )
+    is_locked = models.BooleanField(
+        _("Locked"),
+        default=False,
+        help_text=_(
+            "Once locked, this stage's group assignments and bracket can't be changed until an "
+            "administrator explicitly unlocks it (CLAUDE.md section 10: a locked draw must not be "
+            "modified silently)."
         ),
     )
 
@@ -313,3 +336,51 @@ class GroupParticipant(models.Model):
 
     def __str__(self):
         return f"{self.participant} in {self.group}"
+
+
+class AuditAction(models.TextChoices):
+    REGISTERED = "registered", _("Registered")
+    UNREGISTERED = "unregistered", _("Unregistered")
+    PARTICIPANT_ADDED_BY_STAFF = "participant_added_by_staff", _("Participant added by staff")
+    PARTICIPANT_REMOVED_BY_STAFF = "participant_removed_by_staff", _("Participant removed by staff")
+    GROUPS_CREATED = "groups_created", _("Groups created")
+    PARTICIPANT_MOVED = "participant_moved", _("Participant moved between groups")
+    STAGE_LOCKED = "stage_locked", _("Stage locked")
+    STAGE_UNLOCKED = "stage_unlocked", _("Stage unlocked")
+    BRACKET_SWAPPED = "bracket_swapped", _("Bracket participants swapped")
+
+
+class TournamentAuditLogManager(models.Manager):
+    def log(self, tournament, actor, action, message):
+        return self.create(tournament=tournament, actor=actor if getattr(actor, "is_authenticated", False) else None, action=action, message=message)
+
+
+class TournamentAuditLog(models.Model):
+    """A lightweight, append-only record of administrative draw/registration
+    actions (CLAUDE.md section 41: "Administrative actions should be
+    auditable where appropriate") — deliberately a single free-text
+    `message` per entry rather than a structured diff per action type,
+    same trade-off as apps.matches.models.MatchCorrection: enough to show
+    what happened without a bespoke schema per action.
+    """
+
+    objects = TournamentAuditLogManager()
+
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name="audit_log")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tournament_audit_entries",
+        verbose_name=_("Actor"),
+    )
+    action = models.CharField(_("Action"), max_length=40, choices=AuditAction.choices)
+    message = models.CharField(_("Message"), max_length=300)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_action_display()} — {self.message}"

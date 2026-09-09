@@ -15,6 +15,7 @@ from .models import (
     Stage,
     Tournament,
 )
+from .services.registration import is_competition_full
 
 INPUT_CLASS = "input input-bordered w-full"
 SELECT_CLASS = "select select-bordered w-full"
@@ -42,12 +43,21 @@ class TournamentForm(forms.ModelForm):
 class CompetitionForm(forms.ModelForm):
     class Meta:
         model = Competition
-        fields = ["name", "participant_type", "is_active", "ranking_category"]
+        fields = [
+            "name",
+            "participant_type",
+            "is_active",
+            "ranking_category",
+            "registration_open",
+            "registration_capacity",
+        ]
         widgets = {
             "name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "participant_type": forms.Select(attrs={"class": SELECT_CLASS}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox"}),
             "ranking_category": forms.Select(attrs={"class": SELECT_CLASS}),
+            "registration_open": forms.CheckboxInput(attrs={"class": "checkbox"}),
+            "registration_capacity": forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 1}),
         }
 
     def __init__(self, *args, tournament=None, **kwargs):
@@ -216,6 +226,12 @@ class ParticipantForm(forms.ModelForm):
                 raise forms.ValidationError(_("Seed %(seed)s is already assigned to another participant.") % {"seed": seed})
         return seed
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.competition and not self.instance.pk and is_competition_full(self.competition):
+            raise forms.ValidationError(_("This competition has reached its registration capacity."))
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.competition = self.competition
@@ -246,6 +262,17 @@ class BulkParticipantForm(forms.Form):
             label="",
         )
 
+    def clean_selected(self):
+        selected = self.cleaned_data["selected"]
+        if self.competition.registration_capacity is not None:
+            remaining = self.competition.registration_capacity - self.competition.participants.entrants().count()
+            if len(selected) > max(remaining, 0):
+                raise forms.ValidationError(
+                    _("Only %(remaining)s more participant(s) can be added before reaching capacity.")
+                    % {"remaining": max(remaining, 0)}
+                )
+        return selected
+
     def save(self):
         participants = []
         for obj in self.cleaned_data["selected"]:
@@ -257,3 +284,43 @@ class BulkParticipantForm(forms.Form):
             participant.save()
             participants.append(participant)
         return participants
+
+
+class GroupBulkCreateForm(forms.Form):
+    count = forms.IntegerField(
+        label=_("Number of groups"),
+        min_value=1,
+        max_value=32,
+        widget=forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 1, "max": 32}),
+    )
+
+
+class GroupParticipantMoveForm(forms.Form):
+    target_group = forms.ModelChoiceField(queryset=Group.objects.none(), widget=forms.Select(attrs={"class": SELECT_CLASS}))
+
+    def __init__(self, *args, group_participant=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.group_participant = group_participant
+        self.fields["target_group"].queryset = Group.objects.filter(
+            stage_id=group_participant.group.stage_id
+        ).exclude(pk=group_participant.group_id)
+
+
+class BracketSwapForm(forms.Form):
+    participant_a = forms.ModelChoiceField(queryset=Participant.objects.none(), widget=forms.Select(attrs={"class": SELECT_CLASS}))
+    participant_b = forms.ModelChoiceField(queryset=Participant.objects.none(), widget=forms.Select(attrs={"class": SELECT_CLASS}))
+
+    def __init__(self, *args, stage=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage = stage
+        queryset = stage.competition.participants.entrants()
+        self.fields["participant_a"].queryset = queryset
+        self.fields["participant_b"].queryset = queryset
+
+    def clean(self):
+        cleaned_data = super().clean()
+        a = cleaned_data.get("participant_a")
+        b = cleaned_data.get("participant_b")
+        if a and b and a.pk == b.pk:
+            raise forms.ValidationError(_("Choose two different participants to swap."))
+        return cleaned_data

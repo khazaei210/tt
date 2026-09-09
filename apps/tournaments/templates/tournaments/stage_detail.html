@@ -8,8 +8,24 @@
 {% pageheader stage.name %}
     <a href="{% url 'tournaments:competition_detail' stage.competition.pk %}" class="link">{{ stage.competition.name }}</a>
     · {{ stage.get_stage_format_display }}
+    {% if stage.is_locked %}
+        · {% translate "Locked" as locked_label %}{% status_badge locked_label variant="warning" size="sm" %}
+    {% endif %}
 {% pageheader_actions %}
     {% if can_manage %}
+        {% if stage.is_locked %}
+            <form method="post" action="{% url 'tournaments:stage_unlock' stage.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">{% translate "Unlock draw" %}</button>
+            </form>
+        {% else %}
+            {% translate "Lock this stage's draw? Groups and the bracket can't be changed until it's unlocked again." as lock_confirm %}
+            <form method="post" action="{% url 'tournaments:stage_lock' stage.pk %}"
+                  onsubmit="return confirm('{{ lock_confirm|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">{% translate "Lock draw" %}</button>
+            </form>
+        {% endif %}
         <a href="{% url 'tournaments:stage_edit' stage.pk %}" class="btn btn-outline" aria-label="{% translate 'Edit stage' %}">
             {% icon "edit" %}<span class="hidden sm:inline">{% translate "Edit stage" %}</span>
         </a>
@@ -22,13 +38,15 @@
 {% if stage.stage_format == "round_robin" %}
     {% translate "Groups" as groups_label %}
     {% sectionheader title=groups_label %}
-        {% if can_manage and groups %}
+        {% if can_manage and groups and not stage.is_locked %}
             {% translate "Assign every unassigned participant to whichever group currently has the fewest members?" as auto_assign_confirm %}
             <form method="post" action="{% url 'tournaments:stage_auto_assign_groups' stage.pk %}"
                   onsubmit="return confirm('{{ auto_assign_confirm|escapejs }}');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline">{% translate "Auto-assign to groups" %}</button>
             </form>
+        {% endif %}
+        {% if can_manage and groups %}
             {% translate "Generate the schedule for every group in this stage that doesn't have one yet?" as generate_all_confirm %}
             <form method="post" action="{% url 'tournaments:stage_generate_all_schedules' stage.pk %}"
                   onsubmit="return confirm('{{ generate_all_confirm|escapejs }}');">
@@ -46,12 +64,26 @@
                 </button>
             </form>
         {% endif %}
-        {% if can_manage %}
+        {% if can_manage and not stage.is_locked %}
             <a href="{% url 'tournaments:group_add' stage.pk %}" class="btn btn-primary btn-sm" aria-label="{% translate 'Add group' %}">
                 {% icon "add" %}<span class="hidden sm:inline">{% translate "Add group" %}</span>
             </a>
         {% endif %}
     {% endsectionheader %}
+    {% if can_manage and not stage.is_locked %}
+    <form method="post" action="{% url 'tournaments:stage_groups_bulk_create' stage.pk %}"
+          class="flex items-end gap-2 flex-wrap bg-base-100 rounded-box shadow p-4 mb-4">
+        {% csrf_token %}
+        <div>
+            <label class="label"><span class="label-text">{{ group_bulk_create_form.count.label }}</span></label>
+            {{ group_bulk_create_form.count }}
+            {% for error in group_bulk_create_form.count.errors %}
+                <p class="text-sm text-error mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm">{% translate "Create groups" %}</button>
+    </form>
+    {% endif %}
     {% if can_manage and next_knockout_stage and not stage.qualifiers_per_group %}
         <p class="text-sm text-base-content/60 mb-2">
             {% blocktranslate with stage_name=next_knockout_stage.name %}Set "Qualifiers per group" on this stage to enable advancing to {{ stage_name }}.{% endblocktranslate %}
@@ -72,7 +104,7 @@
 {% else %}
     {% translate "Bracket" as bracket_label %}
     {% sectionheader title=bracket_label %}
-        {% if has_bracket and can_manage %}
+        {% if has_bracket and can_manage and not stage.is_locked %}
             {% translate "Clear the generated bracket? This deletes all matches for this stage." as clear_bracket_confirm %}
             <form method="post" action="{% url 'tournaments:stage_bracket_clear' stage.pk %}"
                   onsubmit="return confirm('{{ clear_bracket_confirm|escapejs }}');">
@@ -117,9 +149,33 @@
                 {% endfor %}
             </div>
         </div>
+        {% if can_manage and not stage.is_locked %}
+        {% card extra_class="mt-4" %}
+            <h3 class="font-semibold mb-2">{% translate "Swap two participants' bracket positions" %}</h3>
+            <p class="text-sm text-base-content/60 mb-3">
+                {% translate "Only works before either of their first-round matches has started." %}
+            </p>
+            <form method="post" action="{% url 'tournaments:stage_bracket_swap' stage.pk %}" class="flex items-end gap-2 flex-wrap">
+                {% csrf_token %}
+                <div class="flex-1 min-w-48">
+                    <label class="label"><span class="label-text">{{ bracket_swap_form.participant_a.label }}</span></label>
+                    {{ bracket_swap_form.participant_a }}
+                </div>
+                <div class="flex-1 min-w-48">
+                    <label class="label"><span class="label-text">{{ bracket_swap_form.participant_b.label }}</span></label>
+                    {{ bracket_swap_form.participant_b }}
+                </div>
+                {% for error in bracket_swap_form.non_field_errors %}
+                    <p class="text-sm text-error mt-1">{{ error }}</p>
+                {% endfor %}
+                <button type="submit" class="btn btn-outline btn-sm">{% translate "Swap" %}</button>
+            </form>
+        {% endcard %}
+        {% endif %}
     {% else %}
         {% card %}
             <p class="text-base-content/60 mb-4">{% translate "No bracket generated yet." %}</p>
+            {% if not stage.is_locked %}
             <form method="post" action="{% url 'tournaments:stage_bracket_generate' stage.pk %}" class="flex items-end gap-4 flex-wrap">
                 {% csrf_token %}
                 <div>
@@ -135,6 +191,7 @@
                 </label>
                 <button type="submit" class="btn btn-primary">{% translate "Generate bracket" %}</button>
             </form>
+            {% endif %}
         {% endcard %}
     {% endif %}
 {% endif %}

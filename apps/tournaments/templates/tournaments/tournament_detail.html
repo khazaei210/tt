@@ -49,4 +49,32 @@
         {% include "tournaments/_competition_rows.html" %}
     </tbody>
 {% endtable_card %}
+
+{% if can_manage %}
+{% translate "Recent activity" as activity_label %}
+{% sectionheader title=activity_label %}{% endsectionheader %}
+{% if recent_activity %}
+{% table_card %}
+    <thead>
+        <tr>
+            <th>{% translate "When" %}</th>
+            <th>{% translate "Actor" %}</th>
+            <th>{% translate "Action" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in recent_activity %}
+        <tr>
+            <td class="whitespace-nowrap">{{ entry.created_at }}</td>
+            <td>{{ entry.actor|default:"—" }}</td>
+            <td>{{ entry.message }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+{% endtable_card %}
+{% else %}
+    {% translate "No administrative activity recorded yet." as no_activity_msg %}
+    {% empty_panel no_activity_msg %}
+{% endif %}
+{% endif %}
 {% endblock %}

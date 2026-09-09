@@ -1,0 +1,30 @@
+{% load i18n ui_kit %}
+<div class="flex items-center gap-3 flex-wrap mb-4">
+    {% if competition.registration_open %}
+        {% translate "Registration open" as reg_open_label %}
+        {% status_badge reg_open_label variant="success" size="sm" %}
+    {% else %}
+        {% translate "Registration closed" as reg_closed_label %}
+        {% status_badge reg_closed_label variant="ghost" size="sm" %}
+    {% endif %}
+    <span class="text-sm text-base-content/60">
+        {% if competition.registration_capacity %}
+            {% blocktranslate with count=entrant_count capacity=competition.registration_capacity %}{{ count }} / {{ capacity }} registered{% endblocktranslate %}
+        {% else %}
+            {% blocktranslate with count=entrant_count %}{{ count }} registered{% endblocktranslate %}
+        {% endif %}
+    </span>
+    {% if can_register %}
+        <form method="post" action="{% url 'tournaments:competition_register' competition.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm">{% translate "Register" %}</button>
+        </form>
+    {% elif can_unregister %}
+        {% translate "Withdraw your registration from this competition?" as withdraw_confirm %}
+        <form method="post" action="{% url 'tournaments:competition_unregister' competition.pk %}"
+              onsubmit="return confirm('{{ withdraw_confirm|escapejs }}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline btn-error btn-sm">{% translate "Withdraw" %}</button>
+        </form>
+    {% endif %}
+</div>

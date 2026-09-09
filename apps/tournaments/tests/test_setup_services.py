@@ -12,12 +12,19 @@ from apps.tournaments.models import (
     Stage,
     StageFormat,
     Tournament,
+    TournamentAuditLog,
 )
 from apps.tournaments.services.setup import (
+    DuplicateGroupAssignmentError,
+    InvalidGroupMoveError,
     NoGroupsAvailableError,
     NotRoundRobinStageError,
+    StageLockedError,
     auto_assign_participants_to_groups,
+    create_groups,
+    move_participant_to_group,
     seed_participants_by_rating,
+    suggested_group_count,
 )
 
 
@@ -155,3 +162,113 @@ class AutoAssignToGroupsTests(TestCase):
         created = auto_assign_participants_to_groups(self.stage)
 
         self.assertEqual(created, [])
+
+    def test_raises_when_stage_is_locked(self):
+        Group.objects.create(stage=self.stage, name="A", order=1)
+        self.stage.is_locked = True
+        self.stage.save(update_fields=["is_locked"])
+        with self.assertRaises(StageLockedError):
+            auto_assign_participants_to_groups(self.stage)
+
+
+class SuggestedGroupCountTests(TestCase):
+    def test_rounds_up_to_fit_the_default_group_size(self):
+        self.assertEqual(suggested_group_count(0), 1)
+        self.assertEqual(suggested_group_count(4), 1)
+        self.assertEqual(suggested_group_count(5), 2)
+        self.assertEqual(suggested_group_count(16), 4)
+
+    def test_respects_a_custom_target_group_size(self):
+        self.assertEqual(suggested_group_count(9, target_group_size=3), 3)
+
+
+class CreateGroupsTests(TestCase):
+    def setUp(self):
+        self.tournament = Tournament.objects.create(name="Open")
+        self.competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
+        )
+        self.stage = Stage.objects.create(
+            competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN
+        )
+
+    def test_creates_the_requested_number_of_groups_named_sequentially(self):
+        created = create_groups(self.stage, 3)
+        self.assertEqual(len(created), 3)
+        names = list(self.stage.groups.order_by("order").values_list("name", flat=True))
+        self.assertEqual(len(names), 3)
+        self.assertEqual(len(set(names)), 3)
+
+    def test_continues_numbering_after_existing_groups(self):
+        Group.objects.create(stage=self.stage, name="Group A", order=1)
+        created = create_groups(self.stage, 1)
+        self.assertEqual(len(created), 1)
+        self.assertNotEqual(created[0].name, "Group A")
+        self.assertEqual(self.stage.groups.count(), 2)
+
+    def test_raises_for_a_knockout_stage(self):
+        knockout = Stage.objects.create(
+            competition=self.competition, name="Bracket", stage_format=StageFormat.KNOCKOUT, order=2
+        )
+        with self.assertRaises(NotRoundRobinStageError):
+            create_groups(knockout, 2)
+
+    def test_raises_when_stage_is_locked(self):
+        self.stage.is_locked = True
+        self.stage.save(update_fields=["is_locked"])
+        with self.assertRaises(StageLockedError):
+            create_groups(self.stage, 2)
+
+    def test_logs_an_audit_entry(self):
+        create_groups(self.stage, 2)
+        self.assertTrue(TournamentAuditLog.objects.filter(tournament=self.tournament).exists())
+
+
+class MoveParticipantToGroupTests(TestCase):
+    def setUp(self):
+        self.tournament = Tournament.objects.create(name="Open")
+        self.competition = Competition.objects.create(
+            tournament=self.tournament, name="Singles", participant_type=ParticipantType.INDIVIDUAL
+        )
+        self.stage = Stage.objects.create(
+            competition=self.competition, name="Groups", stage_format=StageFormat.ROUND_ROBIN
+        )
+        self.other_stage = Stage.objects.create(
+            competition=self.competition, name="Other", stage_format=StageFormat.ROUND_ROBIN, order=2
+        )
+        self.group_a = Group.objects.create(stage=self.stage, name="A", order=1)
+        self.group_b = Group.objects.create(stage=self.stage, name="B", order=2)
+        self.other_stage_group = Group.objects.create(stage=self.other_stage, name="C", order=1)
+        self.participant = Participant.objects.create(
+            competition=self.competition, participant_type=ParticipantType.INDIVIDUAL, individual_player=make_player(1)
+        )
+        self.group_participant = GroupParticipant.objects.create(group=self.group_a, participant=self.participant)
+
+    def test_moves_the_participant_to_the_target_group(self):
+        move_participant_to_group(self.group_participant, self.group_b)
+        self.group_participant.refresh_from_db()
+        self.assertEqual(self.group_participant.group_id, self.group_b.id)
+
+    def test_rejects_moving_to_the_same_group(self):
+        with self.assertRaises(InvalidGroupMoveError):
+            move_participant_to_group(self.group_participant, self.group_a)
+
+    def test_rejects_a_group_from_a_different_stage(self):
+        with self.assertRaises(InvalidGroupMoveError):
+            move_participant_to_group(self.group_participant, self.other_stage_group)
+
+    def test_rejects_a_duplicate_assignment(self):
+        # Same participant already has a (stray) GroupParticipant row in the target group.
+        GroupParticipant.objects.create(group=self.group_b, participant=self.participant)
+        with self.assertRaises(DuplicateGroupAssignmentError):
+            move_participant_to_group(self.group_participant, self.group_b)
+
+    def test_rejects_when_stage_is_locked(self):
+        self.stage.is_locked = True
+        self.stage.save(update_fields=["is_locked"])
+        with self.assertRaises(StageLockedError):
+            move_participant_to_group(self.group_participant, self.group_b)
+
+    def test_logs_an_audit_entry(self):
+        move_participant_to_group(self.group_participant, self.group_b)
+        self.assertTrue(TournamentAuditLog.objects.filter(tournament=self.tournament).exists())
